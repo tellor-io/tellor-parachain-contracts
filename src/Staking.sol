@@ -8,12 +8,18 @@ contract Staking {
     XcmTransactorV2 constant xcmTransactor = XcmTransactorV2(0x000000000000000000000000000000000000080D); // todo: use constructor
     mapping(bytes => XcmTransactorV2.Multilocation) public registrations;
 
+    event Called(address _caller);
+
     constructor(address _token)
     {
         token = IERC20(_token);
     }
 
-    function register(bytes memory _parachain, XcmTransactorV2.Multilocation calldata _location) external {
+    function call() external {
+        emit Called(msg.sender);
+    }
+
+    function register(bytes memory _parachain, XcmTransactorV2.Multilocation calldata _location, uint256 _stakeAmount) external {
         registrations[_parachain] = _location;
 
         // todo: notify parachain?
