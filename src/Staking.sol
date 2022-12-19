@@ -1,7 +1,7 @@
 pragma solidity ^0.8.0;
 
-import "../lib/moonbeam/precompiles/xcm-transactor/src/v2/XcmTransactorV2.sol";
-import "../lib/moonbeam/precompiles/assets-erc20/ERC20.sol";
+import "../lib/moonbeam/precompiles/XcmTransactorV2.sol";
+import "../lib/moonbeam/precompiles/ERC20.sol";
 
 contract Staking {
     IERC20 public token;
