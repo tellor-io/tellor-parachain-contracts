@@ -25,6 +25,7 @@ contract Staking is Tellor  {
 
     // Register parachain, along with index of Tellor pallet within corresponding runtime and stake amount
     function register(uint32 _paraId, uint8 _palletIndex, uint256 _stakeAmount) external onlyOwner {
+        // todo: fund parachain derivative account with msg.value
         Tellor.registerParachain(_paraId, _palletIndex, _stakeAmount);
     }
 
