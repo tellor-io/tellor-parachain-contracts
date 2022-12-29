@@ -3,12 +3,32 @@ pragma solidity ^0.8.0;
 // Various helper methods for interfacing with the Tellor pallet on another parachain via XCM
 import "../lib/moonbeam/precompiles/XcmTransactorV2.sol";
 
-contract Tellor {
-    XcmTransactorV2 private constant xcmTransactor  = XCM_TRANSACTOR_V2_CONTRACT;
+error ParachainNotRegistered();
+error InsufficientStakeAmount();
+
+interface ITellor {
+    function owner(uint32 _paraId) external view returns(address);
+
+    function stakeAmount(uint32 _paraId) external view returns(uint256);
+
+    function reportStake(uint32 _paraId, address _staker, uint256 _amount) external;
+}
+
+contract Tellor is ITellor {
+    address private contractOwner;
 
     mapping(uint32 => ParachainRegistration) private registrations;
 
-    error ParachainNotRegistered();
+    XcmTransactorV2 private constant xcmTransactor  = XCM_TRANSACTOR_V2_CONTRACT;
+
+    modifier onlyOwner {
+        if (msg.sender != contractOwner) revert NotOwner();
+        _;
+    }
+
+    error NotOwner();
+
+    event ParachainRegistered(address caller, uint32 parachain);
 
     struct ParachainRegistration{
         address owner;
@@ -16,24 +36,31 @@ contract Tellor {
         uint256 stakeAmount;
     }
 
-    function owner(uint32 _paraId) internal view returns(address) {
+    constructor () {
+        contractOwner = msg.sender;
+    }
+
+    function owner(uint32 _paraId) external view returns(address) {
         return registrations[_paraId].owner;
     }
 
-    function stakeAmount(uint32 _paraId) internal view returns(uint256) {
+    function stakeAmount(uint32 _paraId) external view returns(uint256) {
         return registrations[_paraId].stakeAmount;
     }
 
     // Register parachain, along with index of Tellor pallet within corresponding runtime and stake amount
-    function registerParachain(uint32 _paraId, uint8 _palletIndex, uint256 _stakeAmount) internal {
+    function registerParachain(uint32 _paraId, uint8 _palletIndex, uint256 _stakeAmount) external onlyOwner {
         ParachainRegistration memory registration;
         registration.owner = msg.sender;
         registration.palletIndex = abi.encodePacked(_palletIndex);
         registration.stakeAmount = _stakeAmount;
         registrations[_paraId] = registration;
+
+        emit ParachainRegistered(msg.sender, _paraId);
     }
 
-    function reportStake(uint32 _paraId, address _staker, uint256 _amount) internal {
+    function reportStake(uint32 _paraId, address _staker, uint256 _amount) external {
+        // todo: restrict caller to staking contract
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = reportStakeToParachain(_paraId, _staker, _amount);
         uint256 feeAmount = 10000000000;
