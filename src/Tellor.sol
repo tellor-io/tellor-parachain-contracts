@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 // Various helper methods for interfacing with the Tellor pallet on another parachain via XCM
 import "../lib/moonbeam/precompiles/XcmTransactorV2.sol";
 
+error NotAllowed();
+error NotOwner();
 error ParachainNotRegistered();
 error InsufficientStakeAmount();
 
@@ -16,6 +18,7 @@ interface ITellor {
 
 contract Tellor is ITellor {
     address private contractOwner;
+    address private stakingContract;
 
     mapping(uint32 => ParachainRegistration) private registrations;
 
@@ -26,9 +29,8 @@ contract Tellor is ITellor {
         _;
     }
 
-    error NotOwner();
-
-    event ParachainRegistered(address caller, uint32 parachain);
+    event ParachainRegistered(address caller, uint32 parachain, address owner);
+    event StakingContractSet(address caller, address contractAddress);
 
     struct ParachainRegistration{
         address owner;
@@ -40,6 +42,28 @@ contract Tellor is ITellor {
         contractOwner = msg.sender;
     }
 
+    // Register parachain, along with index of Tellor pallet within corresponding runtime and stake amount
+    /// @dev Function to check the amount of tokens that an owner allowed to a spender.
+    /// @param _paraId uint32 The parachain identifier.
+    /// @param _owner address The multi-location derivative account, mapped from the Tellor pallet account on the parachain.
+    /// @param _palletIndex uint8 The index of the Tellor pallet within the parachain's runtime.
+    /// @param _stakeAmount uint256 The minimum stake amount for the parachain.
+    function registerParachain(uint32 _paraId, address _owner, uint8 _palletIndex, uint256 _stakeAmount) external onlyOwner {
+        ParachainRegistration memory registration;
+        registration.owner = _owner;
+        registration.palletIndex = abi.encodePacked(_palletIndex);
+        registration.stakeAmount = _stakeAmount;
+        registrations[_paraId] = registration;
+
+        emit ParachainRegistered(msg.sender, _paraId, _owner);
+    }
+
+    function setStaking(address _address) external onlyOwner {
+        stakingContract = _address;
+
+        emit StakingContractSet(msg.sender, _address);
+    }
+
     function owner(uint32 _paraId) external view returns(address) {
         return registrations[_paraId].owner;
     }
@@ -48,27 +72,19 @@ contract Tellor is ITellor {
         return registrations[_paraId].stakeAmount;
     }
 
-    // Register parachain, along with index of Tellor pallet within corresponding runtime and stake amount
-    function registerParachain(uint32 _paraId, uint8 _palletIndex, uint256 _stakeAmount) external onlyOwner {
-        ParachainRegistration memory registration;
-        registration.owner = msg.sender;
-        registration.palletIndex = abi.encodePacked(_palletIndex);
-        registration.stakeAmount = _stakeAmount;
-        registrations[_paraId] = registration;
-
-        emit ParachainRegistered(msg.sender, _paraId);
-    }
-
     function reportStake(uint32 _paraId, address _staker, uint256 _amount) external {
-        // todo: restrict caller to staking contract
+        // Ensure sender is staking contract
+        if (msg.sender != stakingContract) revert NotAllowed();
+
+        // Prepare remote call and send
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = reportStakeToParachain(_paraId, _staker, _amount);
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
-        notifyThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+        transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
     }
 
-    function notifyThroughSigned(uint32 _paraId, uint64 _transactRequiredWeightAtMost, bytes memory _call, uint256 _feeAmount, uint64 _overallWeight) private {
+    function transactThroughSigned(uint32 _paraId, uint64 _transactRequiredWeightAtMost, bytes memory _call, uint256 _feeAmount, uint64 _overallWeight) private {
         // Create multi-location based on supplied paraId
         XcmTransactorV2.Multilocation memory location;
         location.parents = 1;
