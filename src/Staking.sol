@@ -23,8 +23,8 @@ contract Staking  {
 
     error NotOwner();
 
-    // Deposit stake: called by reporter
-    function depositStake(uint32 _paraId, uint256 _amount) external {
+    // Deposit stake: called by staker/reporter, where _reporter is the reporters address on the corresponding parachain
+    function depositStake(uint32 _paraId, bytes calldata _reporter, uint256 _amount) external {
 
         if (tellor.owner(_paraId) == address(0x0))
             revert ParachainNotRegistered();
@@ -34,7 +34,7 @@ contract Staking  {
         // todo: Deposit state
 
         // Notify parachain
-        tellor.reportStake(_paraId, msg.sender, _amount);
+        tellor.reportStake(_paraId, msg.sender, _reporter, _amount);
         emit DepositedStake(msg.sender, _paraId);
     }
 

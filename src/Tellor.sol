@@ -13,7 +13,12 @@ interface ITellor {
 
     function stakeAmount(uint32 _paraId) external view returns(uint256);
 
-    function reportStake(uint32 _paraId, address _staker, uint256 _amount) external;
+    /// @dev Report stake to a registered parachain.
+    /// @param _paraId uint32 The parachain identifier.
+    /// @param _staker address The address of the staker.
+    /// @param _reporter bytes The corresponding address of the reporter on the parachain.
+    /// @param _amount uint256 The staked amount for the parachain.
+    function reportStake(uint32 _paraId, address _staker, bytes calldata _reporter, uint256 _amount) external;
 }
 
 contract Tellor is ITellor {
@@ -42,8 +47,7 @@ contract Tellor is ITellor {
         contractOwner = msg.sender;
     }
 
-    // Register parachain, along with index of Tellor pallet within corresponding runtime and stake amount
-    /// @dev Function to check the amount of tokens that an owner allowed to a spender.
+    /// @dev Register parachain, along with index of Tellor pallet within corresponding runtime and stake amount.
     /// @param _paraId uint32 The parachain identifier.
     /// @param _owner address The multi-location derivative account, mapped from the Tellor pallet account on the parachain.
     /// @param _palletIndex uint8 The index of the Tellor pallet within the parachain's runtime.
@@ -64,7 +68,7 @@ contract Tellor is ITellor {
         emit StakingContractSet(msg.sender, _address);
     }
 
-    function owner(uint32 _paraId) external view returns(address) {
+    function owner(uint32 _paraId) public view returns(address) {
         return registrations[_paraId].owner;
     }
 
@@ -72,13 +76,19 @@ contract Tellor is ITellor {
         return registrations[_paraId].stakeAmount;
     }
 
-    function reportStake(uint32 _paraId, address _staker, uint256 _amount) external {
+    /// @dev Report stake to a registered parachain.
+    /// @param _paraId uint32 The parachain identifier.
+    /// @param _staker address The address of the staker.
+    /// @param _reporter bytes The corresponding address of the reporter on the parachain.
+    /// @param _amount uint256 The staked amount for the parachain.
+    function reportStake(uint32 _paraId, address _staker, bytes calldata _reporter, uint256 _amount) external {
         // Ensure sender is staking contract
         if (msg.sender != stakingContract) revert NotAllowed();
+        if (owner(_paraId) == address(0x0)) revert ParachainNotRegistered();
 
         // Prepare remote call and send
         uint64 transactRequiredWeightAtMost = 5000000000;
-        bytes memory call = reportStakeToParachain(_paraId, _staker, _amount);
+        bytes memory call = reportStakeToParachain(_paraId, _staker, _reporter, _amount);
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
         transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
@@ -95,9 +105,9 @@ contract Tellor is ITellor {
         xcmTransactor.transactThroughSignedMultilocation(location, location, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight);
     }
 
-    function reportStakeToParachain(uint32 _paraId, address _staker, uint256 _amount) private view returns(bytes memory) {
+    function reportStakeToParachain(uint32 _paraId, address _staker, bytes memory _reporter, uint256 _amount) private view returns(bytes memory) {
         // Encode call to report(staker, amount) within Tellor pallet
-        return bytes.concat(registrations[_paraId].palletIndex, hex"00", bytes20(_staker), bytes32(reverse(_amount)));
+        return bytes.concat(registrations[_paraId].palletIndex, hex"00", bytes20(_staker), _reporter, bytes32(reverse(_amount)));
     }
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
