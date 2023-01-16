@@ -37,15 +37,4 @@ contract Staking  {
         tellor.reportStake(_paraId, msg.sender, _reporter, _amount);
         emit DepositedStake(msg.sender, _paraId);
     }
-
-//    function requestStakingWithdraw(uint256 _amount) external {
-//    }
-//
-//    function withdrawStake() external {
-//    }
-//
-//    function slashReporter(address _reporter, address _recipient) external {
-//
-//    }
-
 }
