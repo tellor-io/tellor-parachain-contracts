@@ -3,25 +3,19 @@ pragma solidity ^0.8.0;
 // Various helper methods for interfacing with the Tellor pallet on another parachain via XCM
 import "../lib/moonbeam/precompiles/XcmTransactorV2.sol";
 
-error NotAllowed();
-error NotOwner();
-error ParachainNotRegistered();
-error InsufficientStakeAmount();
+    error NotAllowed();
+    error NotOwner();
+    error ParachainNotRegistered();
 
-interface ITellor {
+interface IRegistry {
     function owner(uint32 _paraId) external view returns(address);
 
-    function stakeAmount(uint32 _paraId) external view returns(uint256);
+    function palletIndex(uint32 _paraId) external view returns(bytes memory);
 
-    /// @dev Report stake to a registered parachain.
-    /// @param _paraId uint32 The parachain identifier.
-    /// @param _staker address The address of the staker.
-    /// @param _reporter bytes The corresponding address of the reporter on the parachain.
-    /// @param _amount uint256 The staked amount for the parachain.
-    function reportStake(uint32 _paraId, address _staker, bytes calldata _reporter, uint256 _amount) external;
+    function stakeAmount(uint32 _paraId) external view returns(uint256);
 }
 
-contract Tellor is ITellor {
+contract ParachainRegistry is IRegistry {
     address private contractOwner;
     address private stakingContract;
 
@@ -70,6 +64,10 @@ contract Tellor is ITellor {
 
     function owner(uint32 _paraId) public view returns(address) {
         return registrations[_paraId].owner;
+    }
+
+    function palletIndex(uint32 _paraId) external view returns(bytes memory) {
+        return registrations[_paraId].palletIndex;
     }
 
     function stakeAmount(uint32 _paraId) external view returns(uint256) {
