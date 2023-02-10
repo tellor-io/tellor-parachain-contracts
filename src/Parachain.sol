@@ -13,6 +13,19 @@ abstract contract Parachain {
         registry = IRegistry(_registry);
     }
 
+    function removeValue(uint32 _paraId, bytes32 _queryId, uint256 _timestamp) internal {
+        // Ensure paraId is registered
+        if (registry.owner(_paraId) == address(0x0)) revert ParachainNotRegistered();
+
+        // Prepare remote call and send
+        // todo: store parameters by call enum, so updateable over time
+        uint64 transactRequiredWeightAtMost = 5000000000;
+        bytes memory call = encodeRemoveValue(_paraId, _queryId, _timestamp);
+        uint256 feeAmount = 10000000000;
+        uint64 overallWeight = 9000000000;
+        transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+    }
+
     /// @dev Report stake to a registered parachain.
     /// @param _paraId uint32 The parachain identifier.
     /// @param _staker address The address of the staker.
@@ -39,6 +52,16 @@ abstract contract Parachain {
 
         // Send remote transact
         xcmTransactor.transactThroughSignedMultilocation(location, location, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight);
+    }
+
+    function encodeRemoveValue(uint32 _paraId, bytes32 _queryId, uint256 _timestamp) private view returns(bytes memory) {
+        // Encode call to remove_value(query_id, timestamp) within Tellor pallet
+        return bytes.concat(
+            registry.palletIndex(_paraId), // pallet index within runtime
+            hex"05", // fixed call index within pallet
+            _queryId, // identifier of specific data feed
+            bytes32(reverse(_timestamp)) // timestamp
+        );
     }
 
     function encodeReportStakeDeposited(uint32 _paraId, address _staker, bytes memory _reporter, uint256 _amount) private view returns(bytes memory) {

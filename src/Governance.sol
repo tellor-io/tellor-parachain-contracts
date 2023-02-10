@@ -8,6 +8,7 @@ contract Governance is Parachain  {
     address public owner;
 
     event DisputeStarted(address caller, uint32 parachain);
+    event ParachainValueRemoved(uint32 _paraId, bytes32 _queryId, uint256 _timestamp);
 
     modifier onlyOwner {
         if (msg.sender != owner) revert NotOwner();
@@ -27,5 +28,17 @@ contract Governance is Parachain  {
         // todo: dispute
 
         emit DisputeStarted(msg.sender, _paraId);
+    }
+
+    // Remove value: called as part of dispute resolution
+    // note: call must originate from the Governance contract due to access control within the pallet.
+    function removeParachainValue(uint32 _paraId, bytes32 _queryId, uint256 _timestamp) external onlyOwner { // temporarily external for testing: must ultimately be *private*
+
+        if (registry.owner(_paraId) == address(0x0))
+            revert ParachainNotRegistered();
+
+        // Notify parachain
+        removeValue(_paraId, _queryId, _timestamp);
+        emit ParachainValueRemoved(_paraId, _queryId, _timestamp);
     }
 }
