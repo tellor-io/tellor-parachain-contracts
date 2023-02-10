@@ -10,7 +10,7 @@ contract Staking is Parachain {
     address private owner;
     IERC20 private token;
 
-    event NewParachainStaker(address caller, uint32 parachain);
+    event NewParachainStaker(uint32 _paraId, address _staker, bytes _account, uint256 _amount);
 
     modifier onlyOwner {
         if (msg.sender != owner) revert NotOwner();
@@ -35,7 +35,7 @@ contract Staking is Parachain {
         // todo: Deposit state
 
         // Notify parachain
-        reportStake(_paraId, msg.sender, _account, _amount);
-        emit NewParachainStaker(msg.sender, _paraId);
+        reportStakeDeposited(_paraId, msg.sender, _account, _amount);
+        emit NewParachainStaker(_paraId, msg.sender, _account, _amount);
     }
 }

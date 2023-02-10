@@ -18,13 +18,13 @@ abstract contract Parachain {
     /// @param _staker address The address of the staker.
     /// @param _reporter bytes The corresponding address of the reporter on the parachain.
     /// @param _amount uint256 The staked amount for the parachain.
-    function reportStake(uint32 _paraId, address _staker, bytes calldata _reporter, uint256 _amount) internal {
+    function reportStakeDeposited(uint32 _paraId, address _staker, bytes calldata _reporter, uint256 _amount) internal {
         // Ensure paraId is registered
         if (registry.owner(_paraId) == address(0x0)) revert ParachainNotRegistered();
 
         // Prepare remote call and send
         uint64 transactRequiredWeightAtMost = 5000000000;
-        bytes memory call = reportStakeToParachain(_paraId, _staker, _reporter, _amount);
+        bytes memory call = encodeReportStakeDeposited(_paraId, _staker, _reporter, _amount);
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
         transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
@@ -41,9 +41,15 @@ abstract contract Parachain {
         xcmTransactor.transactThroughSignedMultilocation(location, location, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight);
     }
 
-    function reportStakeToParachain(uint32 _paraId, address _staker, bytes memory _reporter, uint256 _amount) private view returns(bytes memory) {
-        // Encode call to report(staker, amount) within Tellor pallet
-        return bytes.concat(registry.palletIndex(_paraId), hex"00", bytes20(_staker), _reporter, bytes32(reverse(_amount)));
+    function encodeReportStakeDeposited(uint32 _paraId, address _staker, bytes memory _reporter, uint256 _amount) private view returns(bytes memory) {
+        // Encode call to report_stake_deposited(reporter, amount, address) within Tellor pallet
+        return bytes.concat(
+            registry.palletIndex(_paraId), // pallet index within runtime
+            hex"09", // fixed call index within pallet
+            _reporter, // account id of reporter on target parachain
+            bytes32(reverse(_amount)), // amount
+            bytes20(_staker) // staker
+        );
     }
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
