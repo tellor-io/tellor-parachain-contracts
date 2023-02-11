@@ -58,7 +58,7 @@ abstract contract Parachain {
         // Encode call to remove_value(query_id, timestamp) within Tellor pallet
         return bytes.concat(
             registry.palletIndex(_paraId), // pallet index within runtime
-            hex"05", // fixed call index within pallet
+            hex"06", // fixed call index within pallet
             _queryId, // identifier of specific data feed
             bytes32(reverse(_timestamp)) // timestamp
         );
@@ -68,7 +68,7 @@ abstract contract Parachain {
         // Encode call to report_stake_deposited(reporter, amount, address) within Tellor pallet
         return bytes.concat(
             registry.palletIndex(_paraId), // pallet index within runtime
-            hex"09", // fixed call index within pallet
+            hex"0A", // fixed call index within pallet
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)), // amount
             bytes20(_staker) // staker
@@ -76,7 +76,7 @@ abstract contract Parachain {
     }
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
-        // 0x00 denotes parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
+        // 0x00 denotes Parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
         return bytes.concat(hex"00", bytes4(_paraId));
     }
 
