@@ -17,8 +17,6 @@ interface IRegistry {
 }
 
 contract ParachainRegistry is IRegistry {
-    address private contractOwner;
-
     mapping(uint32 => ParachainRegistration) private registrations;
 
     XcmTransactorV2 private constant xcmTransactor  = XCM_TRANSACTOR_V2_CONTRACT;
@@ -32,31 +30,19 @@ contract ParachainRegistry is IRegistry {
         uint256 stakeAmount;
     }
 
-    constructor () {
-        contractOwner = msg.sender;
+    modifier onlyParachain(uint32 _paraId, uint8 _palletInstance) {
+        // Ensure sender is derivative account of pallet on parachain
+        address derivativeAddress = xcmUtils.multilocationToAddress(XcmUtils.Multilocation(1, x2(_paraId, _palletInstance)));
+        if (msg.sender != derivativeAddress) revert NotOwner();
+        _;
     }
 
     /// @dev Register parachain, along with index of Tellor pallet within corresponding runtime and stake amount.
     /// @param _paraId uint32 The parachain identifier.
-    /// @param _palletIndex uint8 The index of the Tellor pallet within the parachain's runtime.
+    /// @param _palletInstance uint8 The index of the Tellor pallet within the parachain's runtime.
     /// @param _stakeAmount uint256 The minimum stake amount for the parachain.
-    function register(uint32 _paraId, uint8 _palletIndex, uint256 _stakeAmount) external {
-
-        // Ensure sender is derivative account of pallet on parachain
-        XcmUtils.Multilocation memory location;
-        location.parents = 1;
-        location.interior = new bytes[](2);
-        location.interior[0] = parachain(_paraId);
-        location.interior[1] = pallet(_palletIndex);
-        address derivedAddress = xcmUtils.multilocationToAddress(location);
-        if (msg.sender != derivedAddress) revert NotOwner();
-
-        ParachainRegistration memory registration;
-        registration.owner = msg.sender;
-        registration.palletIndex = abi.encodePacked(_palletIndex);
-        registration.stakeAmount = _stakeAmount;
-        registrations[_paraId] = registration;
-
+    function register(uint32 _paraId, uint8 _palletInstance, uint256 _stakeAmount) external onlyParachain(_paraId, _palletInstance) {
+        registrations[_paraId] = ParachainRegistration(msg.sender, abi.encodePacked(_palletInstance), _stakeAmount);
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }
 
@@ -73,12 +59,19 @@ contract ParachainRegistry is IRegistry {
     }
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
-        // 0x00 denotes parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
+        // 0x00 denotes Parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
         return bytes.concat(hex"00", bytes4(_paraId));
     }
 
-    function pallet(uint8 _palletIndex) private pure returns (bytes memory) {
-        // 0x00 denotes parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
-        return bytes.concat(hex"04", bytes1(_palletIndex));
+    function pallet(uint8 _palletInstance) private pure returns (bytes memory) {
+        // 0x04 denotes PalletInstance: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
+        return bytes.concat(hex"04", bytes1(_palletInstance));
+    }
+
+    function x2(uint32 _paraId, uint8 _palletInstance) private pure returns (bytes[] memory) {
+        bytes[] memory interior = new bytes[](2);
+        interior[0] = parachain(_paraId);
+        interior[1] = pallet(_palletInstance);
+        return interior;
     }
 }
