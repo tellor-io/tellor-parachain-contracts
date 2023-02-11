@@ -57,7 +57,7 @@ abstract contract Parachain {
     function encodeRemoveValue(uint32 _paraId, bytes32 _queryId, uint256 _timestamp) private view returns(bytes memory) {
         // Encode call to remove_value(query_id, timestamp) within Tellor pallet
         return bytes.concat(
-            registry.palletIndex(_paraId), // pallet index within runtime
+            registry.palletInstance(_paraId), // pallet index within runtime
             hex"06", // fixed call index within pallet
             _queryId, // identifier of specific data feed
             bytes32(reverse(_timestamp)) // timestamp
@@ -67,7 +67,7 @@ abstract contract Parachain {
     function encodeReportStakeDeposited(uint32 _paraId, address _staker, bytes memory _reporter, uint256 _amount) private view returns(bytes memory) {
         // Encode call to report_stake_deposited(reporter, amount, address) within Tellor pallet
         return bytes.concat(
-            registry.palletIndex(_paraId), // pallet index within runtime
+            registry.palletInstance(_paraId), // pallet index within runtime
             hex"0A", // fixed call index within pallet
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)), // amount

@@ -11,7 +11,7 @@ import "../lib/moonbeam/precompiles/XcmUtils.sol";
 interface IRegistry {
     function owner(uint32 _paraId) external view returns(address);
 
-    function palletIndex(uint32 _paraId) external view returns(bytes memory);
+    function palletInstance(uint32 _paraId) external view returns(bytes memory);
 
     function stakeAmount(uint32 _paraId) external view returns(uint256);
 }
@@ -26,7 +26,7 @@ contract ParachainRegistry is IRegistry {
 
     struct ParachainRegistration{
         address owner;
-        bytes palletIndex;
+        bytes palletInstance;
         uint256 stakeAmount;
     }
 
@@ -50,8 +50,8 @@ contract ParachainRegistry is IRegistry {
         return registrations[_paraId].owner;
     }
 
-    function palletIndex(uint32 _paraId) external view returns(bytes memory) {
-        return registrations[_paraId].palletIndex;
+    function palletInstance(uint32 _paraId) external view returns(bytes memory) {
+        return registrations[_paraId].palletInstance;
     }
 
     function stakeAmount(uint32 _paraId) external view returns(uint256) {
