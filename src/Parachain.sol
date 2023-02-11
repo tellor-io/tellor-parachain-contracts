@@ -21,7 +21,7 @@ abstract contract Parachain {
         // todo: store parameters by call enum, so updateable over time
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = encodeRemoveValue(_paraId, _queryId, _timestamp);
-        uint256 feeAmount = 10000000000;
+        uint256 feeAmount = 80000000;
         uint64 overallWeight = 9000000000;
         transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
     }

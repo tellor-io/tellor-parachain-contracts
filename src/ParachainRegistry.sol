@@ -31,7 +31,7 @@ contract ParachainRegistry is IRegistry {
     }
 
     modifier onlyParachain(uint32 _paraId, uint8 _palletInstance) {
-        // Ensure sender is derivative account of pallet on parachain
+        // Ensure sender is multilocation-derivative account of pallet on parachain
         address derivativeAddress = xcmUtils.multilocationToAddress(XcmUtils.Multilocation(1, x2(_paraId, _palletInstance)));
         if (msg.sender != derivativeAddress) revert NotOwner();
         _;
