@@ -2,7 +2,9 @@ pragma solidity ^0.8.0;
 
 import "../lib/moonbeam/precompiles/ERC20.sol";
 import { Parachain } from "./Parachain.sol";
-import { IRegistry, ParachainRegistry, ParachainNotRegistered } from "./ParachainRegistry.sol";
+// import { IRegistry, ParachainRegistry, ParachainNotRegistered } from "./ParachainRegistry.sol";
+import { IRegistry, ParachainRegistry } from "./ParachainRegistry.sol";
+
 
     error InsufficientStakeAmount();
 
@@ -27,10 +29,12 @@ contract Staking is Parachain {
     // Deposit stake: called by staker/reporter, where _account is the reporters account identifier on the corresponding parachain
     function depositParachainStake(uint32 _paraId, bytes calldata _account, uint256 _amount) external {
 
-        if (registry.owner(_paraId) == address(0x0))
-            revert ParachainNotRegistered();
-        if (_amount < registry.stakeAmount(_paraId))
-            revert InsufficientStakeAmount();
+        // if (registry.owner(_paraId) == address(0x0))
+        //     revert ParachainNotRegistered();
+        // if (_amount < registry.stakeAmount(_paraId))
+        //     revert InsufficientStakeAmount();
+        require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
+        require(_amount >= registry.stakeAmount(_paraId), "Insufficient stake amount");
 
         // todo: Deposit state
 

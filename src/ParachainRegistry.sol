@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import "../lib/moonbeam/precompiles/XcmTransactorV2.sol";
 import "../lib/moonbeam/precompiles/XcmUtils.sol";
 
-    error NotAllowed();
-    error NotOwner();
-    error ParachainNotRegistered();
+    // error NotAllowed();
+    // error NotOwner();
+    // error ParachainNotRegistered();
 
 interface IRegistry {
     function owner(uint32 _paraId) external view returns(address);
@@ -33,7 +33,8 @@ contract ParachainRegistry is IRegistry {
     modifier onlyParachain(uint32 _paraId, uint8 _palletInstance) {
         // Ensure sender is multilocation-derivative account of pallet on parachain
         address derivativeAddress = xcmUtils.multilocationToAddress(XcmUtils.Multilocation(1, x2(_paraId, _palletInstance)));
-        if (msg.sender != derivativeAddress) revert NotOwner();
+        // if (msg.sender != derivativeAddress) revert NotOwner();
+        require(msg.sender == derivativeAddress, "Not owner");
         _;
     }
 
@@ -46,26 +47,29 @@ contract ParachainRegistry is IRegistry {
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }
 
-    function owner(uint32 _paraId) public view returns(address) {
+    function owner(uint32 _paraId) public override view returns(address) {
         return registrations[_paraId].owner;
     }
 
-    function palletInstance(uint32 _paraId) external view returns(bytes memory) {
+    function palletInstance(uint32 _paraId) external override view returns(bytes memory) {
         return registrations[_paraId].palletInstance;
     }
 
-    function stakeAmount(uint32 _paraId) external view returns(uint256) {
+    function stakeAmount(uint32 _paraId) external override view returns(uint256) {
         return registrations[_paraId].stakeAmount;
     }
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
         // 0x00 denotes Parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
-        return bytes.concat(hex"00", bytes4(_paraId));
+        // return bytes.concat(hex"00", bytes4(_paraId));
+        // TypeError: Member "concat" not found or not visible after argument-dependent lookup in type(bytes storage pointer)
+        return abi.encodePacked(hex"00", abi.encodePacked(_paraId));
     }
 
     function pallet(uint8 _palletInstance) private pure returns (bytes memory) {
         // 0x04 denotes PalletInstance: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
-        return bytes.concat(hex"04", bytes1(_palletInstance));
+        // return bytes.concat(hex"04", bytes1(_palletInstance));
+        return abi.encodePacked(hex"04", abi.encodePacked(_palletInstance));
     }
 
     function x2(uint32 _paraId, uint8 _palletInstance) private pure returns (bytes[] memory) {

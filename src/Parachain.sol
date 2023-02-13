@@ -1,7 +1,8 @@
 pragma solidity ^0.8.0;
 
 import "../lib/moonbeam/precompiles/XcmTransactorV2.sol"; // Various helper methods for interfacing with the Tellor pallet on another parachain via XCM
-import { IRegistry, ParachainNotRegistered } from "./ParachainRegistry.sol";
+// import { IRegistry, ParachainNotRegistered } from "./ParachainRegistry.sol";
+import { IRegistry } from "./ParachainRegistry.sol";
 
 // Helper contract providing cross-chain messaging functionality
 abstract contract Parachain {
@@ -15,7 +16,10 @@ abstract contract Parachain {
 
     function removeValue(uint32 _paraId, bytes32 _queryId, uint256 _timestamp) internal {
         // Ensure paraId is registered
-        if (registry.owner(_paraId) == address(0x0)) revert ParachainNotRegistered();
+        // if (registry.owner(_paraId) == address(0x0)) {
+        //     revert ParachainNotRegistered();
+        // }
+        require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
 
         // Prepare remote call and send
         // todo: store parameters by call enum, so updateable over time
@@ -33,7 +37,8 @@ abstract contract Parachain {
     /// @param _amount uint256 The staked amount for the parachain.
     function reportStakeDeposited(uint32 _paraId, address _staker, bytes calldata _reporter, uint256 _amount) internal {
         // Ensure paraId is registered
-        if (registry.owner(_paraId) == address(0x0)) revert ParachainNotRegistered();
+        // if (registry.owner(_paraId) == address(0x0)) revert ParachainNotRegistered();
+        require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
 
         // Prepare remote call and send
         uint64 transactRequiredWeightAtMost = 5000000000;
@@ -56,7 +61,13 @@ abstract contract Parachain {
 
     function encodeRemoveValue(uint32 _paraId, bytes32 _queryId, uint256 _timestamp) private view returns(bytes memory) {
         // Encode call to remove_value(query_id, timestamp) within Tellor pallet
-        return bytes.concat(
+        // return bytes.concat(
+        //     registry.palletInstance(_paraId), // pallet index within runtime
+        //     hex"06", // fixed call index within pallet
+        //     _queryId, // identifier of specific data feed
+        //     bytes32(reverse(_timestamp)) // timestamp
+        // );
+        return abi.encodePacked(
             registry.palletInstance(_paraId), // pallet index within runtime
             hex"06", // fixed call index within pallet
             _queryId, // identifier of specific data feed
@@ -66,7 +77,14 @@ abstract contract Parachain {
 
     function encodeReportStakeDeposited(uint32 _paraId, address _staker, bytes memory _reporter, uint256 _amount) private view returns(bytes memory) {
         // Encode call to report_stake_deposited(reporter, amount, address) within Tellor pallet
-        return bytes.concat(
+        // return bytes.concat(
+        //     registry.palletInstance(_paraId), // pallet index within runtime
+        //     hex"0A", // fixed call index within pallet
+        //     _reporter, // account id of reporter on target parachain
+        //     bytes32(reverse(_amount)), // amount
+        //     bytes20(_staker) // staker
+        // );
+        return abi.encodePacked(
             registry.palletInstance(_paraId), // pallet index within runtime
             hex"0A", // fixed call index within pallet
             _reporter, // account id of reporter on target parachain
@@ -77,7 +95,8 @@ abstract contract Parachain {
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
         // 0x00 denotes Parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
-        return bytes.concat(hex"00", bytes4(_paraId));
+        // return bytes.concat(hex"00", bytes4(_paraId));
+        return abi.encodePacked(hex"00", bytes4(_paraId));
     }
 
     // https://ethereum.stackexchange.com/questions/83626/how-to-reverse-byte-order-in-uint256-or-bytes32
