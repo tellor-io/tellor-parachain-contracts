@@ -106,4 +106,34 @@ contract Oracle is Parachain, TellorFlex {
 
         reportStakeDeposited(_paraId, msg.sender, _account, _amount);
     }
+
+
+    function requestParachainStakeWithdraw(uint32 _paraId, uint256 _amount) external {
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][msg.sender]; 
+        StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
+        require(
+            _staker.stakedBalance >= _amount,
+            "insufficient staked balance"
+        );
+        _updateStakeAndPayRewards(msg.sender, _staker.stakedBalance - _amount);
+        _staker.startDate = block.timestamp;
+        _staker.lockedBalance += _amount;
+        toWithdraw += _amount;
+        emit StakeWithdrawRequested(msg.sender, _amount);
+        emit ParachainStakeWithdrawRequested(_paraId, msg.sender, _amount);
+
+        reportStakeWithdrawRequested(_paraId, msg.sender, _parachainStakeInfo._account, _amount);
+    }
+
+
+    function confirmParachainStakeWithdrawRequest(uint32 _paraId, address _reporter, uint256 _amount) external {
+        // spec says msg.owner, but that seems wrong?
+        require(msg.sender == registry.owner(_paraId), "not parachain owner");
+
+        // Not rly sure what else this func is supposed to do
+        // Update ParachainStakeInfo._lockedBalanceConfirmed ?
+
+        emit ParachainStakeWithdrawRequestConfirmed(_paraId, _reporter, _amount);
+    }
+
 }
