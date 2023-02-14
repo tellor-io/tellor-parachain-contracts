@@ -17,7 +17,7 @@ contract Oracle is Parachain, TellorFlex {
     struct ParachainStakeInfo {
         StakeInfo _stakeInfo;
         bytes _account;
-        uint256 _lockedBalanceConfirmed; // lockedBalanceConfirmed denoting the amount confirmed by the parachain as requested for withdrawal
+        uint256 _lockedBalanceConfirmed; // the amount confirmed by the parachain. Where is this updated?
     }
 
     mapping(uint32 => mapping(address => ParachainStakeInfo)) private parachainStakeInfo;
@@ -49,67 +49,61 @@ contract Oracle is Parachain, TellorFlex {
         ) {}
 
 
-    // original deposit stake function:
-    // function depositStake(uint256 _amount) external {
-    //     require(governance != address(0), "governance address not set");
-    //     StakeInfo storage _staker = stakerDetails[msg.sender];
-    //     uint256 _stakedBalance = _staker.stakedBalance;
-    //     uint256 _lockedBalance = _staker.lockedBalance;
-    //     if (_lockedBalance > 0) {
-    //         if (_lockedBalance >= _amount) {
-    //             // if staker's locked balance covers full _amount, use that
-    //             _staker.lockedBalance -= _amount;
-    //             toWithdraw -= _amount;
-    //         } else {
-    //             // otherwise, stake the whole locked balance and transfer the
-    //             // remaining amount from the staker's address
-    //             require(
-    //                 token.transferFrom(
-    //                     msg.sender,
-    //                     address(this),
-    //                     _amount - _lockedBalance
-    //                 )
-    //             );
-    //             toWithdraw -= _staker.lockedBalance;
-    //             _staker.lockedBalance = 0;
-    //         }
-    //     } else {
-    //         if (_stakedBalance == 0) {
-    //             // if staked balance and locked balance equal 0, save current vote tally.
-    //             // voting participation used for calculating rewards
-    //             (bool _success, bytes memory _returnData) = governance.call(
-    //                 abi.encodeWithSignature("getVoteCount()")
-    //             );
-    //             if (_success) {
-    //                 _staker.startVoteCount = uint256(abi.decode(_returnData, (uint256)));
-    //             }
-    //             (_success,_returnData) = governance.call(
-    //                 abi.encodeWithSignature("getVoteTallyByAddress(address)",msg.sender)
-    //             );
-    //             if(_success){
-    //                 _staker.startVoteTally =  abi.decode(_returnData,(uint256));
-    //             }
-    //         }
-    //         require(token.transferFrom(msg.sender, address(this), _amount));
-    //     }
-    //     _updateStakeAndPayRewards(msg.sender, _stakedBalance + _amount);
-    //     _staker.startDate = block.timestamp; // This resets the staker start date to now
-    //     emit NewStaker(msg.sender, _amount);
-    // }
+    function depositParachainStake(uint32 _paraId, bytes calldata _account, uint256 _amount) external {
+        require(governance != address(0), "governance address not set");
 
-    // function depositParachainStake(uint32 _paraId, bytes memory _account, uint256 _amount) external {
-    //     address parachainOwner = registry.owner(_paraId);
-    //     require(parachainOwner != address(0x0), "Parachain not registered");
+        // Ensure parachain is registered
+        address parachainOwner = registry.owner(_paraId);
+        require(parachainOwner != address(0x0), "Parachain not registered");
 
-    //     ParachainStakeInfo storage parachainStakeInfo = parachainStakeInfo[_paraId][msg.sender];
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][msg.sender];
+        _parachainStakeInfo._account = _account;
 
-        
+        StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
+        uint256 _stakedBalance = _staker.stakedBalance;
+        uint256 _lockedBalance = _staker.lockedBalance;
+        if (_lockedBalance > 0) {
+            if (_lockedBalance >= _amount) {
+                // if staker's locked balance covers full _amount, use that
+                _staker.lockedBalance -= _amount;
+                toWithdraw -= _amount;
+            } else {
+                // otherwise, stake the whole locked balance and transfer the
+                // remaining amount from the staker's address
+                require(
+                    token.transferFrom(
+                        msg.sender,
+                        address(this),
+                        _amount - _lockedBalance
+                    )
+                );
+                toWithdraw -= _staker.lockedBalance;
+                _staker.lockedBalance = 0;
+            }
+        } else {
+            if (_stakedBalance == 0) {
+                // if staked balance and locked balance equal 0, save current vote tally.
+                // voting participation used for calculating rewards
+                (bool _success, bytes memory _returnData) = governance.call(
+                    abi.encodeWithSignature("getVoteCount()")
+                );
+                if (_success) {
+                    _staker.startVoteCount = uint256(abi.decode(_returnData, (uint256)));
+                }
+                (_success,_returnData) = governance.call(
+                    abi.encodeWithSignature("getVoteTallyByAddress(address)",msg.sender)
+                );
+                if(_success){
+                    _staker.startVoteTally =  abi.decode(_returnData,(uint256));
+                }
+            }
+            require(token.transferFrom(msg.sender, address(this), _amount));
+        }
+        _updateStakeAndPayRewards(msg.sender, _stakedBalance + _amount);
+        _staker.startDate = block.timestamp; // This resets the staker start date to now
+        emit NewStaker(msg.sender, _amount);
+        emit NewParachainStaker(_paraId, msg.sender, _account, _amount);
 
-              
-
-    //     emit NewParachainStaker(_paraId, msg.sender, _account, _amount);
-
-    //     reportStakeDeposited(_paraId, msg.sender, _account, _amount);
-    // }
-
+        reportStakeDeposited(_paraId, msg.sender, _account, _amount);
+    }
 }
