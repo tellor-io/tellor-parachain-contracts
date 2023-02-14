@@ -48,6 +48,23 @@ abstract contract Parachain {
         transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
     }
 
+    /// @dev Report stake withdraw request to a registered parachain.
+    /// @param _paraId uint32 The parachain identifier.
+    /// @param _staker address The address of the staker.
+    /// @param _reporter bytes The corresponding address of the reporter on the parachain.
+    /// @param _amount uint256 The staked amount for the parachain.
+    function reportStakeWithdrawRequested(uint32 _paraId, address _staker, bytes memory _reporter, uint256 _amount) internal {
+        // Ensure paraId is registered
+        require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
+
+        // Prepare remote call and send
+        uint64 transactRequiredWeightAtMost = 5000000000;
+        bytes memory call = encodeReportStakeWithdrawRequested(_paraId, _staker, _reporter, _amount);
+        uint256 feeAmount = 10000000000;
+        uint64 overallWeight = 9000000000;
+        transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+    }
+
     function transactThroughSigned(uint32 _paraId, uint64 _transactRequiredWeightAtMost, bytes memory _call, uint256 _feeAmount, uint64 _overallWeight) private {
         // Create multi-location based on supplied paraId
         XcmTransactorV2.Multilocation memory location;
@@ -90,6 +107,17 @@ abstract contract Parachain {
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)), // amount
             bytes20(_staker) // staker
+        );
+    }
+
+    function encodeReportStakeWithdrawRequested(uint32 _paraId, address _staker, bytes memory _reporter, uint256 _amount) private view returns(bytes memory) {
+        // Encode call to report_stake_withdraw_requested(reporter, amount, address) within Tellor pallet
+        return abi.encodePacked(
+            registry.palletInstance(_paraId), // pallet index within runtime
+            hex"0B", // fixed call index within pallet , TODO: update, idk what supposed to be
+            _reporter, // account id of reporter on target parachain
+            bytes32(reverse(_amount)),
+            bytes20(_staker)
         );
     }
 
