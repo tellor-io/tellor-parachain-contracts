@@ -136,4 +136,18 @@ contract Oracle is Parachain, TellorFlex {
         emit ParachainStakeWithdrawRequestConfirmed(_paraId, _reporter, _amount);
     }
 
+    function slashParachainReporter(uint32 _paraId, address _reporter, address _recipient) external returns (uint256) {
+        require(msg.sender == governance, "only governance can slash reporter");
+
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][_reporter];
+        StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
+        uint256 _slashAmount = _staker.stakedBalance;
+        _updateStakeAndPayRewards(_reporter, 0);
+        require(token.transfer(_recipient, _slashAmount), "transfer failed");
+        emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
+
+        reportSlash(_paraId, _reporter, _recipient, _slashAmount);
+        return _slashAmount;
+    }
+
 }
