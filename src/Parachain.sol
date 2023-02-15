@@ -82,6 +82,20 @@ abstract contract Parachain {
         transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
     }
 
+    /// @dev Report stake withdraw to a registered parachain.
+    /// @param _paraId uint32 The parachain identifier.
+    /// @param _reporter address The corresponding address of the reporter on the parachain.
+    /// @param _amount uint256 Amount withdrawn.
+    function reportStakeWithdrawn(uint32 _paraId, address _reporter, uint256 _amount) internal {
+        require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
+
+        uint64 transactRequiredWeightAtMost = 5000000000;
+        bytes memory call = encodeReportStakeWithdrawn(_paraId, _reporter, _amount);
+        uint256 feeAmount = 10000000000;
+        uint64 overallWeight = 9000000000;
+        transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+    }
+
 
     function transactThroughSigned(uint32 _paraId, uint64 _transactRequiredWeightAtMost, bytes memory _call, uint256 _feeAmount, uint64 _overallWeight) private {
         // Create multi-location based on supplied paraId
@@ -146,6 +160,16 @@ abstract contract Parachain {
             hex"0C", // fixed call index within pallet
             _reporter, // account id of reporter on target parachain
             _recipient, // recipient
+            bytes32(reverse(_amount)) // amount
+        );
+    }
+
+    function encodeReportStakeWithdrawn(uint32 _paraId, address _reporter, uint256 _amount) private view returns(bytes memory) {
+        // Encode call to stake_withdrawn(reporter, amount) within Tellor pallet
+        return abi.encodePacked(
+            registry.palletInstance(_paraId), // pallet index within runtime
+            hex"0D", // fixed call index within pallet
+            _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)) // amount
         );
     }

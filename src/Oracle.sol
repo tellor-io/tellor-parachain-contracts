@@ -150,4 +150,26 @@ contract Oracle is Parachain, TellorFlex {
         return _slashAmount;
     }
 
+    function withdrawParachainStake(uint32 _paraId) external {
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][msg.sender];
+        StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
+        require(
+            block.timestamp - _staker.startDate >= 7 days,
+            "lock period not expired"
+        );
+        require(
+            _staker.lockedBalance > 0,
+            "no locked balance to withdraw"
+        );
+        uint256 _amount = _staker.lockedBalance;
+        require(token.transfer(msg.sender, _amount), "withdraw stake token transfer failed");
+        toWithdraw -= _amount;
+        _staker.lockedBalance = 0;
+
+        emit StakeWithdrawn(msg.sender);
+        emit ParachainStakeWithdrawn(_paraId, msg.sender);
+
+        reportStakeWithdrawn(_paraId, msg.sender, _amount);
+    }
+
 }
