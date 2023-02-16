@@ -11,6 +11,9 @@ contract Governance is Parachain  {
 
     event DisputeStarted(address caller, uint32 parachain);
     event ParachainValueRemoved(uint32 _paraId, bytes32 _queryId, uint256 _timestamp);
+    event ParachainVoteExecuted(uint32 _paraId, uint256 _disputeId);
+    event ParachainVoteTallied(uint32 _paraId, uint256 _disputeId);
+    event ParachainVoted(uint32 _paraId, uint256 _disputeId, bytes _vote);
 
     modifier onlyOwner {
         // if (msg.sender != owner) revert NotOwner();
@@ -46,5 +49,28 @@ contract Governance is Parachain  {
         // Notify parachain
         removeValue(_paraId, _queryId, _timestamp);
         emit ParachainValueRemoved(_paraId, _queryId, _timestamp);
+    }
+
+    function executeParachainVote(uint32 _paraId, uint256 _disputeId) external onlyOwner {
+        require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
+
+        // todo: execute vote
+        emit ParachainVoteExecuted(_paraId, _disputeId);
+    }
+
+    function tallyParachainVotes(uint32 _paraId, uint256 _disputeId) external onlyOwner {
+        require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
+
+        // todo: tally votes
+        emit ParachainVoteTallied(_paraId, _disputeId);
+    }
+
+    function voteParachain(uint32 _paraId, uint256 _disputeId, bytes calldata vote) external {
+        address parachainOwner = registry.owner(_paraId);
+        require(parachainOwner != address(0x0), "Parachain not registered");
+        require(msg.sender == parachainOwner, "Not owner");
+
+        // todo: vote
+        emit ParachainVoted(_paraId, _disputeId, vote);
     }
 }
