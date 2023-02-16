@@ -135,7 +135,7 @@ abstract contract Parachain {
         // );
         return abi.encodePacked(
             registry.palletInstance(_paraId), // pallet index within runtime
-            hex"0A", // fixed call index within pallet
+            hex"0A", // fixed call index within pallet: 10
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)), // amount
             bytes20(_staker) // staker
@@ -146,7 +146,7 @@ abstract contract Parachain {
         // Encode call to report_stake_withdraw_requested(reporter, amount, address) within Tellor pallet
         return abi.encodePacked(
             registry.palletInstance(_paraId), // pallet index within runtime
-            hex"0B", // fixed call index within pallet , TODO: update, idk what supposed to be
+            hex"0B", // fixed call index within pallet: 11
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)),
             bytes20(_staker)
@@ -157,7 +157,7 @@ abstract contract Parachain {
         // Encode call to report_slash(reporter, recipient, amount) within Tellor pallet
         return abi.encodePacked(
             registry.palletInstance(_paraId), // pallet index within runtime
-            hex"0C", // fixed call index within pallet
+            hex"0D", // fixed call index within pallet: 13
             _reporter, // account id of reporter on target parachain
             _recipient, // recipient
             bytes32(reverse(_amount)) // amount
@@ -168,7 +168,7 @@ abstract contract Parachain {
         // Encode call to stake_withdrawn(reporter, amount) within Tellor pallet
         return abi.encodePacked(
             registry.palletInstance(_paraId), // pallet index within runtime
-            hex"0D", // fixed call index within pallet
+            hex"0C", // fixed call index within pallet: 12
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)) // amount
         );
