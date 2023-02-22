@@ -3,7 +3,7 @@ pragma solidity 0.8.3;
 
 import "./interfaces/IOracle.sol";
 import "./interfaces/IERC20.sol";
-import "UsingTellor.sol";
+import "./UsingTellor.sol";
 
 /**
  @author Tellor Inc.
