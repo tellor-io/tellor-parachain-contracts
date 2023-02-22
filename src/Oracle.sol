@@ -17,7 +17,7 @@ contract Oracle is Parachain, TellorFlex {
     struct ParachainStakeInfo {
         StakeInfo _stakeInfo;
         bytes _account;
-        uint256 _lockedBalanceConfirmed; // the amount confirmed by the parachain. Where is this updated?
+        uint256 _lockedBalanceConfirmed;
     }
 
     mapping(uint32 => mapping(address => ParachainStakeInfo)) private parachainStakeInfo;
@@ -54,9 +54,9 @@ contract Oracle is Parachain, TellorFlex {
 
         // Ensure parachain is registered
         address parachainOwner = registry.owner(_paraId);
-        require(parachainOwner != address(0x0), "Parachain not registered");
+        require(parachainOwner != address(0x0), "parachain not registered");
         // Ensure called by parachain owner
-        require(msg.sender == parachainOwner, "Must be parachain owner");
+        require(msg.sender == parachainOwner, "must be parachain owner");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][msg.sender];
         _parachainStakeInfo._account = _account;
@@ -113,9 +113,9 @@ contract Oracle is Parachain, TellorFlex {
     function requestParachainStakeWithdraw(uint32 _paraId, uint256 _amount, address _reporter) external {
         // Ensure parachain is registered
         address parachainOwner = registry.owner(_paraId);
-        require(parachainOwner != address(0x0), "Parachain not registered");
+        require(parachainOwner != address(0x0), "parachain not registered");
         // Ensure called by parachain owner
-        require(msg.sender == parachainOwner, "Must be parachain owner");
+        require(msg.sender == parachainOwner, "must be parachain owner");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][_reporter]; 
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
@@ -134,21 +134,23 @@ contract Oracle is Parachain, TellorFlex {
     }
 
 
-    // Attacks are prevented bc caller must be the parachain owner
-    // Still don't understand why this func is needed
     function confirmParachainStakeWithdrawRequest(uint32 _paraId, address _reporter, uint256 _amount) external {
-        // spec says msg.owner, but that seems wrong?
+        address parachainOwner = registry.owner(_paraId);
+        require(parachainOwner != address(0x0), "parachain not registered");
         require(msg.sender == registry.owner(_paraId), "not parachain owner");
 
-        // Not rly sure what else this func is supposed to do
-        // Update ParachainStakeInfo._lockedBalanceConfirmed ?
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][_reporter];
+        _parachainStakeInfo._lockedBalanceConfirmed = _amount;
 
         emit ParachainStakeWithdrawRequestConfirmed(_paraId, _reporter, _amount);
     }
 
-    // Slash attacks prevented bc caller must be governance contract
+
     function slashParachainReporter(uint32 _paraId, address _reporter, address _recipient) external returns (uint256) {
         require(msg.sender == governance, "only governance can slash reporter");
+        address parachainOwner = registry.owner(_paraId);
+        require(parachainOwner != address(0x0), "parachain not registered");
+        require(msg.sender == parachainOwner, "must be parachain owner");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][_reporter];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
@@ -161,9 +163,13 @@ contract Oracle is Parachain, TellorFlex {
         return _slashAmount;
     }
 
-    // Attacks on others' stakes prevented bc updates happen based on msg.sender
-    function withdrawParachainStake(uint32 _paraId) external {
-        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][msg.sender];
+
+    function withdrawParachainStake(uint32 _paraId, address _reporter) external {
+        address parachainOwner = registry.owner(_paraId);
+        require(parachainOwner != address(0x0), "parachain not registered");
+        require(msg.sender == registry.owner(_paraId), "not parachain owner");
+
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][_reporter];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         require(
             block.timestamp - _staker.startDate >= 7 days,
@@ -173,15 +179,20 @@ contract Oracle is Parachain, TellorFlex {
             _staker.lockedBalance > 0,
             "no locked balance to withdraw"
         );
+        require(
+            _staker.lockedBalance == _parachainStakeInfo._lockedBalanceConfirmed,
+            "locked balance not confirmed"
+        );
         uint256 _amount = _staker.lockedBalance;
-        require(token.transfer(msg.sender, _amount), "withdraw stake token transfer failed");
+        require(token.transfer(_reporter, _amount), "withdraw stake token transfer failed");
         toWithdraw -= _amount;
         _staker.lockedBalance = 0;
+        _parachainStakeInfo._lockedBalanceConfirmed = 0;
 
-        emit StakeWithdrawn(msg.sender);
-        emit ParachainStakeWithdrawn(_paraId, msg.sender);
+        emit StakeWithdrawn(_reporter);
+        emit ParachainStakeWithdrawn(_paraId, _reporter);
 
-        reportStakeWithdrawn(_paraId, msg.sender, _amount);
+        reportStakeWithdrawn(_paraId, _reporter, _amount);
     }
 
 }
