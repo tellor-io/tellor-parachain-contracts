@@ -184,7 +184,7 @@ contract Oracle is Parachain, TellorFlex {
             "withdraw stake request not confirmed"
         );
         uint256 _amount = _staker.lockedBalance;
-        require(token.transfer(_reporter, _amount), "withdraw stake token transfer failed");
+        require(token.transfer(msg.sender, _amount), "withdraw stake token transfer failed");
         toWithdraw -= _amount;
         _staker.lockedBalance = 0;
         _parachainStakeInfo._lockedBalanceConfirmed = 0;
