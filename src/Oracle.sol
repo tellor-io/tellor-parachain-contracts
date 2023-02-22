@@ -20,11 +20,12 @@ contract Oracle is Parachain, TellorFlex {
         uint256 _lockedBalanceConfirmed;
     }
 
+    // Parachain stake info is sorted by parachain ID, then the parachain account bytes.
     mapping(uint32 => mapping(address => ParachainStakeInfo)) private parachainStakeInfo;
 
     event NewParachainStaker(uint32 _paraId, address _staker, bytes _account, uint256 _amount);
     event ParachainReporterSlashed(uint32 _paraId, address _reporter, address _recipient, uint256 _slashAmount);
-    event ParachainStakeWithdrawRequested(uint32 _paraId, address _staker, uint256 _amount);
+    event ParachainStakeWithdrawRequested(uint32 _paraId, bytes _account, uint256 _amount);
     event ParachainStakeWithdrawRequestConfirmed(uint32 _paraId, address _staker, uint256 _amount);
     event ParachainStakeWithdrawn(uint32 _paraId, address _staker);
     event ParachainValueRemoved(uint32 _paraId, bytes32 _queryId, uint256 _timestamp);
@@ -49,14 +50,15 @@ contract Oracle is Parachain, TellorFlex {
         ) {}
 
 
+    /// @dev Called by the reporter/staker on the EVM compatible parachain that hosts the Tellor controller contracts.
+    /// The reporter/staker will call this function and pass in the parachain account identifier, which is used to enable
+    /// that account to report values over on the oracle consumer parachain.
     function depositParachainStake(uint32 _paraId, bytes calldata _account, uint256 _amount) external {
         require(governance != address(0), "governance address not set");
 
         // Ensure parachain is registered
         address parachainOwner = registry.owner(_paraId);
         require(parachainOwner != address(0x0), "parachain not registered");
-        // Ensure called by parachain owner
-        require(msg.sender == parachainOwner, "must be parachain owner");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][msg.sender];
         _parachainStakeInfo._account = _account;
@@ -109,28 +111,27 @@ contract Oracle is Parachain, TellorFlex {
         reportStakeDeposited(_paraId, msg.sender, _account, _amount);
     }
 
-
-    function requestParachainStakeWithdraw(uint32 _paraId, uint256 _amount, address _reporter) external {
+    /// @dev Allows a reporter on EVM compatible parachain to request withdrawal of their stake for 
+    /// a specific oracle consumer parachain.
+    function requestParachainStakeWithdraw(uint32 _paraId, uint256 _amount) external {
         // Ensure parachain is registered
         address parachainOwner = registry.owner(_paraId);
         require(parachainOwner != address(0x0), "parachain not registered");
-        // Ensure called by parachain owner
-        require(msg.sender == parachainOwner, "must be parachain owner");
 
-        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][_reporter]; 
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][msg.sender]; 
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         require(
             _staker.stakedBalance >= _amount,
             "insufficient staked balance"
         );
-        _updateStakeAndPayRewards(_reporter, _staker.stakedBalance - _amount);
+        _updateStakeAndPayRewards(msg.sender, _staker.stakedBalance - _amount);
         _staker.startDate = block.timestamp;
         _staker.lockedBalance += _amount;
         toWithdraw += _amount;
-        emit StakeWithdrawRequested(_reporter, _amount);
-        emit ParachainStakeWithdrawRequested(_paraId, _reporter, _amount);
+        emit StakeWithdrawRequested(msg.sender, _amount);
+        emit ParachainStakeWithdrawRequested(_paraId, _parachainStakeInfo._account, _amount);
 
-        reportStakeWithdrawRequested(_paraId, msg.sender, _amount);
+        reportStakeWithdrawRequested(_paraId, _parachainStakeInfo._account, _amount);
     }
 
 
