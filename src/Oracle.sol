@@ -50,8 +50,8 @@ contract Oracle is Parachain, TellorFlex {
         ) {}
 
 
-    /// @dev Called by the reporter/staker on the EVM compatible parachain that hosts the Tellor controller contracts.
-    /// The reporter/staker will call this function and pass in the parachain account identifier, which is used to enable
+    /// @dev Called by the staker on the EVM compatible parachain that hosts the Tellor controller contracts.
+    /// The staker will call this function and pass in the parachain account identifier, which is used to enable
     /// that account to report values over on the oracle consumer parachain.
     function depositParachainStake(uint32 _paraId, bytes calldata _account, uint256 _amount) external {
         require(governance != address(0), "governance address not set");
@@ -111,7 +111,7 @@ contract Oracle is Parachain, TellorFlex {
         reportStakeDeposited(_paraId, msg.sender, _account, _amount);
     }
 
-    /// @dev Allows a reporter on EVM compatible parachain to request withdrawal of their stake for 
+    /// @dev Allows a staker on EVM compatible parachain to request withdrawal of their stake for 
     /// a specific oracle consumer parachain.
     function requestParachainStakeWithdraw(uint32 _paraId, uint256 _amount) external {
         // Ensure parachain is registered
@@ -135,15 +135,15 @@ contract Oracle is Parachain, TellorFlex {
     }
 
 
-    function confirmParachainStakeWithdrawRequest(uint32 _paraId, address _reporter, uint256 _amount) external {
+    function confirmParachainStakeWithdrawRequest(uint32 _paraId, address _staker, uint256 _amount) external {
         address parachainOwner = registry.owner(_paraId);
         require(parachainOwner != address(0x0), "parachain not registered");
         require(msg.sender == registry.owner(_paraId), "not parachain owner");
 
-        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][_reporter];
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][_staker];
         _parachainStakeInfo._lockedBalanceConfirmed = _amount;
 
-        emit ParachainStakeWithdrawRequestConfirmed(_paraId, _reporter, _amount);
+        emit ParachainStakeWithdrawRequestConfirmed(_paraId, _staker, _amount);
     }
 
 
@@ -151,7 +151,6 @@ contract Oracle is Parachain, TellorFlex {
         require(msg.sender == governance, "only governance can slash reporter");
         address parachainOwner = registry.owner(_paraId);
         require(parachainOwner != address(0x0), "parachain not registered");
-        require(msg.sender == parachainOwner, "must be parachain owner");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][_reporter];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
@@ -165,12 +164,12 @@ contract Oracle is Parachain, TellorFlex {
     }
 
 
-    function withdrawParachainStake(uint32 _paraId, address _reporter) external {
+    /// @dev Allows a staker to withdraw their stake for a specific parachain.
+    function withdrawParachainStake(uint32 _paraId) external {
         address parachainOwner = registry.owner(_paraId);
         require(parachainOwner != address(0x0), "parachain not registered");
-        require(msg.sender == registry.owner(_paraId), "not parachain owner");
 
-        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][_reporter];
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakeInfo[_paraId][msg.sender];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         require(
             block.timestamp - _staker.startDate >= 7 days,
@@ -182,7 +181,7 @@ contract Oracle is Parachain, TellorFlex {
         );
         require(
             _staker.lockedBalance == _parachainStakeInfo._lockedBalanceConfirmed,
-            "locked balance not confirmed"
+            "withdraw stake request not confirmed"
         );
         uint256 _amount = _staker.lockedBalance;
         require(token.transfer(_reporter, _amount), "withdraw stake token transfer failed");
@@ -190,10 +189,10 @@ contract Oracle is Parachain, TellorFlex {
         _staker.lockedBalance = 0;
         _parachainStakeInfo._lockedBalanceConfirmed = 0;
 
-        emit StakeWithdrawn(_reporter);
-        emit ParachainStakeWithdrawn(_paraId, _reporter);
+        emit StakeWithdrawn(msg.sender);
+        emit ParachainStakeWithdrawn(_paraId, msg.sender);
 
-        reportStakeWithdrawn(_paraId, _reporter, _amount);
+        reportStakeWithdrawn(_paraId, msg.sender, _parachainStakeInfo._account, _amount);
     }
 
 }
