@@ -95,7 +95,7 @@ contract Oracle is Parachain, TellorFlex {
                     _staker.startVoteCount = uint256(abi.decode(_returnData, (uint256)));
                 }
                 (_success,_returnData) = governance.call(
-                    abi.encodeWithSignature("getVoteTallyByAddress(address)",msg.sender)
+                    abi.encodeWithSignature("getVoteTallyByAddress(address)", msg.sender)
                 );
                 if(_success){
                     _staker.startVoteTally =  abi.decode(_returnData,(uint256));
