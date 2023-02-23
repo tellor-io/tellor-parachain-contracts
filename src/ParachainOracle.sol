@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {TellorFlex} from "lib/tellor/TellorFlex.sol";
 import {Parachain} from "./Parachain.sol";
 
-interface iOracle {
+interface IParachainOracle {
     function depositParachainStake(uint32 _paraId, bytes calldata _account, uint256 _amount) external;
     function requestParachainStakeWithdrawal(uint32 _paraId, uint256 _amount) external;
     function confirmParachainStakeWidthrawRequest(uint32 _paraId, address _staker, uint256 _amount) external;
@@ -13,7 +13,7 @@ interface iOracle {
  
 }
 
-contract Oracle is Parachain, TellorFlex {
+contract ParachainOracle is Parachain, TellorFlex {
     struct ParachainStakeInfo {
         StakeInfo _stakeInfo;
         bytes _account;
