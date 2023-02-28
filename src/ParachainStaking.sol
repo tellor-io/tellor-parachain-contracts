@@ -106,7 +106,7 @@ contract ParachainStaking is Parachain {
     // Functions
     /**
      * @dev Initializes system parameters
-     * @param _parachain address of Parachain contract with XCM functions
+     * @param _registry address of Parachain Registry contract
      * @param _token address of token used for staking and rewards
      * @param _reportingLock base amount of time (seconds) before reporter is able to report again
      * @param _stakeAmountDollarTarget fixed USD amount that stakeAmount targets on updateStakeAmount
@@ -114,14 +114,14 @@ contract ParachainStaking is Parachain {
      * @param _stakingTokenPriceQueryId queryId where staking token price is reported
      */
     constructor(
-        address _parachain,
+        address _registry,
         address _token,
         uint256 _reportingLock,
         uint256 _stakeAmountDollarTarget,
         uint256 _stakingTokenPrice,
         uint256 _minimumStakeAmount,
         bytes32 _stakingTokenPriceQueryId
-    ) Parachain(_parachain) {
+    ) Parachain(_registry) {
         require(_token != address(0), "must set token address");
         require(_stakingTokenPrice > 0, "must set staking token price");
         require(_reportingLock > 0, "must set reporting lock");
