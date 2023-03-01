@@ -50,16 +50,15 @@ abstract contract Parachain {
 
     /// @dev Report stake withdraw request to a registered parachain.
     /// @param _paraId uint32 The parachain identifier.
-    /// @param _staker address The address of the staker.
-    /// @param _reporter bytes The corresponding address of the reporter on the parachain.
+    /// @param _account bytes The account identifier on the parachain.
     /// @param _amount uint256 The staked amount for the parachain.
-    function reportStakeWithdrawRequested(uint32 _paraId, address _staker, bytes memory _reporter, uint256 _amount) internal {
+    function reportStakeWithdrawRequested(uint32 _paraId, bytes memory _account, uint256 _amount) internal {
         // Ensure paraId is registered
         require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
 
         // Prepare remote call and send
         uint64 transactRequiredWeightAtMost = 5000000000;
-        bytes memory call = encodeReportStakeWithdrawRequested(_paraId, _staker, _reporter, _amount);
+        bytes memory call = encodeReportStakeWithdrawRequested(_paraId, _account, _amount);
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
         transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
@@ -84,13 +83,14 @@ abstract contract Parachain {
 
     /// @dev Report stake withdraw to a registered parachain.
     /// @param _paraId uint32 The parachain identifier.
-    /// @param _reporter address The corresponding address of the reporter on the parachain.
+    /// @param _reporter address Address of staker on EVM compatible chain w/ Tellor controller contracts.
+    /// @param _account bytes The account identifier on the parachain.
     /// @param _amount uint256 Amount withdrawn.
-    function reportStakeWithdrawn(uint32 _paraId, address _reporter, uint256 _amount) internal {
+    function reportStakeWithdrawn(uint32 _paraId, address _reporter, bytes memory _account, uint256 _amount) internal {
         require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
 
         uint64 transactRequiredWeightAtMost = 5000000000;
-        bytes memory call = encodeReportStakeWithdrawn(_paraId, _reporter, _amount);
+        bytes memory call = encodeReportStakeWithdrawn(_paraId, _reporter, _account, _amount);
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
         transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
@@ -142,14 +142,13 @@ abstract contract Parachain {
         );
     }
 
-    function encodeReportStakeWithdrawRequested(uint32 _paraId, address _staker, bytes memory _reporter, uint256 _amount) private view returns(bytes memory) {
+    function encodeReportStakeWithdrawRequested(uint32 _paraId, bytes memory _account, uint256 _amount) private view returns(bytes memory) {
         // Encode call to report_stake_withdraw_requested(reporter, amount, address) within Tellor pallet
         return abi.encodePacked(
             registry.palletInstance(_paraId), // pallet index within runtime
             hex"0B", // fixed call index within pallet: 11
-            _reporter, // account id of reporter on target parachain
-            bytes32(reverse(_amount)),
-            bytes20(_staker)
+            _account,
+            bytes32(reverse(_amount))
         );
     }
 
@@ -164,12 +163,13 @@ abstract contract Parachain {
         );
     }
 
-    function encodeReportStakeWithdrawn(uint32 _paraId, address _reporter, uint256 _amount) private view returns(bytes memory) {
+    function encodeReportStakeWithdrawn(uint32 _paraId, address _reporter, bytes memory _account, uint256 _amount) private view returns(bytes memory) {
         // Encode call to stake_withdrawn(reporter, amount) within Tellor pallet
         return abi.encodePacked(
             registry.palletInstance(_paraId), // pallet index within runtime
             hex"0C", // fixed call index within pallet: 12
             _reporter, // account id of reporter on target parachain
+            _account,
             bytes32(reverse(_amount)) // amount
         );
     }
