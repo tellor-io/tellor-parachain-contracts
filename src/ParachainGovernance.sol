@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.3;
 
 import "../lib/moonbeam/precompiles/ERC20.sol";
 import { Parachain } from "./Parachain.sol";
@@ -15,18 +15,19 @@ import { IParachainStaking } from "./ParachainStaking.sol";
 */
 contract ParachainGovernance is Parachain {
     // Storage
+    address public owner;
+    IParachainStaking public parachainStaking;
     IERC20 public token; // token used for dispute fees, same as reporter staking token
-    address public parachainStakingAddress; //tellorFlex address
     address public teamMultisig; // address of team multisig wallet, one of four stakeholder groups
     uint256 public voteCount; // total number of votes initiated
     bytes32 public autopayAddrsQueryId =
     keccak256(abi.encode("AutopayAddresses", abi.encode(bytes("")))); // query id for autopay addresses array
     mapping(bytes32 => Dispute) private disputeInfo; // mapping of dispute IDs to the details of the dispute
-    mapping(bytes32 => uint256) private openDisputesOnId; // mapping of a query ID to the number of disputes on that query ID
+    // mapping(bytes32 => uint256) private openDisputesOnId; // mapping of a query ID to the number of disputes on that query ID
     mapping(bytes32 => Vote) private voteInfo; // mapping of dispute IDs to the details of the vote
     mapping(bytes32 => bytes32[]) private voteRounds; // mapping of vote identifier hashes to an array of dispute IDs
     mapping(address => uint256) private voteTallyByAddress; // mapping of addresses to the number of votes they have cast
-    mapping(address => uint256[]) private disputeIdsByReporter; // mapping of reporter addresses to an array of dispute IDs
+    mapping(address => bytes32[]) private disputeIdsByReporter; // mapping of reporter addresses to an array of dispute IDs
 
     enum VoteResult {
         FAILED,
@@ -67,37 +68,6 @@ contract ParachainGovernance is Parachain {
     }
 
     // Events
-    event NewDispute(
-        uint256 _disputeId,
-        bytes32 _queryId,
-        uint256 _timestamp,
-        address _reporter
-    ); // Emitted when a new dispute is opened
-
-    event Voted(
-        uint256 _disputeId,
-        bool _supports,
-        address _voter,
-        bool _invalidQuery
-    ); // Emitted when an address casts their vote
-    event VoteExecuted(uint256 _disputeId, VoteResult _result); // Emitted when a vote is executed
-    event VoteTallied(
-        uint256 _disputeId,
-        VoteResult _result,
-        address _initiator,
-        address _reporter
-    ); // Emitted when all casting for a vote is tallied
-    address public owner;
-
-    IParachainStaking public parachainStaking;
-
-    mapping(uint32 => mapping(bytes32 => uint256[])) private parachainVoteRounds;
-    mapping(uint32 => mapping(uint256 => Vote)) private parachainVoteInfo;
-    mapping(uint32 => mapping(uint256 => Dispute)) private parachainDisputeInfo;
-    mapping(uint32 => mapping(address => bytes32[])) private disputeIdsByParachainReporter;
-    mapping(uint32 => mapping(bytes32 => uint256)) private openDisputesOnIdByParachain;
-    mapping(uint32 => uint256) private parachainVoteCount;
-
     event NewParachainDispute(uint32 _paraId, bytes32 _disputeId, bytes32 _queryId, uint256 _timestamp, address _reporter);
     event ParachainValueRemoved(uint32 _paraId, bytes32 _queryId, uint256 _timestamp);
     event ParachainVoteExecuted(uint32 _paraId, uint256 _disputeId);
@@ -114,7 +84,7 @@ contract ParachainGovernance is Parachain {
      * @dev Initializes contract parameters
      * @param _registry address of ParachainRegistry contract
      * @param _parachainStaking address of ParachainStaking contract
-     * @param _teamMultisig address of tellor team multisig, one of four voting
+     * @param _teamMultiSig address of tellor team multisig, one of four voting
      * stakeholder groups
      */
     constructor(
@@ -126,20 +96,20 @@ contract ParachainGovernance is Parachain {
     {
         parachainStaking = IParachainStaking(_parachainStaking);
         token = IERC20(parachainStaking.getTokenAddress());
-        parachainStakingAddress = _parachainStaking;
         teamMultisig = _teamMultiSig;
     }
 
-
-    // @dev Start dispute/vote for a specific parachain
-    // @param _paraId uint32 Parachain ID, where the dispute was initiated
-    // @param _queryId bytes32 Query ID being disputed
-    // @param _timestamp uint256 Timestamp being disputed
-    // @param _disputeId uint256 Dispute ID on the parachain
-    // @param _value bytes Value disputed
-    // @param _disputedReporter address Reporter who submitted the disputed value
-    // @param _disputeInitiator address Initiator who started the dispute/proposal
-    // @param _slashAmount uint256 Amount of tokens to be slashed of staker
+    /**
+    * @dev Start dispute/vote for a specific parachain
+    * @param _paraId uint32 Parachain ID, where the dispute was initiated
+    * @param _queryId bytes32 Query ID being disputed
+    * @param _timestamp uint256 Timestamp being disputed
+    * @param _disputeId uint256 Dispute ID on the parachain
+    * @param _value bytes Value disputed
+    * @param _disputedReporter address Reporter who submitted the disputed value
+    * @param _disputeInitiator address Initiator who started the dispute/proposal
+    * @param _slashAmount uint256 Amount of tokens to be slashed of staker
+    */
     function beginParachainDispute(
         uint32 _paraId,
         bytes32 _queryId,
@@ -184,17 +154,14 @@ contract ParachainGovernance is Parachain {
         // disputeIdsByReporter must organize by parachain, then reporter, since
         // there could be duplicate dispute ids from one staker enabling multiple reporters on
         // different parachains.
-        disputeIdsByParachainReporter[_paraId][_disputedReporter].push(_hash);
+        disputeIdsByReporter[_disputedReporter].push(_hash);
 
         if (_voteRounds.length == 1) { // Assumes _voteRounds will never be empty
             require(
                 block.timestamp - _timestamp < 12 hours,
                 "Dispute must be started within reporting lock time"
             );
-            openDisputesOnIdByParachain[_paraId][_queryId]++;
             // slash a single stakeAmount from reporter
-            // Following command throws error:
-            // TypeError: Type tuple() is not implicitly convertible to expected type uint256.
             // Once commneted out, the above command throws a "Stack too deep" error.
             _thisDispute.slashedAmount = parachainStaking.slashParachainReporter(
                 _paraId,
@@ -212,7 +179,7 @@ contract ParachainGovernance is Parachain {
             _thisDispute.value = disputeInfo[_voteRounds[0]].value;
         }
         _thisVote.fee = _disputeFee;
-        parachainVoteCount[_paraId]++;
+        voteCount++;
 
         emit NewParachainDispute(
             _paraId,
@@ -496,7 +463,7 @@ contract ParachainGovernance is Parachain {
     // }
 
 
-    function getDisputesByReporter(address _reporter) external view returns (uint256[] memory) {
+    function getDisputesByReporter(address _reporter) external view returns (bytes32[] memory) {
         return disputeIdsByReporter[_reporter];
     }
 
@@ -522,18 +489,18 @@ contract ParachainGovernance is Parachain {
         return (_d.queryId, _d.timestamp, _d.value, _d.disputedReporter);
     }
 
-    /**
-     * @dev Returns the number of open disputes for a specific query ID
-     * @param _queryId is the ID of a specific data feed
-     * @return uint256 of the number of open disputes for the query ID
-     */
-    function getOpenDisputesOnId(bytes32 _queryId)
-    external
-    view
-    returns (uint256)
-    {
-        return openDisputesOnId[_queryId];
-    }
+    // /**
+    //  * @dev Returns the number of open disputes for a specific query ID
+    //  * @param _queryId is the ID of a specific data feed
+    //  * @return uint256 of the number of open disputes for the query ID
+    //  */
+    // function getOpenDisputesOnId(bytes32 _queryId)
+    // external
+    // view
+    // returns (uint256)
+    // {
+    //     return openDisputesOnId[_queryId];
+    // }
 
     /**
      * @dev Returns the total number of votes

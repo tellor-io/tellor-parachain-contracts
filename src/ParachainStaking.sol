@@ -10,7 +10,7 @@ interface IParachainStaking {
     function requestParachainStakeWithdrawal(uint32 _paraId, uint256 _amount) external;
     function confirmParachainStakeWidthrawRequest(uint32 _paraId, address _staker, uint256 _amount) external;
     function withdrawParachainStake(uint32 _paraId, address _staker, uint256 _amount) external;
-    function slashParachainReporter(uint32 _paraId, address _reporter, address _recipient) external;
+    function slashParachainReporter(uint32 _paraId, address _reporter, address _recipient) external returns (uint256);
     function getTokenAddress() external view returns (address);
  
 }
