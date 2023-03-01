@@ -14,22 +14,6 @@ abstract contract Parachain {
         registry = IRegistry(_registry);
     }
 
-    function removeValue(uint32 _paraId, bytes32 _queryId, uint256 _timestamp) internal {
-        // Ensure paraId is registered
-        // if (registry.owner(_paraId) == address(0x0)) {
-        //     revert ParachainNotRegistered();
-        // }
-        require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
-
-        // Prepare remote call and send
-        // todo: store parameters by call enum, so updateable over time
-        uint64 transactRequiredWeightAtMost = 5000000000;
-        bytes memory call = encodeRemoveValue(_paraId, _queryId, _timestamp);
-        uint256 feeAmount = 80000000;
-        uint64 overallWeight = 9000000000;
-        transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
-    }
-
     /// @dev Report stake to a registered parachain.
     /// @param _paraId uint32 The parachain identifier.
     /// @param _staker address The address of the staker.

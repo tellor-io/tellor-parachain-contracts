@@ -190,19 +190,6 @@ contract ParachainGovernance is Parachain {
         );
     }
 
-    // Remove value: called as part of dispute resolution
-    // note: call must originate from the Governance contract due to access control within the pallet.
-    function removeParachainValue(uint32 _paraId, bytes32 _queryId, uint256 _timestamp) private onlyOwner { // temporarily external for testing: must ultimately be *private*
-
-        // if (registry.owner(_paraId) == address(0x0)) 
-            // revert ParachainNotRegistered();
-        require(registry.owner(_paraId) != address(0x0), "parachain not registered");
-
-        // Notify parachain
-        removeValue(_paraId, _queryId, _timestamp);
-        emit ParachainValueRemoved(_paraId, _queryId, _timestamp);
-    }
-
     // /**
     //  * @dev Executes vote and transfers corresponding balances to initiator/reporter
     //  * @param _disputeId is the ID of the vote being executed
