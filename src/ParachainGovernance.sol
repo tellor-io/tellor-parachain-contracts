@@ -101,20 +101,23 @@ contract ParachainGovernance is Parachain {
 
     /**
     * @dev Start dispute/vote for a specific parachain
+    // Trusts that the corresponding value for the supplied query identifier and timestamp 
+    // exists on the consumer parachain, that it has been removed during dispute initiation, 
+    // and that a dispute fee has been locked.
     * @param _paraId uint32 Parachain ID, where the dispute was initiated
     * @param _queryId bytes32 Query ID being disputed
     * @param _timestamp uint256 Timestamp being disputed
-    * @param _disputeId uint256 Dispute ID on the parachain
     * @param _value bytes Value disputed
     * @param _disputedReporter address Reporter who submitted the disputed value
     * @param _disputeInitiator address Initiator who started the dispute/proposal
     * @param _slashAmount uint256 Amount of tokens to be slashed of staker
     */
+    // * @param _disputeId uint256 Dispute ID on the parachain
     function beginParachainDispute(
         uint32 _paraId,
         bytes32 _queryId,
         uint256 _timestamp,
-        uint256 _disputeId,
+        // uint256 _disputeId,
         bytes calldata _value,
         address _disputedReporter,
         address _disputeInitiator,
@@ -125,12 +128,6 @@ contract ParachainGovernance is Parachain {
         address parachainOwner = registry.owner(_paraId);
         require(parachainOwner != address(0x0), "parachain not registered");
         require(msg.sender == parachainOwner, "not owner");
-
-        // Trusts that the corresponding value for the supplied query identifier and timestamp 
-        // exists on the consumer parachain, that it has been removed during dispute initiation, 
-        // and that a dispute fee has been locked.
-
-        // ^From spec. Shouldn't the dispute fee amount be passed in as an argument?
 
         bytes32 _hash = keccak256(abi.encodePacked(_paraId, _queryId, _timestamp));
         // Push new vote round
