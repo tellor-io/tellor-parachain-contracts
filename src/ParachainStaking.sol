@@ -155,22 +155,22 @@ contract ParachainStaking is Parachain {
         governance = _governanceAddress;
     }
 
-    /**
-     * @dev Funds the Flex contract with staking rewards (paid by autopay and minting)
-     * @param _amount amount of tokens to fund contract with
-     */
-    function addStakingRewards(uint256 _amount) external {
-        require(token.transferFrom(msg.sender, address(this), _amount));
-        _updateRewards();
-        stakingRewardsBalance += _amount;
-        // update reward rate = real staking rewards balance / 30 days
-        rewardRate =
-        (stakingRewardsBalance -
-        ((accumulatedRewardPerShare * totalStakeAmount) /
-        1e18 -
-        totalRewardDebt)) /
-        30 days;
-    }
+    // /**
+    //  * @dev Funds the Flex contract with staking rewards (paid by autopay and minting)
+    //  * @param _amount amount of tokens to fund contract with
+    //  */
+    // function addStakingRewards(uint256 _amount) external {
+    //     require(token.transferFrom(msg.sender, address(this), _amount));
+    //     _updateRewards();
+    //     stakingRewardsBalance += _amount;
+    //     // update reward rate = real staking rewards balance / 30 days
+    //     rewardRate =
+    //     (stakingRewardsBalance -
+    //     ((accumulatedRewardPerShare * totalStakeAmount) /
+    //     1e18 -
+    //     totalRewardDebt)) /
+    //     30 days;
+    // }
 
     /// @dev Called by the staker on the EVM compatible parachain that hosts the Tellor controller contracts.
     /// The staker will call this function and pass in the parachain account identifier, which is used to enable
@@ -228,7 +228,7 @@ contract ParachainStaking is Parachain {
             }
             require(token.transferFrom(msg.sender, address(this), _amount));
         }
-        _updateStakeAndPayRewards(msg.sender, _stakedBalance + _amount);
+        // _updateStakeAndPayRewards(msg.sender, _stakedBalance + _amount);
         _staker.startDate = block.timestamp; // This resets the staker start date to now
         emit NewStaker(msg.sender, _amount);
         emit NewParachainStaker(_paraId, msg.sender, _account, _amount);
@@ -269,7 +269,7 @@ contract ParachainStaking is Parachain {
             _staker.stakedBalance >= _amount,
             "insufficient staked balance"
         );
-        _updateStakeAndPayRewards(msg.sender, _staker.stakedBalance - _amount);
+        // _updateStakeAndPayRewards(msg.sender, _staker.stakedBalance - _amount);
         _staker.startDate = block.timestamp;
         _staker.lockedBalance += _amount;
         toWithdraw += _amount;
@@ -310,7 +310,7 @@ contract ParachainStaking is Parachain {
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][_reporter];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         uint256 _slashAmount = _staker.stakedBalance;
-        _updateStakeAndPayRewards(_reporter, 0);
+        // _updateStakeAndPayRewards(_reporter, 0);
         require(token.transfer(_recipient, _slashAmount), "transfer failed");
         emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
 
@@ -532,50 +532,50 @@ contract ParachainStaking is Parachain {
     //     return reports[_queryId].timestamps.length;
     // }
 
-    /**
-     * @dev Returns the pending staking reward for a given address
-     * @param _stakerAddress staker address to look up
-     * @return _pendingReward - pending reward for given staker
-     */
-    function getPendingRewardByStaker(address _stakerAddress)
-    external
-    returns (uint256 _pendingReward)
-    {
-        StakeInfo storage _staker = stakerDetails[_stakerAddress];
-        _pendingReward = (_staker.stakedBalance *
-        _getUpdatedAccumulatedRewardPerShare()) /
-        1e18 -
-        _staker.rewardDebt;
-        (bool _success, bytes memory _returnData) = governance.call(
-            abi.encodeWithSignature("getVoteCount()")
-        );
-        uint256 _numberOfVotes;
-        if (_success) {
-            _numberOfVotes = uint256(abi.decode(_returnData, (uint256))) - _staker.startVoteCount;
-        }
-        if (_numberOfVotes > 0) {
-            (_success,_returnData) = governance.call(
-                abi.encodeWithSignature("getVoteTallyByAddress(address)",_stakerAddress)
-            );
-            if(_success){
-                _pendingReward =
-                (_pendingReward * (abi.decode(_returnData,(uint256)) - _staker.startVoteTally))
-                / _numberOfVotes;
-            }
-        }
-    }
+    // /**
+    //  * @dev Returns the pending staking reward for a given address
+    //  * @param _stakerAddress staker address to look up
+    //  * @return _pendingReward - pending reward for given staker
+    //  */
+    // function getPendingRewardByStaker(address _stakerAddress)
+    // external
+    // returns (uint256 _pendingReward)
+    // {
+    //     StakeInfo storage _staker = stakerDetails[_stakerAddress];
+    //     _pendingReward = (_staker.stakedBalance *
+    //     _getUpdatedAccumulatedRewardPerShare()) /
+    //     1e18 -
+    //     _staker.rewardDebt;
+    //     (bool _success, bytes memory _returnData) = governance.call(
+    //         abi.encodeWithSignature("getVoteCount()")
+    //     );
+    //     uint256 _numberOfVotes;
+    //     if (_success) {
+    //         _numberOfVotes = uint256(abi.decode(_returnData, (uint256))) - _staker.startVoteCount;
+    //     }
+    //     if (_numberOfVotes > 0) {
+    //         (_success,_returnData) = governance.call(
+    //             abi.encodeWithSignature("getVoteTallyByAddress(address)",_stakerAddress)
+    //         );
+    //         if(_success){
+    //             _pendingReward =
+    //             (_pendingReward * (abi.decode(_returnData,(uint256)) - _staker.startVoteTally))
+    //             / _numberOfVotes;
+    //         }
+    //     }
+    // }
 
-    /**
-     * @dev Returns the real staking rewards balance after accounting for unclaimed rewards
-     * @return uint256 real staking rewards balance
-     */
-    function getRealStakingRewardsBalance() external view returns (uint256) {
-        uint256 _pendingRewards = (_getUpdatedAccumulatedRewardPerShare() *
-        totalStakeAmount) /
-        1e18 -
-        totalRewardDebt;
-        return (stakingRewardsBalance - _pendingRewards);
-    }
+    // /**
+    //  * @dev Returns the real staking rewards balance after accounting for unclaimed rewards
+    //  * @return uint256 real staking rewards balance
+    //  */
+    // function getRealStakingRewardsBalance() external view returns (uint256) {
+    //     uint256 _pendingRewards = (_getUpdatedAccumulatedRewardPerShare() *
+    //     totalStakeAmount) /
+    //     1e18 -
+    //     totalRewardDebt;
+    //     return (stakingRewardsBalance - _pendingRewards);
+    // }
 
     // /**
     //  * @dev Returns reporter address and whether a value was removed for a given queryId and timestamp
@@ -911,153 +911,153 @@ contract ParachainStaking is Parachain {
     // *                                                                           *
     // *****************************************************************************
 
-    /**
-     * @dev Updates accumulated staking rewards per staked token
-     */
-    function _updateRewards() internal {
-        if (timeOfLastAllocation == block.timestamp) {
-            return;
-        }
-        if (totalStakeAmount == 0 || rewardRate == 0) {
-            timeOfLastAllocation = block.timestamp;
-            return;
-        }
-        // calculate accumulated reward per token staked
-        uint256 _newAccumulatedRewardPerShare = accumulatedRewardPerShare +
-        ((block.timestamp - timeOfLastAllocation) * rewardRate * 1e18) /
-        totalStakeAmount;
-        // calculate accumulated reward with _newAccumulatedRewardPerShare
-        uint256 _accumulatedReward = (_newAccumulatedRewardPerShare *
-        totalStakeAmount) /
-        1e18 -
-        totalRewardDebt;
-        if (_accumulatedReward >= stakingRewardsBalance) {
-            // if staking rewards run out, calculate remaining reward per staked
-            // token and set rewardRate to 0
-            uint256 _newPendingRewards = stakingRewardsBalance -
-            ((accumulatedRewardPerShare * totalStakeAmount) /
-            1e18 -
-            totalRewardDebt);
-            accumulatedRewardPerShare +=
-            (_newPendingRewards * 1e18) /
-            totalStakeAmount;
-            rewardRate = 0;
-        } else {
-            accumulatedRewardPerShare = _newAccumulatedRewardPerShare;
-        }
-        timeOfLastAllocation = block.timestamp;
-    }
+    // /**
+    //  * @dev Updates accumulated staking rewards per staked token
+    //  */
+    // function _updateRewards() internal {
+    //     if (timeOfLastAllocation == block.timestamp) {
+    //         return;
+    //     }
+    //     if (totalStakeAmount == 0 || rewardRate == 0) {
+    //         timeOfLastAllocation = block.timestamp;
+    //         return;
+    //     }
+    //     // calculate accumulated reward per token staked
+    //     uint256 _newAccumulatedRewardPerShare = accumulatedRewardPerShare +
+    //     ((block.timestamp - timeOfLastAllocation) * rewardRate * 1e18) /
+    //     totalStakeAmount;
+    //     // calculate accumulated reward with _newAccumulatedRewardPerShare
+    //     uint256 _accumulatedReward = (_newAccumulatedRewardPerShare *
+    //     totalStakeAmount) /
+    //     1e18 -
+    //     totalRewardDebt;
+    //     if (_accumulatedReward >= stakingRewardsBalance) {
+    //         // if staking rewards run out, calculate remaining reward per staked
+    //         // token and set rewardRate to 0
+    //         uint256 _newPendingRewards = stakingRewardsBalance -
+    //         ((accumulatedRewardPerShare * totalStakeAmount) /
+    //         1e18 -
+    //         totalRewardDebt);
+    //         accumulatedRewardPerShare +=
+    //         (_newPendingRewards * 1e18) /
+    //         totalStakeAmount;
+    //         rewardRate = 0;
+    //     } else {
+    //         accumulatedRewardPerShare = _newAccumulatedRewardPerShare;
+    //     }
+    //     timeOfLastAllocation = block.timestamp;
+    // }
 
-    /**
-     * @dev Called whenever a user's stake amount changes. First updates staking rewards,
-     * transfers pending rewards to user's address, and finally updates user's stake amount
-     * and other relevant variables.
-     * @param _stakerAddress address of user whose stake is being updated
-     * @param _newStakedBalance new staked balance of user
-     */
-    function _updateStakeAndPayRewards(
-        address _stakerAddress,
-        uint256 _newStakedBalance
-    ) internal {
-        _updateRewards();
-        StakeInfo storage _staker = stakerDetails[_stakerAddress];
-        if (_staker.stakedBalance > 0) {
-            // if address already has a staked balance, calculate and transfer pending rewards
-            uint256 _pendingReward = (_staker.stakedBalance *
-            accumulatedRewardPerShare) /
-            1e18 -
-            _staker.rewardDebt;
-            // get staker voting participation rate
-            uint256 _numberOfVotes;
-            (bool _success, bytes memory _returnData) = governance.call(
-                abi.encodeWithSignature("getVoteCount()")
-            );
-            if (_success) {
-                _numberOfVotes =
-                uint256(abi.decode(_returnData, (uint256))) -
-                _staker.startVoteCount;
-            }
-            if (_numberOfVotes > 0) {
-                // staking reward = pending reward * voting participation rate
-                (_success, _returnData) = governance.call(
-                    abi.encodeWithSignature("getVoteTallyByAddress(address)",_stakerAddress)
-                );
-                if(_success){
-                    uint256 _voteTally = abi.decode(_returnData,(uint256));
-                    uint256 _tempPendingReward =
-                    (_pendingReward *
-                    (_voteTally - _staker.startVoteTally)) /
-                    _numberOfVotes;
-                    if (_tempPendingReward < _pendingReward) {
-                        _pendingReward = _tempPendingReward;
-                    }
-                }
-            }
-            stakingRewardsBalance -= _pendingReward;
-            require(token.transfer(msg.sender, _pendingReward));
-            totalRewardDebt -= _staker.rewardDebt;
-            totalStakeAmount -= _staker.stakedBalance;
-        }
-        _staker.stakedBalance = _newStakedBalance;
-        // Update total stakers
-        if (_staker.stakedBalance >= stakeAmount) {
-            if (_staker.staked == false) {
-                totalStakers++;
-            }
-            _staker.staked = true;
-        } else {
-            if (_staker.staked == true && totalStakers > 0) {
-                totalStakers--;
-            }
-            _staker.staked = false;
-        }
-        // tracks rewards accumulated before stake amount updated
-        _staker.rewardDebt =
-        (_staker.stakedBalance * accumulatedRewardPerShare) /
-        1e18;
-        totalRewardDebt += _staker.rewardDebt;
-        totalStakeAmount += _staker.stakedBalance;
-        // update reward rate if staking rewards are available
-        // given staker's updated parameters
-        if(rewardRate == 0) {
-            rewardRate =
-            (stakingRewardsBalance -
-            ((accumulatedRewardPerShare * totalStakeAmount) /
-            1e18 -
-            totalRewardDebt)) /
-            30 days;
-        }
-    }
+    // /**
+    //  * @dev Called whenever a user's stake amount changes. First updates staking rewards,
+    //  * transfers pending rewards to user's address, and finally updates user's stake amount
+    //  * and other relevant variables.
+    //  * @param _stakerAddress address of user whose stake is being updated
+    //  * @param _newStakedBalance new staked balance of user
+    //  */
+    // function _updateStakeAndPayRewards(
+    //     address _stakerAddress,
+    //     uint256 _newStakedBalance
+    // ) internal {
+    //     _updateRewards();
+    //     StakeInfo storage _staker = stakerDetails[_stakerAddress];
+    //     if (_staker.stakedBalance > 0) {
+    //         // if address already has a staked balance, calculate and transfer pending rewards
+    //         uint256 _pendingReward = (_staker.stakedBalance *
+    //         accumulatedRewardPerShare) /
+    //         1e18 -
+    //         _staker.rewardDebt;
+    //         // get staker voting participation rate
+    //         uint256 _numberOfVotes;
+    //         (bool _success, bytes memory _returnData) = governance.call(
+    //             abi.encodeWithSignature("getVoteCount()")
+    //         );
+    //         if (_success) {
+    //             _numberOfVotes =
+    //             uint256(abi.decode(_returnData, (uint256))) -
+    //             _staker.startVoteCount;
+    //         }
+    //         if (_numberOfVotes > 0) {
+    //             // staking reward = pending reward * voting participation rate
+    //             (_success, _returnData) = governance.call(
+    //                 abi.encodeWithSignature("getVoteTallyByAddress(address)",_stakerAddress)
+    //             );
+    //             if(_success){
+    //                 uint256 _voteTally = abi.decode(_returnData,(uint256));
+    //                 uint256 _tempPendingReward =
+    //                 (_pendingReward *
+    //                 (_voteTally - _staker.startVoteTally)) /
+    //                 _numberOfVotes;
+    //                 if (_tempPendingReward < _pendingReward) {
+    //                     _pendingReward = _tempPendingReward;
+    //                 }
+    //             }
+    //         }
+    //         stakingRewardsBalance -= _pendingReward;
+    //         require(token.transfer(msg.sender, _pendingReward));
+    //         totalRewardDebt -= _staker.rewardDebt;
+    //         totalStakeAmount -= _staker.stakedBalance;
+    //     }
+    //     _staker.stakedBalance = _newStakedBalance;
+    //     // Update total stakers
+    //     if (_staker.stakedBalance >= stakeAmount) {
+    //         if (_staker.staked == false) {
+    //             totalStakers++;
+    //         }
+    //         _staker.staked = true;
+    //     } else {
+    //         if (_staker.staked == true && totalStakers > 0) {
+    //             totalStakers--;
+    //         }
+    //         _staker.staked = false;
+    //     }
+    //     // tracks rewards accumulated before stake amount updated
+    //     _staker.rewardDebt =
+    //     (_staker.stakedBalance * accumulatedRewardPerShare) /
+    //     1e18;
+    //     totalRewardDebt += _staker.rewardDebt;
+    //     totalStakeAmount += _staker.stakedBalance;
+    //     // update reward rate if staking rewards are available
+    //     // given staker's updated parameters
+    //     if(rewardRate == 0) {
+    //         rewardRate =
+    //         (stakingRewardsBalance -
+    //         ((accumulatedRewardPerShare * totalStakeAmount) /
+    //         1e18 -
+    //         totalRewardDebt)) /
+    //         30 days;
+    //     }
+    // }
 
-    /**
-     * @dev Internal function retrieves updated accumulatedRewardPerShare
-     * @return uint256 up-to-date accumulated reward per share
-     */
-    function _getUpdatedAccumulatedRewardPerShare()
-    internal
-    view
-    returns (uint256)
-    {
-        if (totalStakeAmount == 0) {
-            return accumulatedRewardPerShare;
-        }
-        uint256 _newAccumulatedRewardPerShare = accumulatedRewardPerShare +
-        ((block.timestamp - timeOfLastAllocation) * rewardRate * 1e18) /
-        totalStakeAmount;
-        uint256 _accumulatedReward = (_newAccumulatedRewardPerShare *
-        totalStakeAmount) /
-        1e18 -
-        totalRewardDebt;
-        if (_accumulatedReward >= stakingRewardsBalance) {
-            uint256 _newPendingRewards = stakingRewardsBalance -
-            ((accumulatedRewardPerShare * totalStakeAmount) /
-            1e18 -
-            totalRewardDebt);
-            _newAccumulatedRewardPerShare =
-            accumulatedRewardPerShare +
-            (_newPendingRewards * 1e18) /
-            totalStakeAmount;
-        }
-        return _newAccumulatedRewardPerShare;
-    }
+    // /**
+    //  * @dev Internal function retrieves updated accumulatedRewardPerShare
+    //  * @return uint256 up-to-date accumulated reward per share
+    //  */
+    // function _getUpdatedAccumulatedRewardPerShare()
+    // internal
+    // view
+    // returns (uint256)
+    // {
+    //     if (totalStakeAmount == 0) {
+    //         return accumulatedRewardPerShare;
+    //     }
+    //     uint256 _newAccumulatedRewardPerShare = accumulatedRewardPerShare +
+    //     ((block.timestamp - timeOfLastAllocation) * rewardRate * 1e18) /
+    //     totalStakeAmount;
+    //     uint256 _accumulatedReward = (_newAccumulatedRewardPerShare *
+    //     totalStakeAmount) /
+    //     1e18 -
+    //     totalRewardDebt;
+    //     if (_accumulatedReward >= stakingRewardsBalance) {
+    //         uint256 _newPendingRewards = stakingRewardsBalance -
+    //         ((accumulatedRewardPerShare * totalStakeAmount) /
+    //         1e18 -
+    //         totalRewardDebt);
+    //         _newAccumulatedRewardPerShare =
+    //         accumulatedRewardPerShare +
+    //         (_newPendingRewards * 1e18) /
+    //         totalStakeAmount;
+    //     }
+    //     return _newAccumulatedRewardPerShare;
+    // }
 }
