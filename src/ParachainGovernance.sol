@@ -110,9 +110,9 @@ contract ParachainGovernance is Parachain {
     * @param _value bytes Value disputed
     * @param _disputedReporter address Reporter who submitted the disputed value
     * @param _disputeInitiator address Initiator who started the dispute/proposal
-    * @param _slashAmount uint256 Amount of tokens to be slashed of staker
     */
     // * @param _disputeId uint256 Dispute ID on the parachain
+    // * @param _slashAmount uint256 Amount of tokens to be slashed of staker
     function beginParachainDispute(
         uint32 _paraId,
         bytes32 _queryId,
@@ -121,8 +121,8 @@ contract ParachainGovernance is Parachain {
         bytes calldata _value,
         address _disputedReporter,
         address _disputeInitiator,
-        uint256 _disputeFee,
-        uint256 _slashAmount
+        uint256 _disputeFee
+        // uint256 _slashAmount
         ) external {
         // Ensure parachain is registered & sender is parachain owner
         address parachainOwner = registry.owner(_paraId);
