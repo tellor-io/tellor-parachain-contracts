@@ -20,13 +20,17 @@ abstract contract Parachain {
     /// @param _reporter bytes The corresponding address of the reporter on the parachain.
     /// @param _amount uint256 The staked amount for the parachain.
     function reportStakeDeposited(uint32 _paraId, address _staker, bytes calldata _reporter, uint256 _amount) internal {
-        // Ensure paraId is registered
-        // if (registry.owner(_paraId) == address(0x0)) revert ParachainNotRegistered();
         require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
 
         // Prepare remote call and send
         uint64 transactRequiredWeightAtMost = 5000000000;
-        bytes memory call = encodeReportStakeDeposited(_paraId, _staker, _reporter, _amount);
+        bytes memory call = abi.encodePacked(
+            registry.palletInstance(_paraId), // pallet index within runtime
+            hex"0A", // fixed call index within pallet: 10
+            _reporter, // account id of reporter on target parachain
+            bytes32(reverse(_amount)), // amount
+            bytes20(_staker) // staker
+        );
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
         transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
@@ -37,12 +41,15 @@ abstract contract Parachain {
     /// @param _account bytes The account identifier on the parachain.
     /// @param _amount uint256 The staked amount for the parachain.
     function reportStakeWithdrawRequested(uint32 _paraId, bytes memory _account, uint256 _amount) internal {
-        // Ensure paraId is registered
         require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
 
-        // Prepare remote call and send
         uint64 transactRequiredWeightAtMost = 5000000000;
-        bytes memory call = encodeReportStakeWithdrawRequested(_paraId, _account, _amount);
+        bytes memory call = abi.encodePacked(
+            registry.palletInstance(_paraId), // pallet index within runtime
+            hex"0B", // fixed call index within pallet: 11
+            _account,
+            bytes32(reverse(_amount))
+        );
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
         transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
@@ -54,12 +61,16 @@ abstract contract Parachain {
     /// @param _recipient address The address of the recipient of the slashed stake.
     /// @param _amount uint256 Amount slashed.
     function reportSlash(uint32 _paraId, address _reporter, address _recipient, uint256 _amount) internal {
-        // Ensure paraId is registered
         require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
 
-        // Prepare remote call and send
         uint64 transactRequiredWeightAtMost = 5000000000;
-        bytes memory call = encodeReportSlash(_paraId, _reporter, _recipient, _amount);
+        bytes memory call = abi.encodePacked(
+            registry.palletInstance(_paraId), // pallet index within runtime
+            hex"0D", // fixed call index within pallet: 13
+            _reporter, // account id of reporter on target parachain
+            _recipient, // recipient
+            bytes32(reverse(_amount)) // amount
+        );
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
         transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
@@ -74,7 +85,13 @@ abstract contract Parachain {
         require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
 
         uint64 transactRequiredWeightAtMost = 5000000000;
-        bytes memory call = encodeReportStakeWithdrawn(_paraId, _reporter, _account, _amount);
+        bytes memory call = abi.encodePacked(
+            registry.palletInstance(_paraId), // pallet index within runtime
+            hex"0C", // fixed call index within pallet: 12
+            _reporter, // account id of reporter on target parachain
+            _account, // account
+            bytes32(reverse(_amount)) // amount
+        );
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
         transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
@@ -91,72 +108,6 @@ abstract contract Parachain {
 
         // Send remote transact
         xcmTransactor.transactThroughSignedMultilocation(location, location, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight);
-    }
-
-    function encodeRemoveValue(uint32 _paraId, bytes32 _queryId, uint256 _timestamp) private view returns(bytes memory) {
-        // Encode call to remove_value(query_id, timestamp) within Tellor pallet
-        // return bytes.concat(
-        //     registry.palletInstance(_paraId), // pallet index within runtime
-        //     hex"06", // fixed call index within pallet
-        //     _queryId, // identifier of specific data feed
-        //     bytes32(reverse(_timestamp)) // timestamp
-        // );
-        return abi.encodePacked(
-            registry.palletInstance(_paraId), // pallet index within runtime
-            hex"06", // fixed call index within pallet
-            _queryId, // identifier of specific data feed
-            bytes32(reverse(_timestamp)) // timestamp
-        );
-    }
-
-    function encodeReportStakeDeposited(uint32 _paraId, address _staker, bytes memory _reporter, uint256 _amount) private view returns(bytes memory) {
-        // Encode call to report_stake_deposited(reporter, amount, address) within Tellor pallet
-        // return bytes.concat(
-        //     registry.palletInstance(_paraId), // pallet index within runtime
-        //     hex"0A", // fixed call index within pallet
-        //     _reporter, // account id of reporter on target parachain
-        //     bytes32(reverse(_amount)), // amount
-        //     bytes20(_staker) // staker
-        // );
-        return abi.encodePacked(
-            registry.palletInstance(_paraId), // pallet index within runtime
-            hex"0A", // fixed call index within pallet: 10
-            _reporter, // account id of reporter on target parachain
-            bytes32(reverse(_amount)), // amount
-            bytes20(_staker) // staker
-        );
-    }
-
-    function encodeReportStakeWithdrawRequested(uint32 _paraId, bytes memory _account, uint256 _amount) private view returns(bytes memory) {
-        // Encode call to report_stake_withdraw_requested(reporter, amount, address) within Tellor pallet
-        return abi.encodePacked(
-            registry.palletInstance(_paraId), // pallet index within runtime
-            hex"0B", // fixed call index within pallet: 11
-            _account,
-            bytes32(reverse(_amount))
-        );
-    }
-
-    function encodeReportSlash(uint32 _paraId, address _reporter, address _recipient, uint256 _amount) private view returns(bytes memory) {
-        // Encode call to report_slash(reporter, recipient, amount) within Tellor pallet
-        return abi.encodePacked(
-            registry.palletInstance(_paraId), // pallet index within runtime
-            hex"0D", // fixed call index within pallet: 13
-            _reporter, // account id of reporter on target parachain
-            _recipient, // recipient
-            bytes32(reverse(_amount)) // amount
-        );
-    }
-
-    function encodeReportStakeWithdrawn(uint32 _paraId, address _reporter, bytes memory _account, uint256 _amount) private view returns(bytes memory) {
-        // Encode call to stake_withdrawn(reporter, amount) within Tellor pallet
-        return abi.encodePacked(
-            registry.palletInstance(_paraId), // pallet index within runtime
-            hex"0C", // fixed call index within pallet: 12
-            _reporter, // account id of reporter on target parachain
-            _account,
-            bytes32(reverse(_amount)) // amount
-        );
     }
 
     // https://ethereum.stackexchange.com/questions/83626/how-to-reverse-byte-order-in-uint256-or-bytes32
