@@ -230,7 +230,6 @@ contract ParachainStaking is Parachain {
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][_reporter];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
-        // uint256 _slashAmount = _staker.stakedBalance;
         if (_slashAmount > _staker.stakedBalance) {
             _slashAmount = _staker.stakedBalance;
         }

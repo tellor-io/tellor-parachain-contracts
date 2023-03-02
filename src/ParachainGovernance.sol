@@ -152,6 +152,7 @@ contract ParachainGovernance is Parachain {
         disputeIdsByReporter[_disputedReporter].push(_hash);
 
         if (voteRounds[_hash].length == 1) { // Assumes voteRounds[_hash] will never be empty
+            // todo: Maybe this can just be handled on oracle consumer parachain
             require(
                 block.timestamp - _timestamp < 12 hours,
                 "Dispute must be started within reporting lock time"
