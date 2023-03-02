@@ -68,11 +68,10 @@ contract ParachainGovernance is Parachain {
     }
 
     // Events
-    event NewParachainDispute(uint32 _paraId, bytes32 _disputeId, bytes32 _queryId, uint256 _timestamp, address _reporter);
-    event ParachainValueRemoved(uint32 _paraId, bytes32 _queryId, uint256 _timestamp);
-    event ParachainVoteExecuted(uint32 _paraId, uint256 _disputeId);
-    event ParachainVoteTallied(uint32 _paraId, uint256 _disputeId);
-    event ParachainVoted(uint32 _paraId, uint256 _disputeId, bytes _vote);
+    event NewParachainDispute(uint32 _paraId, bytes32 _queryId, uint256 _timestamp, address _reporter);
+    event ParachainVoteExecuted(uint32 _paraId, bytes32 _queryId, uint256 _timestamp);
+    event ParachainVoteTallied(uint32 _paraId, bytes32 _queryId, uint256 _timestamp);
+    event ParachainVoted(uint32 _paraId, bytes32 _queryId, uint256 _timestamp, bytes _vote);
 
     modifier onlyOwner {
         // if (msg.sender != owner) revert NotOwner();
@@ -110,14 +109,12 @@ contract ParachainGovernance is Parachain {
     * @param _value bytes Value disputed
     * @param _disputedReporter address Reporter who submitted the disputed value
     * @param _disputeInitiator address Initiator who started the dispute/proposal
+    * @param _slashAmount uint256 Amount of tokens to be slashed of staker
     */
-    // * @param _disputeId uint256 Dispute ID on the parachain
-    // * @param _slashAmount uint256 Amount of tokens to be slashed of staker
     function beginParachainDispute(
         uint32 _paraId,
         bytes32 _queryId,
         uint256 _timestamp,
-        // uint256 _disputeId,
         bytes calldata _value,
         address _disputedReporter,
         address _disputeInitiator,
@@ -152,7 +149,6 @@ contract ParachainGovernance is Parachain {
         disputeIdsByReporter[_disputedReporter].push(_hash);
 
         if (voteRounds[_hash].length == 1) { // Assumes voteRounds[_hash] will never be empty
-            // todo: Maybe this can just be handled on oracle consumer parachain
             require(
                 block.timestamp - _timestamp < 12 hours,
                 "Dispute must be started within reporting lock time"
@@ -179,7 +175,6 @@ contract ParachainGovernance is Parachain {
 
         emit NewParachainDispute(
             _paraId,
-            _hash,
             _queryId,
             _timestamp,
             _disputedReporter
@@ -263,12 +258,12 @@ contract ParachainGovernance is Parachain {
     //     emit VoteExecuted(_disputeId, voteInfo[_disputeId].result);
     // }
 
-    function executeParachainVote(uint32 _paraId, uint256 _disputeId) external onlyOwner {
-        require(registry.owner(_paraId) != address(0x0), "parachain not registered");
+    // function executeParachainVote(uint32 _paraId, uint256 _disputeId) external onlyOwner {
+    //     require(registry.owner(_paraId) != address(0x0), "parachain not registered");
 
-        // todo: execute vote
-        emit ParachainVoteExecuted(_paraId, _disputeId);
-    }
+    //     // todo: execute vote
+    //     emit ParachainVoteExecuted(_paraId, _disputeId);
+    // }
 
     //     /**
     //  * @dev Tallies the votes and begins the 1 day challenge period
@@ -352,12 +347,12 @@ contract ParachainGovernance is Parachain {
     //     );
     // }
 
-    function tallyParachainVotes(uint32 _paraId, uint256 _disputeId) external onlyOwner {
-        require(registry.owner(_paraId) != address(0x0), "parachain not registered");
+    // function tallyParachainVotes(uint32 _paraId, uint256 _disputeId) external onlyOwner {
+    //     require(registry.owner(_paraId) != address(0x0), "parachain not registered");
 
-        // todo: tally votes
-        emit ParachainVoteTallied(_paraId, _disputeId);
-    }
+    //     // todo: tally votes
+    //     emit ParachainVoteTallied(_paraId, _disputeId);
+    // }
 
     //     /**
     //  * @dev Enables the sender address to cast a vote
@@ -409,13 +404,20 @@ contract ParachainGovernance is Parachain {
     //     emit Voted(_disputeId, _supports, msg.sender, _invalidQuery);
     // }
 
-    function voteParachain(uint32 _paraId, uint256 _disputeId, bytes calldata vote) external {
+    /**
+     * @dev Enables oracle consumer parachain to cast collated votes of its users for an open dispute
+     * @param _paraId is the ID of the parachain
+     * @param _queryId is the ID of the query
+     * @param _timestamp is the timestamp when the value was submitted
+     * @param _vote is the collated votes of the users of the oracle consumer parachain
+     */
+    function voteParachain(uint32 _paraId, bytes32 _queryId, uint256 _timestamp, bytes calldata _vote) external {
         address parachainOwner = registry.owner(_paraId);
         require(parachainOwner != address(0x0), "parachain not registered");
         require(msg.sender == parachainOwner, "not owner");
 
         // todo: vote
-        emit ParachainVoted(_paraId, _disputeId, vote);
+        emit ParachainVoted(_paraId, _queryId, _timestamp, _vote);
     }
 
     // *****************************************************************************
