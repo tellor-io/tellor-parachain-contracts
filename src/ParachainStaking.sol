@@ -10,7 +10,7 @@ interface IParachainStaking {
     function requestParachainStakeWithdrawal(uint32 _paraId, uint256 _amount) external;
     function confirmParachainStakeWidthrawRequest(uint32 _paraId, address _staker, uint256 _amount) external;
     function withdrawParachainStake(uint32 _paraId, address _staker, uint256 _amount) external;
-    function slashParachainReporter(uint32 _paraId, address _reporter, address _recipient) external returns (uint256);
+    function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient) external returns (uint256);
     function getTokenAddress() external view returns (address);
  
 }
@@ -218,18 +218,22 @@ contract ParachainStaking is Parachain {
     /**
      * @dev Slashes a reporter and transfers their stake amount to the given recipient
      * Note: this function is only callable by the governance address.
+     * @param _paraId is the parachain ID of the oracle consumer parachain
      * @param _reporter is the address of the reporter being slashed
      * @param _recipient is the address receiving the reporter's stake
      * @return _slashAmount uint256 amount of token slashed and sent to recipient address
      */
-    function slashParachainReporter(uint32 _paraId, address _reporter, address _recipient) external returns (uint256) {
+    function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient) external returns (uint256) {
         require(msg.sender == governance, "only governance can slash reporter");
         address parachainOwner = registry.owner(_paraId);
         require(parachainOwner != address(0x0), "parachain not registered");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][_reporter];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
-        uint256 _slashAmount = _staker.stakedBalance;
+        // uint256 _slashAmount = _staker.stakedBalance;
+        if (_slashAmount > _staker.stakedBalance) {
+            _slashAmount = _staker.stakedBalance;
+        }
         require(token.transfer(_recipient, _slashAmount), "transfer failed");
         emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
 

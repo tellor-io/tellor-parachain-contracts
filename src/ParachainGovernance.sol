@@ -121,18 +121,18 @@ contract ParachainGovernance is Parachain {
         bytes calldata _value,
         address _disputedReporter,
         address _disputeInitiator,
-        uint256 _disputeFee
-        // uint256 _slashAmount
+        uint256 _disputeFee,
+        uint256 _slashAmount
         ) external {
         // Ensure parachain is registered & sender is parachain owner
         address parachainOwner = registry.owner(_paraId);
         require(parachainOwner != address(0x0), "parachain not registered");
         require(msg.sender == parachainOwner, "not owner");
 
+        // Create unique identifier for this dispute
         bytes32 _hash = keccak256(abi.encodePacked(_paraId, _queryId, _timestamp));
         // Push new vote round
-        bytes32[] storage _voteRounds = voteRounds[_hash];
-        _voteRounds.push(_hash);
+        voteRounds[_hash].push(_hash);
 
         // Create new vote and dispute
         Vote storage _thisVote = voteInfo[_hash];
@@ -147,33 +147,31 @@ contract ParachainGovernance is Parachain {
         _thisVote.initiator = _disputeInitiator;
         _thisVote.blockNumber = block.number; 
         _thisVote.startDate = block.timestamp; // This is correct bc consumer parachain must submit votes before voting period ends
-        _thisVote.voteRound = _voteRounds.length;
-        // disputeIdsByReporter must organize by parachain, then reporter, since
-        // there could be duplicate dispute ids from one staker enabling multiple reporters on
-        // different parachains.
+        _thisVote.voteRound = voteRounds[_hash].length;
+        
         disputeIdsByReporter[_disputedReporter].push(_hash);
 
-        if (_voteRounds.length == 1) { // Assumes _voteRounds will never be empty
+        if (voteRounds[_hash].length == 1) { // Assumes voteRounds[_hash] will never be empty
             require(
                 block.timestamp - _timestamp < 12 hours,
                 "Dispute must be started within reporting lock time"
             );
             // slash a single stakeAmount from reporter
-            // Once commneted out, the above command throws a "Stack too deep" error.
             _thisDispute.slashedAmount = parachainStaking.slashParachainReporter(
+                _slashAmount,
                 _paraId,
                 _thisDispute.disputedReporter,
                 address(this)
             );
             _thisDispute.value = _value;
         } else {
-            bytes32 _prevId = _voteRounds[_voteRounds.length - 2];
+            bytes32 _prevId = voteRounds[_hash][voteRounds[_hash].length - 2];
             require(
                 block.timestamp - voteInfo[_prevId].tallyDate < 1 days,
                 "New dispute round must be started within a day"
             );
-            _thisDispute.slashedAmount = disputeInfo[_voteRounds[0]].slashedAmount;
-            _thisDispute.value = disputeInfo[_voteRounds[0]].value;
+            _thisDispute.slashedAmount = disputeInfo[voteRounds[_hash][0]].slashedAmount;
+            _thisDispute.value = disputeInfo[voteRounds[_hash][0]].value;
         }
         _thisVote.fee = _disputeFee;
         voteCount++;
