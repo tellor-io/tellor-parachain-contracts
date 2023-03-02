@@ -437,13 +437,6 @@ contract ParachainGovernance is Parachain {
         return voteInfo[_disputeId].voted[_voter];
     }
 
-    // /**
-    //  * @dev Get the latest dispute fee
-    //  */
-    // function getDisputeFee() public view returns (uint256) {
-    //     return (oracle.getStakeAmount() / 10);
-    // }
-
 
     function getDisputesByReporter(address _reporter) external view returns (bytes32[] memory) {
         return disputeIdsByReporter[_reporter];
