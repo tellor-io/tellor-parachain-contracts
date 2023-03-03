@@ -68,8 +68,13 @@ contract ParachainGovernance is Parachain {
 
     // Events
     event NewParachainDispute(uint32 _paraId, bytes32 _queryId, uint256 _timestamp, address _reporter);
-    event ParachainVoteExecuted(uint32 _paraId, bytes32 _queryId, uint256 _timestamp);
-    event ParachainVoteTallied(uint32 _paraId, bytes32 _queryId, uint256 _timestamp);
+    event VoteExecuted(uint32 _paraId, bytes32 _queryId, uint256 _timestamp);
+    event VoteTallied(
+        bytes32 _disputeId,
+        VoteResult _result,
+        address _initiator,
+        address _reporter
+    ); // Emitted when all casting for a vote is tallied
     event ParachainVoted(uint32 _paraId, bytes32 _queryId, uint256 _timestamp, bytes _vote);
     event Voted(
         uint32 _paraId,
@@ -271,87 +276,89 @@ contract ParachainGovernance is Parachain {
     //     emit ParachainVoteExecuted(_paraId, _disputeId);
     // }
 
-    //     /**
-    //  * @dev Tallies the votes and begins the 1 day challenge period
-    //  * @param _disputeId is the dispute id
-    //  */
-    // function tallyVotes(uint256 _disputeId) external {
-    //     // Ensure vote has not been executed and that vote has not been tallied
-    //     Vote storage _thisVote = voteInfo[_disputeId];
-    //     require(_thisVote.tallyDate == 0, "Vote has already been tallied");
-    //     require(_disputeId <= voteCount && _disputeId > 0, "Vote does not exist");
-    //     // Determine appropriate vote duration dispute round
-    //     // Vote time increases as rounds increase but only up to 6 days (withdrawal period)
-    //     require(
-    //         block.timestamp - _thisVote.startDate >=
-    //         86400 * _thisVote.voteRound ||
-    //         block.timestamp - _thisVote.startDate >= 86400 * 6,
-    //         "Time for voting has not elapsed"
-    //     );
-    //     // Get total votes from each separate stakeholder group.  This will allow
-    //     // normalization so each group's votes can be combined and compared to
-    //     // determine the vote outcome.
-    //     uint256 _tokenVoteSum = _thisVote.tokenholders.doesSupport +
-    //     _thisVote.tokenholders.against +
-    //     _thisVote.tokenholders.invalidQuery;
-    //     uint256 _reportersVoteSum = _thisVote.reporters.doesSupport +
-    //     _thisVote.reporters.against +
-    //     _thisVote.reporters.invalidQuery;
-    //     uint256 _multisigVoteSum = _thisVote.teamMultisig.doesSupport +
-    //     _thisVote.teamMultisig.against +
-    //     _thisVote.teamMultisig.invalidQuery;
-    //     uint256 _usersVoteSum = _thisVote.users.doesSupport +
-    //     _thisVote.users.against +
-    //     _thisVote.users.invalidQuery;
-    //     // Cannot divide by zero
-    //     if (_tokenVoteSum == 0) {
-    //         _tokenVoteSum++;
-    //     }
-    //     if (_reportersVoteSum == 0) {
-    //         _reportersVoteSum++;
-    //     }
-    //     if (_multisigVoteSum == 0) {
-    //         _multisigVoteSum++;
-    //     }
-    //     if (_usersVoteSum == 0) {
-    //         _usersVoteSum++;
-    //     }
-    //     // Normalize and combine each stakeholder group votes
-    //     uint256 _scaledDoesSupport = ((_thisVote.tokenholders.doesSupport *
-    //     1e18) / _tokenVoteSum) +
-    //     ((_thisVote.reporters.doesSupport * 1e18) / _reportersVoteSum) +
-    //     ((_thisVote.teamMultisig.doesSupport * 1e18) / _multisigVoteSum) +
-    //     ((_thisVote.users.doesSupport * 1e18) / _usersVoteSum);
-    //     uint256 _scaledAgainst = ((_thisVote.tokenholders.against * 1e18) /
-    //     _tokenVoteSum) +
-    //     ((_thisVote.reporters.against * 1e18) / _reportersVoteSum) +
-    //     ((_thisVote.teamMultisig.against * 1e18) / _multisigVoteSum) +
-    //     ((_thisVote.users.against * 1e18) / _usersVoteSum);
-    //     uint256 _scaledInvalid = ((_thisVote.tokenholders.invalidQuery * 1e18) /
-    //     _tokenVoteSum) +
-    //     ((_thisVote.reporters.invalidQuery * 1e18) / _reportersVoteSum) +
-    //     ((_thisVote.teamMultisig.invalidQuery * 1e18) / _multisigVoteSum) +
-    //     ((_thisVote.users.invalidQuery * 1e18) / _usersVoteSum);
+    /**
+     * @dev Tallies the votes and begins the 1 day challenge period
+     * @param _disputeId is the ID of the vote being tallied
+     */
+    function tallyVotes(bytes32 _disputeId) external {
+        // Ensure vote has not been executed and that vote has not been tallied
+        Vote storage _thisVote = voteInfo[_disputeId];
+        require(_thisVote.tallyDate == 0, "Vote has already been tallied");
+        // require(_disputeId <= voteCount && _disputeId > 0, "Vote does not exist");
+        // todo: convert above require to work w/ bytes32 disputeId
 
-    //     // If votes in support outweight the sum of against and invalid, result is passed
-    //     if (_scaledDoesSupport > _scaledAgainst + _scaledInvalid) {
-    //         _thisVote.result = VoteResult.PASSED;
-    //         // If votes in against outweight the sum of support and invalid, result is failed
-    //     } else if (_scaledAgainst > _scaledDoesSupport + _scaledInvalid) {
-    //         _thisVote.result = VoteResult.FAILED;
-    //         // Otherwise, result is invalid
-    //     } else {
-    //         _thisVote.result = VoteResult.INVALID;
-    //     }
+        // Determine appropriate vote duration dispute round
+        // Vote time increases as rounds increase but only up to 6 days (withdrawal period)
+        require(
+            // uint256 _elapsedVotingTime = block.timestamp - _thisVote.startDate
+            block.timestamp - _thisVote.startDate >= 1 days * _thisVote.voteRound ||
+            block.timestamp - _thisVote.startDate >= 6 days, // todo: shouldn't it be <= 6 days?
+            "Time for voting has not elapsed"
+        );
+        // Get total votes from each separate stakeholder group.  This will allow
+        // normalization so each group's votes can be combined and compared to
+        // determine the vote outcome.
+        uint256 _tokenVoteSum = _thisVote.tokenholders.doesSupport +
+        _thisVote.tokenholders.against +
+        _thisVote.tokenholders.invalidQuery;
+        uint256 _reportersVoteSum = _thisVote.reporters.doesSupport +
+        _thisVote.reporters.against +
+        _thisVote.reporters.invalidQuery;
+        uint256 _multisigVoteSum = _thisVote.teamMultisig.doesSupport +
+        _thisVote.teamMultisig.against +
+        _thisVote.teamMultisig.invalidQuery;
+        uint256 _usersVoteSum = _thisVote.users.doesSupport +
+        _thisVote.users.against +
+        _thisVote.users.invalidQuery;
+        // Cannot divide by zero
+        if (_tokenVoteSum == 0) {
+            _tokenVoteSum++;
+        }
+        if (_reportersVoteSum == 0) {
+            _reportersVoteSum++;
+        }
+        if (_multisigVoteSum == 0) {
+            _multisigVoteSum++;
+        }
+        if (_usersVoteSum == 0) {
+            _usersVoteSum++;
+        }
+        // Normalize and combine each stakeholder group votes
+        uint256 _scaledDoesSupport = ((_thisVote.tokenholders.doesSupport *
+        1e18) / _tokenVoteSum) +
+        ((_thisVote.reporters.doesSupport * 1e18) / _reportersVoteSum) +
+        ((_thisVote.teamMultisig.doesSupport * 1e18) / _multisigVoteSum) +
+        ((_thisVote.users.doesSupport * 1e18) / _usersVoteSum);
+        uint256 _scaledAgainst = ((_thisVote.tokenholders.against * 1e18) /
+        _tokenVoteSum) +
+        ((_thisVote.reporters.against * 1e18) / _reportersVoteSum) +
+        ((_thisVote.teamMultisig.against * 1e18) / _multisigVoteSum) +
+        ((_thisVote.users.against * 1e18) / _usersVoteSum);
+        uint256 _scaledInvalid = ((_thisVote.tokenholders.invalidQuery * 1e18) /
+        _tokenVoteSum) +
+        ((_thisVote.reporters.invalidQuery * 1e18) / _reportersVoteSum) +
+        ((_thisVote.teamMultisig.invalidQuery * 1e18) / _multisigVoteSum) +
+        ((_thisVote.users.invalidQuery * 1e18) / _usersVoteSum);
 
-    //     _thisVote.tallyDate = block.timestamp; // Update time vote was tallied
-    //     emit VoteTallied(
-    //         _disputeId,
-    //         _thisVote.result,
-    //         _thisVote.initiator,
-    //         disputeInfo[_disputeId].disputedReporter
-    //     );
-    // }
+        // If votes in support outweight the sum of against and invalid, result is passed
+        if (_scaledDoesSupport > _scaledAgainst + _scaledInvalid) {
+            _thisVote.result = VoteResult.PASSED;
+            // If votes in against outweight the sum of support and invalid, result is failed
+        } else if (_scaledAgainst > _scaledDoesSupport + _scaledInvalid) {
+            _thisVote.result = VoteResult.FAILED;
+            // Otherwise, result is invalid
+        } else {
+            _thisVote.result = VoteResult.INVALID;
+        }
+
+        _thisVote.tallyDate = block.timestamp; // Update time vote was tallied
+        emit VoteTallied(
+            _disputeId,
+            _thisVote.result,
+            _thisVote.initiator,
+            disputeInfo[_disputeId].disputedReporter
+        );
+    }
 
     // function tallyParachainVotes(uint32 _paraId, uint256 _disputeId) external onlyOwner {
     //     require(registry.owner(_paraId) != address(0x0), "parachain not registered");
@@ -361,7 +368,7 @@ contract ParachainGovernance is Parachain {
     // }
 
     /**
-     * @dev Enables the sender address to cast a vote
+     * @dev Enables the sender address (staker or multisig) to cast a vote
      * @param _paraId is the ID of the parachain
      * @param _queryId is the ID of the query
      * @param _timestamp is the timestamp when the disputed value was reported
