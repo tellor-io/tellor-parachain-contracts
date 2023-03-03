@@ -235,14 +235,12 @@ contract ParachainGovernance is Parachain {
         } else if (_supports) {
             _thisVote.tokenholders.doesSupport += _tokenBalance;
             _thisVote.reporters.doesSupport += _totalReports;
-            // _thisVote.users.doesSupport += _getUserTips(msg.sender);
             if (msg.sender == teamMultisig) {
                 _thisVote.teamMultisig.doesSupport += 1;
             }
         } else {
             _thisVote.tokenholders.against += _tokenBalance;
             _thisVote.reporters.against += _totalReports;
-            // _thisVote.users.against += _getUserTips(msg.sender);
             if (msg.sender == teamMultisig) {
                 _thisVote.teamMultisig.against += 1;
             }
@@ -257,7 +255,7 @@ contract ParachainGovernance is Parachain {
      * @param _queryId is the ID of the query
      * @param _timestamp is the timestamp when the disputed value was reported
      * @param _vote is the collated votes of the users on the oracle consumer parachain, 
-     //       a 3-tuple of uint256s representing the number of users who voted for, against, and invalid
+     //       a 3-tuple of uint256s representing the total tips contributed by users who voted for, against, and invalid
      */
     function voteParachain(uint32 _paraId, bytes32 _queryId, uint256 _timestamp, uint256[] memory _vote) external {
         address parachainOwner = registry.owner(_paraId);
@@ -267,14 +265,14 @@ contract ParachainGovernance is Parachain {
         bytes32 _disputeId = keccak256(abi.encodePacked(_paraId, _queryId, _timestamp));
         Vote storage _thisVote = voteInfo[_disputeId];
         require(_thisVote.tallyDate == 0, "Vote has already been tallied");
-        require(!_thisVote.voted[msg.sender], "Sender has already voted");
+        // require(!_thisVote.voted[msg.sender], "Sender has already voted");
 
         // Update voting status and increment total queries for support, invalid, or against based on vote
         _thisVote.voted[msg.sender] = true;
 
-        _thisVote.users.doesSupport += _vote[0];
-        _thisVote.users.against += _vote[1];
-        _thisVote.users.invalidQuery += _vote[2];
+        _thisVote.users.doesSupport = _vote[0];
+        _thisVote.users.against = _vote[1];
+        _thisVote.users.invalidQuery = _vote[2];
 
         emit ParachainVoted(_disputeId, _vote);
     }
@@ -295,7 +293,7 @@ contract ParachainGovernance is Parachain {
         require(
             // uint256 _elapsedVotingTime = block.timestamp - _thisVote.startDate
             block.timestamp - _thisVote.startDate >= 1 days * _thisVote.voteRound ||
-            block.timestamp - _thisVote.startDate >= 6 days, // todo: shouldn't it be <= 6 days?
+            block.timestamp - _thisVote.startDate >= 6 days, // todo: shouldn't it be <= 6 days? nick says correct
             "Time for voting has not elapsed"
         );
         // Get total votes from each separate stakeholder group.  This will allow
