@@ -3,11 +3,7 @@
 See https://github.com/evilrobot-01/tellor for overview.
 
 ### todo
-- finish implementing basic funcs of ParachainGovernance contract
-
-- consumer parachain is only calling func like addparachainuservote. this must happen before voting deadline
-- either someone on evm chain or oracle consumer chain calls tally/exsecute vote, doesn't matter
-- finish `vote` implementation in ParachainGovernance contract
+- finish `executeVote` implementation in ParachainGovernance contract
 -
 - search for "todo" in code for more
 
