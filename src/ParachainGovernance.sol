@@ -193,90 +193,82 @@ contract ParachainGovernance is Parachain {
         );
     }
 
-    // /**
-    //  * @dev Executes vote and transfers corresponding balances to initiator/reporter
-    //  * @param _disputeId is the ID of the vote being executed
-    //  */
-    // function executeVote(uint256 _disputeId) external {
-    //     // Ensure validity of vote ID, vote has been executed, and vote must be tallied
-    //     Vote storage _thisVote = voteInfo[_disputeId];
-    //     require(_disputeId <= voteCount && _disputeId > 0, "Dispute ID must be valid");
-    //     require(!_thisVote.executed, "Vote has already been executed");
-    //     require(_thisVote.tallyDate > 0, "Vote must be tallied");
-    //     // Ensure vote must be final vote and that time has to be pass (86400 = 24 * 60 * 60 for seconds in a day)
-    //     require(
-    //         voteRounds[_thisVote.identifierHash].length == _thisVote.voteRound,
-    //         "Must be the final vote"
-    //     );
-    //     //The time  has to pass after the vote is tallied
-    //     require(
-    //         block.timestamp - _thisVote.tallyDate >= 1 days,
-    //         "1 day has to pass after tally to allow for disputes"
-    //     );
-    //     _thisVote.executed = true;
-    //     Dispute storage _thisDispute = disputeInfo[_disputeId];
-    //     uint256 _i;
-    //     uint256 _voteID;
-    //     if (_thisVote.result == VoteResult.PASSED) {
-    //         // If vote is in dispute and passed, iterate through each vote round and transfer the dispute to initiator
-    //         for (
-    //             _i = voteRounds[_thisVote.identifierHash].length;
-    //             _i > 0;
-    //             _i--
-    //         ) {
-    //             _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
-    //             _thisVote = voteInfo[_voteID];
-    //             // If the first vote round, also make sure to transfer the reporter's slashed stake to the initiator
-    //             if (_i == 1) {
-    //                 token.transfer(
-    //                     _thisVote.initiator,
-    //                     _thisDispute.slashedAmount
-    //                 );
-    //             }
-    //             token.transfer(_thisVote.initiator, _thisVote.fee);
-    //         }
-    //     } else if (_thisVote.result == VoteResult.INVALID) {
-    //         // If vote is in dispute and is invalid, iterate through each vote round and transfer the dispute fee to initiator
-    //         for (
-    //             _i = voteRounds[_thisVote.identifierHash].length;
-    //             _i > 0;
-    //             _i--
-    //         ) {
-    //             _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
-    //             _thisVote = voteInfo[_voteID];
-    //             token.transfer(_thisVote.initiator, _thisVote.fee);
-    //         }
-    //         // Transfer slashed tokens back to disputed reporter
-    //         token.transfer(
-    //             _thisDispute.disputedReporter,
-    //             _thisDispute.slashedAmount
-    //         );
-    //     } else if (_thisVote.result == VoteResult.FAILED) {
-    //         // If vote is in dispute and fails, iterate through each vote round and transfer the dispute fee to disputed reporter
-    //         uint256 _reporterReward = 0;
-    //         for (
-    //             _i = voteRounds[_thisVote.identifierHash].length;
-    //             _i > 0;
-    //             _i--
-    //         ) {
-    //             _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
-    //             _thisVote = voteInfo[_voteID];
-    //             _reporterReward += _thisVote.fee;
-    //         }
-    //         _reporterReward += _thisDispute.slashedAmount;
-    //         token.transfer(_thisDispute.disputedReporter, _reporterReward);
-    //     }
-    //     emit VoteExecuted(_disputeId, voteInfo[_disputeId].result);
-    // }
+    /**
+     * @dev Enables the sender address (staker or multisig) to cast a vote
+     * @param _paraId is the ID of the parachain
+     * @param _queryId is the ID of the query
+     * @param _timestamp is the timestamp when the disputed value was reported
+     * @param _supports is the address's vote: whether or not they support or are against
+     * @param _validDispute is whether or not the dispute is valid (e.g. false if the dispute is invalid)
+     */
+    function vote(
+        uint32 _paraId,
+        bytes32 _queryId,
+        uint256 _timestamp,
+        bool _supports,
+        bool _validDispute
+    ) external {
+        // Ensure that dispute has not been executed and that vote does not exist and is not tallied
+        // todo: how to convert below require statement to work with the bytes32 _disputeId
+        // require(_disputeId <= voteCount && _disputeId > 0, "Vote does not exist");
+        // Ensure there's an open dispute for the given _paraId, _queryId, and _timestamp
 
-    // function executeParachainVote(uint32 _paraId, uint256 _disputeId) external onlyOwner {
-    //     require(registry.owner(_paraId) != address(0x0), "parachain not registered");
+        bytes32 _disputeId = keccak256(abi.encodePacked(_paraId, _queryId, _timestamp));
+        Vote storage _thisVote = voteInfo[_disputeId];
+        require(_thisVote.tallyDate == 0, "Vote has already been tallied");
+        require(!_thisVote.voted[msg.sender], "Sender has already voted");
 
-    //     // todo: execute vote
-    //     emit ParachainVoteExecuted(_paraId, _disputeId);
-    // }
+        // Update voting status and increment total queries for support, invalid, or against based on vote
+        _thisVote.voted[msg.sender] = true;
+        uint256 _tokenBalance = token.balanceOf(msg.sender);
+        (, uint256 _stakedBalance, uint256 _lockedBalance, , , , , ) = parachainStaking.getParachainStakeInfo(_paraId, msg.sender);
+        _tokenBalance += _stakedBalance + _lockedBalance;
+
+        uint256 _totalReports = parachainStaking.getReportsSubmittedByAddress(_paraId, msg.sender);
+
+        if (!_validDispute) { // If vote is invalid
+            _thisVote.tokenholders.invalidQuery += _tokenBalance;
+            _thisVote.reporters.invalidQuery += _totalReports;
+            // _thisVote.users.invalidQuery += _getUserTips(msg.sender);
+            if (msg.sender == teamMultisig) {
+                _thisVote.teamMultisig.invalidQuery += 1;
+            }
+        } else if (_supports) {
+            _thisVote.tokenholders.doesSupport += _tokenBalance;
+            _thisVote.reporters.doesSupport += _totalReports;
+            // _thisVote.users.doesSupport += _getUserTips(msg.sender);
+            if (msg.sender == teamMultisig) {
+                _thisVote.teamMultisig.doesSupport += 1;
+            }
+        } else {
+            _thisVote.tokenholders.against += _tokenBalance;
+            _thisVote.reporters.against += _totalReports;
+            // _thisVote.users.against += _getUserTips(msg.sender);
+            if (msg.sender == teamMultisig) {
+                _thisVote.teamMultisig.against += 1;
+            }
+        }
+        voteTallyByAddress[msg.sender]++;
+        emit Voted(_paraId, _queryId, _timestamp, _supports, msg.sender, _validDispute);
+    }
 
     /**
+     * @dev Enables oracle consumer parachain to cast collated votes of its users for an open dispute
+     * @param _paraId is the ID of the parachain
+     * @param _queryId is the ID of the query
+     * @param _timestamp is the timestamp when the value was submitted
+     * @param _vote is the collated votes of the users of the oracle consumer parachain
+     */
+    function voteParachain(uint32 _paraId, bytes32 _queryId, uint256 _timestamp, bytes calldata _vote) external {
+        address parachainOwner = registry.owner(_paraId);
+        require(parachainOwner != address(0x0), "parachain not registered");
+        require(msg.sender == parachainOwner, "not owner");
+
+        // todo: vote
+        emit ParachainVoted(_paraId, _queryId, _timestamp, _vote);
+    }
+
+        /**
      * @dev Tallies the votes and begins the 1 day challenge period
      * @param _disputeId is the ID of the vote being tallied
      */
@@ -360,87 +352,88 @@ contract ParachainGovernance is Parachain {
         );
     }
 
-    // function tallyParachainVotes(uint32 _paraId, uint256 _disputeId) external onlyOwner {
-    //     require(registry.owner(_paraId) != address(0x0), "parachain not registered");
-
-    //     // todo: tally votes
-    //     emit ParachainVoteTallied(_paraId, _disputeId);
+    // /**
+    //  * @dev Executes vote and transfers corresponding balances to initiator/reporter
+    //  * @param _disputeId is the ID of the vote being executed
+    //  */
+    // function executeVote(uint256 _disputeId) external {
+    //     // Ensure validity of vote ID, vote has been executed, and vote must be tallied
+    //     Vote storage _thisVote = voteInfo[_disputeId];
+    //     require(_disputeId <= voteCount && _disputeId > 0, "Dispute ID must be valid");
+    //     require(!_thisVote.executed, "Vote has already been executed");
+    //     require(_thisVote.tallyDate > 0, "Vote must be tallied");
+    //     // Ensure vote must be final vote and that time has to be pass (86400 = 24 * 60 * 60 for seconds in a day)
+    //     require(
+    //         voteRounds[_thisVote.identifierHash].length == _thisVote.voteRound,
+    //         "Must be the final vote"
+    //     );
+    //     //The time  has to pass after the vote is tallied
+    //     require(
+    //         block.timestamp - _thisVote.tallyDate >= 1 days,
+    //         "1 day has to pass after tally to allow for disputes"
+    //     );
+    //     _thisVote.executed = true;
+    //     Dispute storage _thisDispute = disputeInfo[_disputeId];
+    //     uint256 _i;
+    //     uint256 _voteID;
+    //     if (_thisVote.result == VoteResult.PASSED) {
+    //         // If vote is in dispute and passed, iterate through each vote round and transfer the dispute to initiator
+    //         for (
+    //             _i = voteRounds[_thisVote.identifierHash].length;
+    //             _i > 0;
+    //             _i--
+    //         ) {
+    //             _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
+    //             _thisVote = voteInfo[_voteID];
+    //             // If the first vote round, also make sure to transfer the reporter's slashed stake to the initiator
+    //             if (_i == 1) {
+    //                 token.transfer(
+    //                     _thisVote.initiator,
+    //                     _thisDispute.slashedAmount
+    //                 );
+    //             }
+    //             token.transfer(_thisVote.initiator, _thisVote.fee);
+    //         }
+    //     } else if (_thisVote.result == VoteResult.INVALID) {
+    //         // If vote is in dispute and is invalid, iterate through each vote round and transfer the dispute fee to initiator
+    //         for (
+    //             _i = voteRounds[_thisVote.identifierHash].length;
+    //             _i > 0;
+    //             _i--
+    //         ) {
+    //             _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
+    //             _thisVote = voteInfo[_voteID];
+    //             token.transfer(_thisVote.initiator, _thisVote.fee);
+    //         }
+    //         // Transfer slashed tokens back to disputed reporter
+    //         token.transfer(
+    //             _thisDispute.disputedReporter,
+    //             _thisDispute.slashedAmount
+    //         );
+    //     } else if (_thisVote.result == VoteResult.FAILED) {
+    //         // If vote is in dispute and fails, iterate through each vote round and transfer the dispute fee to disputed reporter
+    //         uint256 _reporterReward = 0;
+    //         for (
+    //             _i = voteRounds[_thisVote.identifierHash].length;
+    //             _i > 0;
+    //             _i--
+    //         ) {
+    //             _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
+    //             _thisVote = voteInfo[_voteID];
+    //             _reporterReward += _thisVote.fee;
+    //         }
+    //         _reporterReward += _thisDispute.slashedAmount;
+    //         token.transfer(_thisDispute.disputedReporter, _reporterReward);
+    //     }
+    //     emit VoteExecuted(_disputeId, voteInfo[_disputeId].result);
     // }
 
-    /**
-     * @dev Enables the sender address (staker or multisig) to cast a vote
-     * @param _paraId is the ID of the parachain
-     * @param _queryId is the ID of the query
-     * @param _timestamp is the timestamp when the disputed value was reported
-     * @param _supports is the address's vote: whether or not they support or are against
-     * @param _validDispute is whether or not the dispute is valid (e.g. false if the dispute is invalid)
-     */
-    function vote(
-        uint32 _paraId,
-        bytes32 _queryId,
-        uint256 _timestamp,
-        bool _supports,
-        bool _validDispute
-    ) external {
-        // Ensure that dispute has not been executed and that vote does not exist and is not tallied
-        // todo: how to convert below require statement to work with the bytes32 _disputeId
-        // require(_disputeId <= voteCount && _disputeId > 0, "Vote does not exist");
-        // Ensure there's an open dispute for the given _paraId, _queryId, and _timestamp
+    // function executeParachainVote(uint32 _paraId, uint256 _disputeId) external onlyOwner {
+    //     require(registry.owner(_paraId) != address(0x0), "parachain not registered");
 
-        bytes32 _disputeId = keccak256(abi.encodePacked(_paraId, _queryId, _timestamp));
-        Vote storage _thisVote = voteInfo[_disputeId];
-        require(_thisVote.tallyDate == 0, "Vote has already been tallied");
-        require(!_thisVote.voted[msg.sender], "Sender has already voted");
-
-        // Update voting status and increment total queries for support, invalid, or against based on vote
-        _thisVote.voted[msg.sender] = true;
-        uint256 _tokenBalance = token.balanceOf(msg.sender);
-        (, uint256 _stakedBalance, uint256 _lockedBalance, , , , , ) = parachainStaking.getParachainStakeInfo(_paraId, msg.sender);
-        _tokenBalance += _stakedBalance + _lockedBalance;
-
-        uint256 _totalReports = parachainStaking.getReportsSubmittedByAddress(_paraId, msg.sender);
-
-        if (!_validDispute) { // If vote is invalid
-            _thisVote.tokenholders.invalidQuery += _tokenBalance;
-            _thisVote.reporters.invalidQuery += _totalReports;
-            // _thisVote.users.invalidQuery += _getUserTips(msg.sender);
-            if (msg.sender == teamMultisig) {
-                _thisVote.teamMultisig.invalidQuery += 1;
-            }
-        } else if (_supports) {
-            _thisVote.tokenholders.doesSupport += _tokenBalance;
-            _thisVote.reporters.doesSupport += _totalReports;
-            // _thisVote.users.doesSupport += _getUserTips(msg.sender);
-            if (msg.sender == teamMultisig) {
-                _thisVote.teamMultisig.doesSupport += 1;
-            }
-        } else {
-            _thisVote.tokenholders.against += _tokenBalance;
-            _thisVote.reporters.against += _totalReports;
-            // _thisVote.users.against += _getUserTips(msg.sender);
-            if (msg.sender == teamMultisig) {
-                _thisVote.teamMultisig.against += 1;
-            }
-        }
-        voteTallyByAddress[msg.sender]++;
-        emit Voted(_paraId, _queryId, _timestamp, _supports, msg.sender, _validDispute);
-    }
-
-    /**
-     * @dev Enables oracle consumer parachain to cast collated votes of its users for an open dispute
-     * @param _paraId is the ID of the parachain
-     * @param _queryId is the ID of the query
-     * @param _timestamp is the timestamp when the value was submitted
-     * @param _vote is the collated votes of the users of the oracle consumer parachain
-     */
-    function voteParachain(uint32 _paraId, bytes32 _queryId, uint256 _timestamp, bytes calldata _vote) external {
-        address parachainOwner = registry.owner(_paraId);
-        require(parachainOwner != address(0x0), "parachain not registered");
-        require(msg.sender == parachainOwner, "not owner");
-
-        // todo: vote
-        emit ParachainVoted(_paraId, _queryId, _timestamp, _vote);
-    }
+    //     // todo: execute vote
+    //     emit ParachainVoteExecuted(_paraId, _disputeId);
+    // }
 
     // *****************************************************************************
     // *                                                                           *
