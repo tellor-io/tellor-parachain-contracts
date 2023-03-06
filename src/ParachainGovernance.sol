@@ -68,7 +68,7 @@ contract ParachainGovernance is Parachain {
 
     // Events
     event NewParachainDispute(uint32 _paraId, bytes32 _queryId, uint256 _timestamp, address _reporter);
-    event VoteExecuted(uint32 _paraId, bytes32 _queryId, uint256 _timestamp);
+    event VoteExecuted(bytes32 _disputeId, VoteResult _result);
     event VoteTallied(
         bytes32 _disputeId,
         VoteResult _result,
@@ -361,88 +361,83 @@ contract ParachainGovernance is Parachain {
         );
     }
 
-    // /**
-    //  * @dev Executes vote and transfers corresponding balances to initiator/reporter
-    //  * @param _disputeId is the ID of the vote being executed
-    //  */
-    // function executeVote(uint256 _disputeId) external {
-    //     // Ensure validity of vote ID, vote has been executed, and vote must be tallied
-    //     Vote storage _thisVote = voteInfo[_disputeId];
-    //     require(_disputeId <= voteCount && _disputeId > 0, "Dispute ID must be valid");
-    //     require(!_thisVote.executed, "Vote has already been executed");
-    //     require(_thisVote.tallyDate > 0, "Vote must be tallied");
-    //     // Ensure vote must be final vote and that time has to be pass (86400 = 24 * 60 * 60 for seconds in a day)
-    //     require(
-    //         voteRounds[_thisVote.identifierHash].length == _thisVote.voteRound,
-    //         "Must be the final vote"
-    //     );
-    //     //The time  has to pass after the vote is tallied
-    //     require(
-    //         block.timestamp - _thisVote.tallyDate >= 1 days,
-    //         "1 day has to pass after tally to allow for disputes"
-    //     );
-    //     _thisVote.executed = true;
-    //     Dispute storage _thisDispute = disputeInfo[_disputeId];
-    //     uint256 _i;
-    //     uint256 _voteID;
-    //     if (_thisVote.result == VoteResult.PASSED) {
-    //         // If vote is in dispute and passed, iterate through each vote round and transfer the dispute to initiator
-    //         for (
-    //             _i = voteRounds[_thisVote.identifierHash].length;
-    //             _i > 0;
-    //             _i--
-    //         ) {
-    //             _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
-    //             _thisVote = voteInfo[_voteID];
-    //             // If the first vote round, also make sure to transfer the reporter's slashed stake to the initiator
-    //             if (_i == 1) {
-    //                 token.transfer(
-    //                     _thisVote.initiator,
-    //                     _thisDispute.slashedAmount
-    //                 );
-    //             }
-    //             token.transfer(_thisVote.initiator, _thisVote.fee);
-    //         }
-    //     } else if (_thisVote.result == VoteResult.INVALID) {
-    //         // If vote is in dispute and is invalid, iterate through each vote round and transfer the dispute fee to initiator
-    //         for (
-    //             _i = voteRounds[_thisVote.identifierHash].length;
-    //             _i > 0;
-    //             _i--
-    //         ) {
-    //             _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
-    //             _thisVote = voteInfo[_voteID];
-    //             token.transfer(_thisVote.initiator, _thisVote.fee);
-    //         }
-    //         // Transfer slashed tokens back to disputed reporter
-    //         token.transfer(
-    //             _thisDispute.disputedReporter,
-    //             _thisDispute.slashedAmount
-    //         );
-    //     } else if (_thisVote.result == VoteResult.FAILED) {
-    //         // If vote is in dispute and fails, iterate through each vote round and transfer the dispute fee to disputed reporter
-    //         uint256 _reporterReward = 0;
-    //         for (
-    //             _i = voteRounds[_thisVote.identifierHash].length;
-    //             _i > 0;
-    //             _i--
-    //         ) {
-    //             _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
-    //             _thisVote = voteInfo[_voteID];
-    //             _reporterReward += _thisVote.fee;
-    //         }
-    //         _reporterReward += _thisDispute.slashedAmount;
-    //         token.transfer(_thisDispute.disputedReporter, _reporterReward);
-    //     }
-    //     emit VoteExecuted(_disputeId, voteInfo[_disputeId].result);
-    // }
+    /**
+     * @dev Executes vote and transfers corresponding balances to initiator/reporter
+     * @param _disputeId is the ID of the vote being executed
+     */
+    function executeVote(bytes32 _disputeId) external {
+        // Ensure validity of vote ID, vote has been executed, and vote must be tallied
+        Vote storage _thisVote = voteInfo[_disputeId];
+        // require(_disputeId <= voteCount && _disputeId > 0, "Dispute ID must be valid");
+        require(!_thisVote.executed, "Vote has already been executed");
+        require(_thisVote.tallyDate > 0, "Vote must be tallied");
+        // Ensure vote must be final vote and that time has to be pass (86400 = 24 * 60 * 60 for seconds in a day)
+        // todo: what exactly is this comment saying? ^
+        require(
+            voteRounds[_thisVote.identifierHash].length == _thisVote.voteRound,
+            "Must be the final vote"
+        );
+        //The time  has to pass after the vote is tallied
+        require(
+            block.timestamp - _thisVote.tallyDate >= 1 days,
+            "1 day has to pass after tally to allow for disputes"
+        );
+        _thisVote.executed = true;
+        Dispute storage _thisDispute = disputeInfo[_disputeId];
+        uint256 _i;
+        bytes32 _voteID;
+        if (_thisVote.result == VoteResult.PASSED) {
+            // If vote is in dispute and passed, iterate through each vote round and transfer the dispute to initiator
+            for (
+                _i = voteRounds[_thisVote.identifierHash].length;
+                _i > 0;
+                _i--
+            ) {
+                _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
+                _thisVote = voteInfo[_voteID];
+                // If the first vote round, also make sure to transfer the reporter's slashed stake to the initiator
+                if (_i == 1) {
+                    token.transfer(
+                        _thisVote.initiator,
+                        _thisDispute.slashedAmount
+                    );
+                }
+                token.transfer(_thisVote.initiator, _thisVote.fee);
+            }
+        } else if (_thisVote.result == VoteResult.INVALID) {
+            // If vote is in dispute and is invalid, iterate through each vote round and transfer the dispute fee to initiator
+            for (
+                _i = voteRounds[_thisVote.identifierHash].length;
+                _i > 0;
+                _i--
+            ) {
+                _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
+                _thisVote = voteInfo[_voteID];
+                token.transfer(_thisVote.initiator, _thisVote.fee);
+            }
+            // Transfer slashed tokens back to disputed reporter
+            token.transfer(
+                _thisDispute.disputedReporter,
+                _thisDispute.slashedAmount
+            );
+        } else if (_thisVote.result == VoteResult.FAILED) {
+            // If vote is in dispute and fails, iterate through each vote round and transfer the dispute fee to disputed reporter
+            uint256 _reporterReward = 0;
+            for (
+                _i = voteRounds[_thisVote.identifierHash].length;
+                _i > 0;
+                _i--
+            ) {
+                _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
+                _thisVote = voteInfo[_voteID];
+                _reporterReward += _thisVote.fee;
+            }
+            _reporterReward += _thisDispute.slashedAmount;
+            token.transfer(_thisDispute.disputedReporter, _reporterReward);
+        }
+        emit VoteExecuted(_disputeId, voteInfo[_disputeId].result);
+    }
 
-    // function executeParachainVote(uint32 _paraId, uint256 _disputeId) external onlyOwner {
-    //     require(registry.owner(_paraId) != address(0x0), "parachain not registered");
-
-    //     // todo: execute vote
-    //     emit ParachainVoteExecuted(_paraId, _disputeId);
-    // }
 
     // *****************************************************************************
     // *                                                                           *
