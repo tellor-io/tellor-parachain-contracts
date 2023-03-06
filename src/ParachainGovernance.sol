@@ -568,36 +568,4 @@ contract ParachainGovernance is Parachain {
         return voteTallyByAddress[_voter];
     }
 
-    // // Internal
-    // /**
-    //  * @dev Retrieves total tips contributed to autopay by a given address
-    //  * @param _user address of the user to check the tip count for
-    //  * @return _userTipTally uint256 of total tips contributed to autopay by the address
-    //  */
-    // function _getUserTips(address _user) internal returns (uint256 _userTipTally) {
-    //     // get autopay addresses array from oracle
-    //     (bytes memory _autopayAddrsBytes, uint256 _timestamp) = getDataBefore(
-    //         autopayAddrsQueryId,
-    //         block.timestamp - 12 hours
-    //     );
-    //     if (_timestamp > 0) {
-    //         address[] memory _autopayAddrs = abi.decode(
-    //             _autopayAddrsBytes,
-    //             (address[])
-    //         );
-    //         // iterate through autopay addresses retrieve tips by user address
-    //         for (uint256 _i = 0; _i < _autopayAddrs.length; _i++) {
-    //             (bool _success, bytes memory _returnData) = _autopayAddrs[_i]
-    //             .call(
-    //                 abi.encodeWithSignature(
-    //                     "getTipsByAddress(address)",
-    //                     _user
-    //                 )
-    //             );
-    //             if (_success) {
-    //                 _userTipTally += abi.decode(_returnData, (uint256));
-    //             }
-    //         }
-    //     }
-    // }
 }
