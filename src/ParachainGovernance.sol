@@ -115,30 +115,29 @@ contract ParachainGovernance is Parachain {
     // Trusts that the corresponding value for the supplied query identifier and timestamp 
     // exists on the consumer parachain, that it has been removed during dispute initiation, 
     // and that a dispute fee has been locked.
-    * @param _paraId uint32 Parachain ID, where the dispute was initiated
-    * @param _queryId bytes32 Query ID being disputed
-    * @param _timestamp uint256 Timestamp being disputed
+    * @param _disputeId bytes32 Unique identifier for this dispute
     * @param _value bytes Value disputed
     * @param _disputedReporter address Reporter who submitted the disputed value
     * @param _disputeInitiator address Initiator who started the dispute/proposal
     * @param _slashAmount uint256 Amount of tokens to be slashed of staker
     */
     function beginParachainDispute(
-        uint32 _paraId,
-        bytes32 _queryId,
-        uint256 _timestamp,
+        bytes32 _disputeId,
         bytes calldata _value,
         address _disputedReporter,
         address _disputeInitiator,
         uint256 _disputeFee,
         uint256 _slashAmount
         ) external {
+        bytes memory _disputeIdBytes = abi.encode(_disputeId);
+        (uint32 _paraId, bytes32 _queryId, uint256 _timestamp) = abi.decode(_disputeIdBytes, (uint32, bytes32, uint256));
         // Ensure parachain is registered & sender is parachain owner
         address parachainOwner = registry.owner(_paraId);
         require(parachainOwner != address(0x0), "parachain not registered");
         require(msg.sender == parachainOwner, "not owner");
 
         // Create unique identifier for this dispute
+        // todo: remove this, but throws "stack too deep" error if removed
         bytes32 _disputeId = keccak256(abi.encodePacked(_paraId, _queryId, _timestamp));
         // Push new vote round
         voteRounds[_disputeId].push(_disputeId);
@@ -195,16 +194,12 @@ contract ParachainGovernance is Parachain {
 
     /**
      * @dev Enables the sender address (staker or multisig) to cast a vote
-     * @param _paraId is the ID of the parachain
-     * @param _queryId is the ID of the query
-     * @param _timestamp is the timestamp when the disputed value was reported
+     * @param _disputeId is the unique identifier for the dispute
      * @param _supports is the address's vote: whether or not they support or are against
      * @param _validDispute is whether or not the dispute is valid (e.g. false if the dispute is invalid)
      */
     function vote(
-        uint32 _paraId,
-        bytes32 _queryId,
-        uint256 _timestamp,
+        bytes32 _disputeId,
         bool _supports,
         bool _validDispute
     ) external {
@@ -213,7 +208,8 @@ contract ParachainGovernance is Parachain {
         // require(_disputeId <= voteCount && _disputeId > 0, "Vote does not exist");
         // Ensure there's an open dispute for the given _paraId, _queryId, and _timestamp
 
-        bytes32 _disputeId = keccak256(abi.encodePacked(_paraId, _queryId, _timestamp));
+        bytes memory _disputeIdBytes = abi.encode(_disputeId);
+        (uint32 _paraId, bytes32 _queryId, uint256 _timestamp) = abi.decode(_disputeIdBytes, (uint32, bytes32, uint256));
         Vote storage _thisVote = voteInfo[_disputeId];
         require(_thisVote.tallyDate == 0, "Vote has already been tallied");
         require(!_thisVote.voted[msg.sender], "Sender has already voted");
@@ -224,23 +220,18 @@ contract ParachainGovernance is Parachain {
         (, uint256 _stakedBalance, uint256 _lockedBalance, , , , , ) = parachainStaking.getParachainStakeInfo(_paraId, msg.sender);
         _tokenBalance += _stakedBalance + _lockedBalance;
 
-        uint256 _totalReports = parachainStaking.getReportsSubmittedByAddress(_paraId, msg.sender);
-
         if (!_validDispute) { // If vote is invalid
             _thisVote.tokenholders.invalidQuery += _tokenBalance;
-            _thisVote.reporters.invalidQuery += _totalReports;
             if (msg.sender == teamMultisig) {
                 _thisVote.teamMultisig.invalidQuery += 1;
             }
         } else if (_supports) {
             _thisVote.tokenholders.doesSupport += _tokenBalance;
-            _thisVote.reporters.doesSupport += _totalReports;
             if (msg.sender == teamMultisig) {
                 _thisVote.teamMultisig.doesSupport += 1;
             }
         } else {
             _thisVote.tokenholders.against += _tokenBalance;
-            _thisVote.reporters.against += _totalReports;
             if (msg.sender == teamMultisig) {
                 _thisVote.teamMultisig.against += 1;
             }
@@ -250,29 +241,34 @@ contract ParachainGovernance is Parachain {
     }
 
     /**
-     * @dev Enables oracle consumer parachain to cast collated votes of its users for an open dispute
-     * @param _paraId is the ID of the parachain
-     * @param _queryId is the ID of the query
-     * @param _timestamp is the timestamp when the disputed value was reported
+     * @dev Enables oracle consumer parachain to cast collated votes of its users and reporters for an open dispute.
+     *      This function is called by the oracle consumer parachain, and can be called multiple times.
+     * @param _disputeId is the ID of the dispute
      * @param _vote is the collated votes of the users on the oracle consumer parachain, 
-     //       a 3-tuple of uint256s representing the total tips contributed by users who voted for, against, and invalid
+     *        an array of uint256s representing the total tips contributed by users who voted for, against, and invalid
+     *        and the total reports for reporters who voted for, against, and invalid. For example,
+     *        _vote = [totalTipsFor, totalTipsAgainst, totalTipsInvalid, totalReportsFor, totalReportsAgainst, totalReportsInvalid]
      */
-    function voteParachain(uint32 _paraId, bytes32 _queryId, uint256 _timestamp, uint256[] memory _vote) external {
+    function voteParachain(bytes32 _disputeId, uint256[] memory _vote) external {
+        bytes memory _disputeIdBytes = abi.encode(_disputeId);
+        (uint32 _paraId, bytes32 _queryId, uint256 _timestamp) = abi.decode(_disputeIdBytes, (uint32, bytes32, uint256));
         address parachainOwner = registry.owner(_paraId);
+
         require(parachainOwner != address(0x0), "parachain not registered");
         require(msg.sender == parachainOwner, "not owner");
 
-        bytes32 _disputeId = keccak256(abi.encodePacked(_paraId, _queryId, _timestamp));
         Vote storage _thisVote = voteInfo[_disputeId];
         require(_thisVote.tallyDate == 0, "Vote has already been tallied");
-        // require(!_thisVote.voted[msg.sender], "Sender has already voted");
 
-        // Update voting status and increment total queries for support, invalid, or against based on vote
-        _thisVote.voted[msg.sender] = true;
-
+        // Update users vote
         _thisVote.users.doesSupport = _vote[0];
         _thisVote.users.against = _vote[1];
         _thisVote.users.invalidQuery = _vote[2];
+
+        // Update reporters vote
+        _thisVote.reporters.doesSupport = _vote[3];
+        _thisVote.reporters.against = _vote[4];
+        _thisVote.reporters.invalidQuery = _vote[5];
 
         emit ParachainVoted(_disputeId, _vote);
     }

@@ -13,7 +13,6 @@ interface IParachainStaking {
     function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient) external returns (uint256);
     function getTokenAddress() external view returns (address);
     function getParachainStakeInfo(uint32 _paraId, address _staker) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool);
-    function getReportsSubmittedByAddress(uint32 _paraId, address _staker) external view returns (uint256);
 }
 
 
@@ -80,7 +79,6 @@ contract ParachainStaking is Parachain {
     event ParachainStakeWithdrawRequested(uint32 _paraId, bytes _account, uint256 _amount);
     event ParachainStakeWithdrawRequestConfirmed(uint32 _paraId, address _staker, uint256 _amount);
     event ParachainStakeWithdrawn(uint32 _paraId, address _staker);
-    event ParachainValueRemoved(uint32 _paraId, bytes32 _queryId, uint256 _timestamp);
 
     // Functions
     /**
@@ -274,36 +272,11 @@ contract ParachainStaking is Parachain {
         reportStakeWithdrawn(_paraId, msg.sender, _parachainStakeInfo._account, _amount);
     }
 
-    /// @dev Updates a staker's total reports submitted.
-    /// @param _paraId Identifier of the oracle consumer parachain.
-    /// @param _reporter The address of the staker.
-    /// @param _reports The amount of reports to add to the staker's total.
-    function updateParachainStakerReportsSubmitted(uint32 _paraId, address _reporter, uint256 _reports) external {
-        require(msg.sender == registry.owner(_paraId), "not parachain owner");
-        ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][_reporter];
-        StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
-        _staker.reportsSubmitted += _reports;
-    }
-
     // *****************************************************************************
     // *                                                                           *
     // *                               Getters                                     *
     // *                                                                           *
     // *****************************************************************************
-
-    /**
-     * @dev Returns the number of values submitted by a specific reporter address on a corresponding parachain
-     * @param _paraId is the parachain ID of the oracle consumer parachain
-     * @param _reporter is the address of a reporter
-     * @return uint256 the number of values submitted by the given reporter
-     */
-    function getReportsSubmittedByAddress(uint32 _paraId, address _reporter)
-    external
-    view
-    returns (uint256)
-    {
-        return parachainStakerDetails[_paraId][_reporter]._stakeInfo.reportsSubmitted;
-    }
 
     /**
      * @dev Returns all information about a staker
