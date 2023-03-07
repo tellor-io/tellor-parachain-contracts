@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-import "lib/tellor/interfaces/IERC20.sol";
+import "../lib/moonbeam/precompiles/ERC20.sol";
 import {Parachain} from "./Parachain.sol";
 
 
@@ -148,22 +148,6 @@ contract ParachainStaking is Parachain {
                 _staker.lockedBalance = 0;
             }
         } else {
-            if (_stakedBalance == 0) {
-                // if staked balance and locked balance equal 0, save current vote tally.
-                // voting participation used for calculating rewards
-                (bool _success, bytes memory _returnData) = governance.call(
-                    abi.encodeWithSignature("getVoteCount()")
-                );
-                if (_success) {
-                    _staker.startVoteCount = uint256(abi.decode(_returnData, (uint256)));
-                }
-                (_success,_returnData) = governance.call(
-                    abi.encodeWithSignature("getVoteTallyByAddress(address)", msg.sender)
-                );
-                if(_success){
-                    _staker.startVoteTally =  abi.decode(_returnData,(uint256));
-                }
-            }
             require(token.transferFrom(msg.sender, address(this), _amount));
         }
         _staker.startDate = block.timestamp; // This resets the staker start date to now
