@@ -242,8 +242,8 @@ contract ParachainGovernance is Parachain {
      *      This function is called by the oracle consumer parachain, and can be called multiple times.
      * @param _disputeId is the ID of the dispute
      * @param _vote is the collated votes of the users & reporters on the oracle consumer parachain, 
-     *        an array of uint256s representing the total tips contributed by users & reporters who voted for, against, and invalid
-     *        Example:
+     *        an array of uint256s representing the total tips contributed by users & total reports of reporters who voted for, 
+     *        against, and invalid. Example:
      *        _vote = [totalTipsFor, totalTipsAgainst, totalTipsInvalid, totalReportsFor, totalReportsAgainst, totalReportsInvalid]
      */
     function voteParachain(bytes32 _disputeId, uint256[] memory _vote) external {
