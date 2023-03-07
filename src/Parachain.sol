@@ -133,4 +133,8 @@ abstract contract Parachain {
         // swap 16-byte long pairs
         v = (v >> 128) | (v << 128);
     }
+
+    function registryAddress() public view returns (address) {
+        return address(registry);
+    }
 }
