@@ -203,14 +203,11 @@ contract ParachainGovernance is Parachain {
         bool _supports,
         bool _validDispute
     ) external {
-        // Ensure that dispute has not been executed and that vote does not exist and is not tallied
-        // todo: how to convert below require statement to work with the bytes32 _disputeId
-        // require(_disputeId <= voteCount && _disputeId > 0, "Vote does not exist");
-        // Ensure there's an open dispute for the given _paraId, _queryId, and _timestamp
-
         bytes memory _disputeIdBytes = abi.encode(_disputeId);
         (uint32 _paraId, bytes32 _queryId, uint256 _timestamp) = abi.decode(_disputeIdBytes, (uint32, bytes32, uint256));
         Vote storage _thisVote = voteInfo[_disputeId];
+
+        require(_thisVote.identifierHash == _disputeId, "Vote does not exist");
         require(_thisVote.tallyDate == 0, "Vote has already been tallied");
         require(!_thisVote.voted[msg.sender], "Sender has already voted");
 
@@ -258,6 +255,7 @@ contract ParachainGovernance is Parachain {
         require(msg.sender == parachainOwner, "not owner");
 
         Vote storage _thisVote = voteInfo[_disputeId];
+        require(_thisVote.identifierHash == _disputeId, "Vote does not exist");
         require(_thisVote.tallyDate == 0, "Vote has already been tallied");
 
         // Update users vote
@@ -278,11 +276,10 @@ contract ParachainGovernance is Parachain {
      * @param _disputeId is the ID of the vote being tallied
      */
     function tallyVotes(bytes32 _disputeId) external {
-        // Ensure vote has not been executed and that vote has not been tallied
         Vote storage _thisVote = voteInfo[_disputeId];
+
+        require(_thisVote.identifierHash == _disputeId, "Vote does not exist");
         require(_thisVote.tallyDate == 0, "Vote has already been tallied");
-        // require(_disputeId <= voteCount && _disputeId > 0, "Vote does not exist");
-        // todo: convert above require to work w/ bytes32 disputeId
 
         // Determine appropriate vote duration dispute round
         // Vote time increases as rounds increase but only up to 6 days (withdrawal period)
@@ -362,11 +359,11 @@ contract ParachainGovernance is Parachain {
      * @param _disputeId is the ID of the vote being executed
      */
     function executeVote(bytes32 _disputeId) external {
-        // Ensure validity of vote ID, vote has been executed, and vote must be tallied
         Vote storage _thisVote = voteInfo[_disputeId];
-        // require(_disputeId <= voteCount && _disputeId > 0, "Dispute ID must be valid");
-        require(!_thisVote.executed, "Vote has already been executed");
+
+        require(_thisVote.identifierHash == _disputeId, "Vote does not exist");
         require(_thisVote.tallyDate > 0, "Vote must be tallied");
+        require(!_thisVote.executed, "Vote has already been executed");
         // Ensure vote must be final vote and that time has to be pass (86400 = 24 * 60 * 60 for seconds in a day)
         // todo: what exactly is this comment saying? ^
         require(
