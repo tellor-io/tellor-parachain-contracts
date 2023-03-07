@@ -75,7 +75,16 @@ contract ParachainGovernance is Parachain {
         address _initiator,
         address _reporter
     ); // Emitted when all casting for a vote is tallied
-    event ParachainVoted(bytes32, uint256[] _vote);
+    // event ParachainVoted(bytes32, uint256[] _vote);
+    event ParachainVoted(
+        bytes32 _disputId,
+        uint256 _totalTipsFor,
+        uint256 _totalTipsAgainst,
+        uint256 _totalTipsInvalid,
+        uint256 _totalReportsFor,
+        uint256 _totalReportsAgainst,
+        uint256 _totalReportsInvalid
+    );
     event Voted(
         uint32 _paraId,
         bytes32 _queryId,
@@ -241,12 +250,22 @@ contract ParachainGovernance is Parachain {
      * @dev Enables oracle consumer parachain to cast collated votes of its users and reporters for an open dispute.
      *      This function is called by the oracle consumer parachain, and can be called multiple times.
      * @param _disputeId is the ID of the dispute
-     * @param _vote is the collated votes of the users & reporters on the oracle consumer parachain, 
-     *        an array of uint256s representing the total tips contributed by users & total reports of reporters who voted for, 
-     *        against, and invalid. Example:
-     *        _vote = [totalTipsFor, totalTipsAgainst, totalTipsInvalid, totalReportsFor, totalReportsAgainst, totalReportsInvalid]
-     */
-    function voteParachain(bytes32 _disputeId, uint256[] memory _vote) external {
+     * @param _totalTipsFor is the total amount of tips contributed by users who voted for the dispute
+     * @param _totalTipsAgainst is the total amount of tips contributed by users who voted against the dispute
+     * @param _totalTipsInvalid is the total amount of tips contributed by users who voted invalid for the dispute
+     * @param _totalReportsFor is the total number of reports submitted by reporters who voted for the dispute
+     * @param _totalReportsAgainst is the total number of reports submitted by reporters who voted against the dispute
+     * @param _totalReportsInvalid is the total number of reports submitted by reporters who voted invalid for the dispute
+    */
+    function voteParachain(
+        bytes32 _disputeId,
+        uint256 _totalTipsFor,
+        uint256 _totalTipsAgainst,
+        uint256 _totalTipsInvalid,
+        uint256 _totalReportsFor,
+        uint256 _totalReportsAgainst,
+        uint256 _totalReportsInvalid
+        ) external {
         bytes memory _disputeIdBytes = abi.encode(_disputeId);
         (uint32 _paraId, bytes32 _queryId, uint256 _timestamp) = abi.decode(_disputeIdBytes, (uint32, bytes32, uint256));
         address parachainOwner = registry.owner(_paraId);
@@ -259,16 +278,16 @@ contract ParachainGovernance is Parachain {
         require(_thisVote.tallyDate == 0, "Vote has already been tallied");
 
         // Update users vote
-        _thisVote.users.doesSupport = _vote[0];
-        _thisVote.users.against = _vote[1];
-        _thisVote.users.invalidQuery = _vote[2];
+        _thisVote.users.doesSupport = _totalTipsFor;
+        _thisVote.users.against = _totalTipsAgainst;
+        _thisVote.users.invalidQuery = _totalTipsInvalid;
 
         // Update reporters vote
-        _thisVote.reporters.doesSupport = _vote[3];
-        _thisVote.reporters.against = _vote[4];
-        _thisVote.reporters.invalidQuery = _vote[5];
+        _thisVote.reporters.doesSupport = _totalReportsFor;
+        _thisVote.reporters.against = _totalReportsAgainst;
+        _thisVote.reporters.invalidQuery = _totalReportsInvalid;
 
-        emit ParachainVoted(_disputeId, _vote);
+        emit ParachainVoted(_disputeId, _totalTipsFor, _totalTipsAgainst, _totalTipsInvalid, _totalReportsFor, _totalReportsAgainst, _totalReportsInvalid);
     }
 
         /**
