@@ -142,20 +142,21 @@ contract ParachainStaking is Parachain {
                         msg.sender,
                         address(this),
                         _amount - _lockedBalance
-                    )
+                    ),
+                    "transfer case 1 failed"
                 );
                 toWithdraw -= _staker.lockedBalance;
                 _staker.lockedBalance = 0;
             }
         } else {
-            require(token.transferFrom(msg.sender, address(this), _amount));
+            require(token.transferFrom(msg.sender, address(this), _amount), "transfer case 2 failed");
         }
         _staker.startDate = block.timestamp; // This resets the staker start date to now
         emit NewStaker(msg.sender, _amount);
         emit NewParachainStaker(_paraId, msg.sender, _account, _amount);
 
         // Call XCM function to nofity consumer parachain of new staker
-        reportStakeDeposited(_paraId, msg.sender, _account, _amount);
+        // reportStakeDeposited(_paraId, msg.sender, _account, _amount);
     }
 
     /// @dev Allows a staker on EVM compatible parachain to request withdrawal of their stake for 
