@@ -132,7 +132,7 @@ contract ParachainStaking is Parachain {
             if (_lockedBalance >= _amount) {
                 // if staker's locked balance covers full _amount, use that
                 _staker.lockedBalance -= _amount;
-                toWithdraw -= _amount;
+                toWithdraw -= _amount; // todo: need this?
             } else {
                 // otherwise, stake the whole locked balance and transfer the
                 // remaining amount from the staker's address
@@ -150,6 +150,7 @@ contract ParachainStaking is Parachain {
         } else {
             require(token.transferFrom(msg.sender, address(this), _amount), "transfer case 2 failed");
         }
+        _staker.stakedBalance += _amount;
         _staker.startDate = block.timestamp; // This resets the staker start date to now
         emit NewStaker(msg.sender, _amount);
         emit NewParachainStaker(_paraId, msg.sender, _account, _amount);
@@ -173,7 +174,7 @@ contract ParachainStaking is Parachain {
             _staker.stakedBalance >= _amount,
             "insufficient staked balance"
         );
-        _staker.startDate = block.timestamp;
+        // _staker.startDate = block.timestamp; // todo: need this?
         _staker.lockedBalance += _amount;
         toWithdraw += _amount;
         emit StakeWithdrawRequested(msg.sender, _amount);
