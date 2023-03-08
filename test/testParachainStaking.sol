@@ -68,19 +68,19 @@ contract ParachainStakingTest is Test {
             100                         // _amount
         );
         
-        // Try deposit stake w/o token
+        // Successfully deposit stake
         assertEq(registry.owner(fakeParaId), paraOwner);
-        // approve token transfer
         token.mint(address(paraOwner), 100);
-        token.approve(address(paraOwner), 100);
+        token.approve(address(staking), 100);
         assertEq(token.balanceOf(address(paraOwner)), 100);
-        // vm.expectRevert("transfer case 2 failed");
-        // staking.depositParachainStake(
-        //     fakeParaId,                 // _paraId
-        //     bytes("consumerChainAcct"), // _account
-        //     20                         // _amount
-        // );
-        // vm.stopPrank();
+        staking.depositParachainStake(
+            fakeParaId,                 // _paraId
+            bytes("consumerChainAcct"), // _account
+            20                          // _amount
+        );
+        assertEq(token.balanceOf(address(paraOwner)), 80);
+        assertEq(token.balanceOf(address(staking)), 20);
+        vm.stopPrank();
     }
 
 }

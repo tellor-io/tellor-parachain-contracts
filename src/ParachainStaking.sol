@@ -155,8 +155,7 @@ contract ParachainStaking is Parachain {
         emit NewParachainStaker(_paraId, msg.sender, _account, _amount);
 
         // Call XCM function to nofity consumer parachain of new staker
-        // todo: uncomment, currently breaking test
-        // reportStakeDeposited(_paraId, msg.sender, _account, _amount);
+        reportStakeDeposited(_paraId, msg.sender, _account, _amount);
     }
 
     /// @dev Allows a staker on EVM compatible parachain to request withdrawal of their stake for 
