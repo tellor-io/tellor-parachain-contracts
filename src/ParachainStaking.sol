@@ -13,6 +13,7 @@ interface IParachainStaking {
     function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient) external returns (uint256);
     function getTokenAddress() external view returns (address);
     function getParachainStakeInfo(uint32 _paraId, address _staker) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool);
+    function getParachainStakerDetails(uint32 _paraId, address _staker) external view returns (bytes memory, uint256);
 }
 
 
@@ -199,32 +200,6 @@ contract ParachainStaking is Parachain {
         emit ParachainStakeWithdrawRequestConfirmed(_paraId, _staker, _amount);
     }
 
-    /**
-     * @dev Slashes a reporter and transfers their stake amount to the given recipient
-     * Note: this function is only callable by the governance address.
-     * @param _paraId is the parachain ID of the oracle consumer parachain
-     * @param _reporter is the address of the reporter being slashed
-     * @param _recipient is the address receiving the reporter's stake
-     * @return _slashAmount uint256 amount of token slashed and sent to recipient address
-     */
-    function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient) external returns (uint256) {
-        require(msg.sender == governance, "only governance can slash reporter");
-        address parachainOwner = registry.owner(_paraId);
-        require(parachainOwner != address(0x0), "parachain not registered");
-
-        ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][_reporter];
-        StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
-        if (_slashAmount > _staker.stakedBalance) {
-            _slashAmount = _staker.stakedBalance;
-        }
-        require(token.transfer(_recipient, _slashAmount), "transfer failed");
-        emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
-
-        reportSlash(_paraId, _reporter, _recipient, _slashAmount);
-        return _slashAmount;
-    }
-
-
     /// @dev Allows a staker to withdraw their stake.
     /// @param _paraId Identifier of the oracle consumer parachain.
     function withdrawParachainStake(uint32 _paraId) external {
@@ -255,6 +230,31 @@ contract ParachainStaking is Parachain {
         emit ParachainStakeWithdrawn(_paraId, msg.sender);
 
         reportStakeWithdrawn(_paraId, msg.sender, _parachainStakeInfo._account, _amount);
+    }
+
+    /**
+     * @dev Slashes a reporter and transfers their stake amount to the given recipient
+     * Note: this function is only callable by the governance address.
+     * @param _paraId is the parachain ID of the oracle consumer parachain
+     * @param _reporter is the address of the reporter being slashed
+     * @param _recipient is the address receiving the reporter's stake
+     * @return _slashAmount uint256 amount of token slashed and sent to recipient address
+     */
+    function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient) external returns (uint256) {
+        require(msg.sender == governance, "only governance can slash reporter");
+        address parachainOwner = registry.owner(_paraId);
+        require(parachainOwner != address(0x0), "parachain not registered");
+
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][_reporter];
+        StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
+        if (_slashAmount > _staker.stakedBalance) {
+            _slashAmount = _staker.stakedBalance;
+        }
+        require(token.transfer(_recipient, _slashAmount), "transfer failed");
+        emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
+
+        reportSlash(_paraId, _reporter, _recipient, _slashAmount);
+        return _slashAmount;
     }
 
     // *****************************************************************************
@@ -303,6 +303,21 @@ contract ParachainStaking is Parachain {
         _staker.startVoteCount,
         _staker.startVoteTally,
         _staker.staked
+        );
+    }
+
+    /**
+    * @dev Returns info relevant to parachain staking
+    * @param _paraId is the parachain ID of the oracle consumer parachain
+    * @param _stakerAddress address of staker inquiring about
+    * @return bytes account on consumer parachain enabled to report by staker
+    * @return uint256 amount of locked token confirmed by consumer parachain
+     */
+    function getParachainStakerDetails(uint32 _paraId, address _stakerAddress) external view returns (bytes memory, uint256) {
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][_stakerAddress];
+        return (
+        _parachainStakeInfo._account,
+        _parachainStakeInfo._lockedBalanceConfirmed
         );
     }
 
