@@ -47,6 +47,13 @@ contract ParachainRegistry is IRegistry {
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }
 
+    // Used for testing bc normal register was reverting bc of onlyParachain modifier
+    // TODO: remove this
+    function fakeRegister(uint32 _paraId, uint8 _palletInstance, uint256 _stakeAmount) external {
+        registrations[_paraId] = ParachainRegistration(msg.sender, abi.encodePacked(_palletInstance), _stakeAmount);
+        emit ParachainRegistered(msg.sender, _paraId, msg.sender);
+    }
+
     function owner(uint32 _paraId) public override view returns(address) {
         return registrations[_paraId].owner;
     }
@@ -72,7 +79,7 @@ contract ParachainRegistry is IRegistry {
         return abi.encodePacked(hex"04", abi.encodePacked(_palletInstance));
     }
 
-    function x2(uint32 _paraId, uint8 _palletInstance) private pure returns (bytes[] memory) {
+    function x2(uint32 _paraId, uint8 _palletInstance) public pure returns (bytes[] memory) {
         bytes[] memory interior = new bytes[](2);
         interior[0] = parachain(_paraId);
         interior[1] = pallet(_palletInstance);
