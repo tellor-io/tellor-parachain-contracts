@@ -127,7 +127,6 @@ contract ParachainStaking is Parachain {
         _parachainStakeInfo._account = _account;
 
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
-        uint256 _stakedBalance = _staker.stakedBalance;
         uint256 _lockedBalance = _staker.lockedBalance;
         if (_lockedBalance > 0) {
             if (_lockedBalance >= _amount) {
@@ -156,6 +155,7 @@ contract ParachainStaking is Parachain {
         emit NewParachainStaker(_paraId, msg.sender, _account, _amount);
 
         // Call XCM function to nofity consumer parachain of new staker
+        // todo: uncomment, currently breaking test
         // reportStakeDeposited(_paraId, msg.sender, _account, _amount);
     }
 
