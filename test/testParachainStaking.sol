@@ -5,6 +5,7 @@ pragma solidity ^0.8.3;
 import "forge-std/Test.sol";
 import "forge-std/Vm.sol";
 import "forge-std/console.sol";
+import "solmate/tokens/ERC20.sol";
 
 // import "../lib/moonbeam/precompiles/ERC20.sol";
 
@@ -17,9 +18,9 @@ import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";
 // import "../src/ParachainGovernance.sol";
 
-contract TestToken is ERC20, Ownable {
-    constructor(uint256 initialSupply) ERC20("TestToken", "TT") {
-        _mint(msg.sender, initialSupply);
+contract TestToken is ERC20 {
+    constructor(uint256 initialSupply) ERC20("TestToken", "TT", 18) {
+        // _mint(msg.sender, initialSupply);
     }
 }
 
@@ -33,7 +34,7 @@ contract ParachainStakingTest is Test {
     // Parachain registration
     uint32 public fakeParaId = 12;
     uint8 public fakePalletInstance = 8;
-    uint256 public fakeStakeAmount = 100;
+    uint256 public fakeStakeAmount = 20;
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
@@ -42,21 +43,10 @@ contract ParachainStakingTest is Test {
 
         vm.prank(paraOwner);
         registry.fakeRegister(fakeParaId, fakePalletInstance, fakeStakeAmount);
-        
-
-        // Register parachain
-        // console.log("derivativeAddressOfParachain: %s", derivativeAddressOfParachain);
-        // vm.startPrank(derivativeAddressOfParachain);
-        // registry.register(
-        //     fakeParaId, // _paraId
-        //     fakePalletInstance, // _palletInstance
-        //     100   // _stakeAmount
-        // );
-        // vm.stopPrank();
     }
 
     function testConstructor() public {
-        assertEq(address(staking.token()), tokenAddress);
+        assertEq(address(staking.token()), address(token));
         assertEq(address(staking.registryAddress()), address(registry));
         assertEq(address(staking.governance()), address(0x0));
     }
@@ -80,13 +70,17 @@ contract ParachainStakingTest is Test {
         
         // Try deposit stake w/o token
         assertEq(registry.owner(fakeParaId), paraOwner);
-        vm.expectRevert("transfer case 2 failed");
+        // approve token transfer
+        token.mint(address(paraOwner), 100);
+        token.approve(address(paraOwner), 100);
+        assertEq(token.balanceOf(address(paraOwner)), 100);
+        // vm.expectRevert("transfer case 2 failed");
         staking.depositParachainStake(
             fakeParaId,                 // _paraId
             bytes("consumerChainAcct"), // _account
-            100                         // _amount
+            20                         // _amount
         );
-        vm.stopPrank();
+        // vm.stopPrank();
     }
 
 }
