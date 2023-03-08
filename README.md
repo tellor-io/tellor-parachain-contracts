@@ -3,7 +3,7 @@
 See https://github.com/evilrobot-01/tellor for overview.
 
 ### todo
-- begin tests
+- use `vm.mockCall` instead of the fake `transactThroughSigned` function
 - search for "todo" in code for more
 
 ### from call w/ Frank
