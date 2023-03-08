@@ -86,4 +86,43 @@ contract ParachainStakingTest is Test {
         vm.stopPrank();
     }
 
+    function testRequestParachainStakeWithdraw() public {
+        staking.init(address(0x2));
+
+        // Try to request stake withdrawal with incorrect parachain
+        vm.startPrank(paraOwner);
+        vm.expectRevert("parachain not registered");
+        staking.requestParachainStakeWithdraw(
+            uint32(1234),               // _paraId
+            100                         // _amount
+        );
+
+        // Try to request stake that's not deposited
+        vm.expectRevert("insufficient staked balance");
+        staking.requestParachainStakeWithdraw(
+            fakeParaId,                 // _paraId
+            100                         // _amount
+        );
+        
+        // Successfully request stake withdrawal
+        token.mint(address(paraOwner), 100);
+        token.approve(address(staking), 100);
+        staking.depositParachainStake(
+            fakeParaId,                 // _paraId
+            bytes("consumerChainAcct"), // _account
+            20                          // _amount
+        );
+        assertEq(token.balanceOf(address(staking)), 20);
+        staking.requestParachainStakeWithdraw(
+            fakeParaId,                 // _paraId
+            20                          // _amount
+        );
+        (, , uint256 lockedBalance, , , , , ,) = staking.getParachainStakerInfo(
+            fakeParaId,
+            paraOwner
+        );
+        assertEq(lockedBalance, 20);
+        vm.stopPrank();
+    }
+
 }
