@@ -36,6 +36,7 @@ contract ParachainGovernance is Parachain {
 
     // Structs
     struct Dispute {
+        uint32 paraId; // parachain ID of the dispute
         bytes32 queryId; // query ID of disputed value
         uint256 timestamp; // timestamp of disputed value
         bytes value; // disputed value
@@ -124,30 +125,31 @@ contract ParachainGovernance is Parachain {
     // Trusts that the corresponding value for the supplied query identifier and timestamp 
     // exists on the consumer parachain, that it has been removed during dispute initiation, 
     // and that a dispute fee has been locked.
-    * @param _disputeId bytes32 Unique identifier for this dispute
+    * @param _paraId uint32 Parachain ID of the dispute
+    * @param _queryId bytes32 Query ID of disputed value
+    * @param _timestamp uint256 Timestamp of disputed value
     * @param _value bytes Value disputed
     * @param _disputedReporter address Reporter who submitted the disputed value
     * @param _disputeInitiator address Initiator who started the dispute/proposal
     * @param _slashAmount uint256 Amount of tokens to be slashed of staker
     */
     function beginParachainDispute(
-        bytes32 _disputeId,
+        uint32 _paraId,
+        bytes32 _queryId,
+        uint256 _timestamp,
         bytes calldata _value,
         address _disputedReporter,
         address _disputeInitiator,
         uint256 _disputeFee,
         uint256 _slashAmount
         ) external {
-        bytes memory _disputeIdBytes = abi.encode(_disputeId);
-        (uint32 _paraId, bytes32 _queryId, uint256 _timestamp) = abi.decode(_disputeIdBytes, (uint32, bytes32, uint256));
         // Ensure parachain is registered & sender is parachain owner
         address parachainOwner = registry.owner(_paraId);
         require(parachainOwner != address(0x0), "parachain not registered");
         require(msg.sender == parachainOwner, "not owner");
 
         // Create unique identifier for this dispute
-        // todo: remove this, but throws "stack too deep" error if removed
-        bytes32 _disputeId = keccak256(abi.encodePacked(_paraId, _queryId, _timestamp));
+        bytes32 _disputeId = keccak256(abi.encode(_paraId, _queryId, _timestamp));
         // Push new vote round
         voteRounds[_disputeId].push(_disputeId);
 
@@ -156,6 +158,7 @@ contract ParachainGovernance is Parachain {
         Dispute storage _thisDispute = disputeInfo[_disputeId];
 
         // Set dispute information
+        _thisDispute.paraId = _paraId;
         _thisDispute.queryId = _queryId;
         _thisDispute.timestamp = _timestamp;
         _thisDispute.disputedReporter = _disputedReporter;
@@ -212,18 +215,21 @@ contract ParachainGovernance is Parachain {
         bool _supports,
         bool _validDispute
     ) external {
-        bytes memory _disputeIdBytes = abi.encode(_disputeId);
-        (uint32 _paraId, bytes32 _queryId, uint256 _timestamp) = abi.decode(_disputeIdBytes, (uint32, bytes32, uint256));
         Vote storage _thisVote = voteInfo[_disputeId];
 
         require(_thisVote.identifierHash == _disputeId, "Vote does not exist");
         require(_thisVote.tallyDate == 0, "Vote has already been tallied");
         require(!_thisVote.voted[msg.sender], "Sender has already voted");
 
+        Dispute storage _thisDispute = disputeInfo[_disputeId];
+
         // Update voting status and increment total queries for support, invalid, or against based on vote
         _thisVote.voted[msg.sender] = true;
         uint256 _tokenBalance = token.balanceOf(msg.sender);
-        (, uint256 _stakedBalance, uint256 _lockedBalance, , , , , ) = parachainStaking.getParachainStakeInfo(_paraId, msg.sender);
+        (, uint256 _stakedBalance, uint256 _lockedBalance, , , , , ) = parachainStaking.getParachainStakeInfo(
+            _thisDispute.paraId,
+            msg.sender
+        );
         _tokenBalance += _stakedBalance + _lockedBalance;
 
         if (!_validDispute) { // If vote is invalid
@@ -243,7 +249,14 @@ contract ParachainGovernance is Parachain {
             }
         }
         voteTallyByAddress[msg.sender]++;
-        emit Voted(_paraId, _queryId, _timestamp, _supports, msg.sender, _validDispute);
+        emit Voted(
+            _thisDispute.paraId,
+            _thisDispute.queryId,
+            _thisDispute.timestamp,
+            _supports,
+            msg.sender,
+            _validDispute
+        );
     }
 
     /**
@@ -266,8 +279,7 @@ contract ParachainGovernance is Parachain {
         uint256 _totalReportsAgainst,
         uint256 _totalReportsInvalid
         ) external {
-        bytes memory _disputeIdBytes = abi.encode(_disputeId);
-        (uint32 _paraId, bytes32 _queryId, uint256 _timestamp) = abi.decode(_disputeIdBytes, (uint32, bytes32, uint256));
+        uint32 _paraId = disputeInfo[_disputeId].paraId;
         address parachainOwner = registry.owner(_paraId);
 
         require(parachainOwner != address(0x0), "parachain not registered");
