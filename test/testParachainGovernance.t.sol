@@ -26,7 +26,7 @@ contract TestToken is ERC20 {
 contract ParachainStakingTest is Test {
 
     function setUp() public {
-        // to test the github ci action
+        // new gh ci test
     }
 
     function testConstructor() public {
