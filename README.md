@@ -1,4 +1,9 @@
 # Tellor Staking/Governance Contracts for EVM-enabled Parachains
+![github actions][gha-badge]
+
+[gha-badge]: https://img.shields.io/github/actions/workflow/status/tellor-io/parity-tellor-contracts/test.yml?label=tests
+
+
 - See the [grant proposal](https://github.com/tellor-io/Grants-Program/blob/master/applications/Tellor.md) for an overview
 - See how these contracts interact with oracle consumer parachains via Cross-Consensus Messaging Format (XCM) [here](https://github.com/evilrobot-01/tellor)
 
