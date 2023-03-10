@@ -1,7 +1,7 @@
 # Tellor Staking/Governance Contracts for EVM-enabled Parachains
-![github actions][gha-badge]
-
-[gha-badge]: https://img.shields.io/github/actions/workflow/status/tellor-io/parity-tellor-contracts/test.yml?label=tests
+![Github Actions](https://img.shields.io/github/actions/workflow/status/tellor-io/parity-tellor-contracts/test.yml?label=tests)
+[![Discord Chat](https://img.shields.io/discord/461602746336935936)](https://discord.gg/tellor)
+[![Twitter Follow](https://img.shields.io/twitter/follow/wearetellor?style=social)](https://twitter.com/WeAreTellor)
 
 
 - See the [grant proposal](https://github.com/tellor-io/Grants-Program/blob/master/applications/Tellor.md) for an overview
