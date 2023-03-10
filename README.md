@@ -16,6 +16,7 @@
 - build the docker image defined in `Dockerfile` and watch forge build/run the tests within the container: `$ docker build --no-cache --progress=plain .`
 
 ### todo
+- add init func to gov contract to initialize parachain staking interface
 - add basic tests for all functions in `ParachainGovernance.sol`
 - use `vm.mockCall` instead of the fake `transactThroughSigned` function. or do what Frank suggests: "That would be a call to a solidity precompile at a specific address on moonbeam. Not sure if you are using foundry, but you might be able to set a fake contract which implements the relevant interface from lib/moonbeam/precompiles at the expected address."
 - search for "todo" in code for more
@@ -26,4 +27,8 @@
 - make parachain contract extendable to include the ability to set fee amounts for xcm calls when each parachain registers
 - do benchmarking for xcm calls
 - ensure pallet implementation works well w/ contracts side (3/13)
+- 
+
+### qs for Nick/Brenda (3/10/23)
+- the structure is a bit different than the spec outlined in the grand proposal [here](https://github.com/tellor-io/Grants-Program/blob/master/applications/Tellor.md#project-details), since the oracle functionality is not included in the `ParachainStaking.sol` contract. is this ok?
 - 
