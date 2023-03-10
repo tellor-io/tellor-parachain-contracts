@@ -113,21 +113,23 @@ contract ParachainGovernance is Parachain {
         )
         Parachain(_registry) 
     {
-        token = IERC20(parachainStaking.getTokenAddress());
         teamMultisig = _teamMultiSig;
+        owner = msg.sender;
     }
 
     /**
-     * @dev Allows the owner to initialize the ParachainStaking contract address
+     * @dev Allows the owner to initialize the ParachainStaking and token interfaces
      * @param _parachainStaking address of ParachainStaking contract
      */
-    function init(address payable _parachainStaking) external onlyOwner {
+    // todo: does it need to be "address payable"?
+    function init(address _parachainStaking) external onlyOwner {
         require(address(parachainStaking) == address(0), "parachainStaking address already set");
         require(
             _parachainStaking != address(0),
             "parachainStaking address can't be zero address"
         );
         parachainStaking = IParachainStaking(_parachainStaking);
+        token = IERC20(parachainStaking.getTokenAddress());
     }
 
 
@@ -157,7 +159,7 @@ contract ParachainGovernance is Parachain {
         // Ensure parachain is registered & sender is parachain owner
         address parachainOwner = registry.owner(_paraId);
         require(parachainOwner != address(0x0), "parachain not registered");
-        require(msg.sender == parachainOwner, "not owner");
+        require(msg.sender == parachainOwner, "not parachain owner");
 
         // Create unique identifier for this dispute
         bytes32 _disputeId = keccak256(abi.encode(_paraId, _queryId, _timestamp));
