@@ -10,8 +10,6 @@ abstract contract Parachain {
 
     XcmTransactorV2 private constant xcmTransactor  = XCM_TRANSACTOR_V2_CONTRACT;
 
-    event TransactThroughSigned(uint32 paraId, uint64 transactRequiredWeightAtMost, bytes call, uint256 feeAmount, uint64 overallWeight);
-
     constructor (address _registry) {
         registry = IRegistry(_registry);
     }
@@ -100,23 +98,28 @@ abstract contract Parachain {
     }
 
 
-    // function transactThroughSigned(uint32 _paraId, uint64 _transactRequiredWeightAtMost, bytes memory _call, uint256 _feeAmount, uint64 _overallWeight) private {
-    //     // Create multi-location based on supplied paraId
-    //     XcmTransactorV2.Multilocation memory location;
-    //     location.parents = 1;
-    //     location.interior = new bytes[](1);
-    //     // 0x00 denotes Parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
-    //     location.interior[0] = abi.encodePacked(hex"00", bytes4(_paraId));
+     function transactThroughSigned(uint32 _paraId, uint64 _transactRequiredWeightAtMost, bytes memory _call, uint256 _feeAmount, uint64 _overallWeight) private {
+         // Create multi-location based on supplied paraId
+         XcmTransactorV2.Multilocation memory location = XcmTransactorV2.Multilocation(1, x1(_paraId));
+         // Send remote transact
+         xcmTransactor.transactThroughSignedMultilocation(location, location, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight);
+     }
 
-    //     // Send remote transact
-    //     xcmTransactor.transactThroughSignedMultilocation(location, location, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight);
-    // }
-
-    // todo: remove, above real one failing in tests
-    function transactThroughSigned(uint32 _paraId, uint64 _transactRequiredWeightAtMost, bytes memory _call, uint256 _feeAmount, uint64 _overallWeight) private {
-        emit TransactThroughSigned(_paraId, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight);
+    function parachain(uint32 _paraId) private pure returns (bytes memory) {
+        // 0x00 denotes Parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
+        return abi.encodePacked(hex"00", bytes4(_paraId));
     }
 
+    function pallet(uint8 _palletInstance) private pure returns (bytes memory) {
+        // 0x04 denotes PalletInstance: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
+        return abi.encodePacked(hex"04", bytes1(_palletInstance));
+    }
+
+    function x1(uint32 _paraId) private pure returns (bytes[] memory) {
+        bytes[] memory interior = new bytes[](1);
+        interior[0] = parachain(_paraId);
+        return interior;
+    }
 
     // https://ethereum.stackexchange.com/questions/83626/how-to-reverse-byte-order-in-uint256-or-bytes32
     function reverse(uint256 input) internal pure returns (uint256 v) {
