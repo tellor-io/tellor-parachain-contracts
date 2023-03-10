@@ -104,21 +104,32 @@ contract ParachainGovernance is Parachain {
     /**
      * @dev Initializes contract parameters
      * @param _registry address of ParachainRegistry contract
-     * @param _parachainStaking address of ParachainStaking contract
      * @param _teamMultiSig address of tellor team multisig, one of four voting
      * stakeholder groups
      */
     constructor(
         address _registry,
-        address payable _parachainStaking,
         address _teamMultiSig
         )
         Parachain(_registry) 
     {
-        parachainStaking = IParachainStaking(_parachainStaking);
         token = IERC20(parachainStaking.getTokenAddress());
         teamMultisig = _teamMultiSig;
     }
+
+    /**
+     * @dev Allows the owner to initialize the ParachainStaking contract address
+     * @param _parachainStaking address of ParachainStaking contract
+     */
+    function init(address payable _parachainStaking) external onlyOwner {
+        require(address(parachainStaking) == address(0), "parachainStaking address already set");
+        require(
+            _parachainStaking != address(0),
+            "parachainStaking address can't be zero address"
+        );
+        parachainStaking = IParachainStaking(_parachainStaking);
+    }
+
 
     /**
     * @dev Start dispute/vote for a specific parachain
