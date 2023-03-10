@@ -98,8 +98,8 @@ contract ParachainStaking is Parachain {
     }
 
     /**
-     * @dev Allows the owner to initialize the governance (flex addy needed for governance deployment)
-     * @param _governanceAddress address of governance contract (github.com/tellor-io/governance)
+     * @dev Allows the owner to initialize the ParachainGovernance contract address
+     * @param _governanceAddress address of ParachainGovernance contract 
      */
     function init(address _governanceAddress) external {
         require(msg.sender == owner, "only owner can set governance address");
