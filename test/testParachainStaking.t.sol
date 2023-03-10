@@ -46,6 +46,19 @@ contract ParachainStakingTest is Test {
         
         // set fake governance address
         staking.init(address(0x2));
+
+        // Set fake precompile(s)
+        deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
+    }
+
+    // From https://book.getfoundry.sh/cheatcodes/get-code#examples
+    function deployPrecompile(string memory _contract, address _address) private {
+        // Deploy supplied contract
+        bytes memory bytecode = abi.encodePacked(vm.getCode(_contract));
+        address deployed;
+        assembly { deployed := create(0, add(bytecode, 0x20), mload(bytecode)) }
+        // Set the bytecode of supplied precompile address
+        vm.etch(_address, deployed.code);
     }
 
     function testConstructor() public {
