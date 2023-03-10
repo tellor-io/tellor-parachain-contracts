@@ -18,6 +18,7 @@
 ### todo
 - add init func to gov contract to initialize parachain staking interface
 - add basic tests for all functions in `ParachainGovernance.sol`
+- do the same as [#7](https://github.com/tellor-io/parity-tellor-contracts/pull/7#issuecomment-1463640355) "for the XcmUtils and then use that to overcome the onlyParachain modifier testing hurdle for register"
 - use `vm.mockCall` instead of the fake `transactThroughSigned` function. or do what Frank suggests: "That would be a call to a solidity precompile at a specific address on moonbeam. Not sure if you are using foundry, but you might be able to set a fake contract which implements the relevant interface from lib/moonbeam/precompiles at the expected address."
 - search for "todo" in code for more
 - see PolkaTellor checklist google sheet
