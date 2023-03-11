@@ -15,17 +15,17 @@ abstract contract Parachain {
     }
 
     /// @dev Report stake to a registered parachain.
-    /// @param _paraId uint32 The parachain identifier.
+    /// @param _parachain Para The registered parachain.
     /// @param _staker address The address of the staker.
     /// @param _reporter bytes The corresponding address of the reporter on the parachain.
     /// @param _amount uint256 The staked amount for the parachain.
-    function reportStakeDeposited(uint32 _paraId, address _staker, bytes calldata _reporter, uint256 _amount) internal {
-        require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
+    function reportStakeDeposited(IRegistry.Parachain memory _parachain, address _staker, bytes calldata _reporter, uint256 _amount) internal {
+        require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
 
         // Prepare remote call and send
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
-            registry.palletInstance(_paraId), // pallet index within runtime
+            _parachain.palletInstance, // pallet index within parachain runtime
             hex"0A", // fixed call index within pallet: 10
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)), // amount
@@ -33,39 +33,39 @@ abstract contract Parachain {
         );
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
-        transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
     }
 
     /// @dev Report stake withdraw request to a registered parachain.
-    /// @param _paraId uint32 The parachain identifier.
+    /// @param _parachain Para The registered parachain.
     /// @param _account bytes The account identifier on the parachain.
     /// @param _amount uint256 The staked amount for the parachain.
-    function reportStakeWithdrawRequested(uint32 _paraId, bytes memory _account, uint256 _amount) internal {
-        require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
+    function reportStakeWithdrawRequested(IRegistry.Parachain memory _parachain, bytes memory _account, uint256 _amount) internal {
+        require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
 
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
-            registry.palletInstance(_paraId), // pallet index within runtime
+            _parachain.palletInstance, // pallet index within parachain runtime
             hex"0B", // fixed call index within pallet: 11
             _account,
             bytes32(reverse(_amount))
         );
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
-        transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
     }
 
     /// @dev Report slash to a registered parachain.
-    /// @param _paraId uint32 The parachain identifier.
+    /// @param _parachain Para The registered parachain.
     /// @param _reporter address The corresponding address of the reporter on the parachain.
     /// @param _recipient address The address of the recipient of the slashed stake.
     /// @param _amount uint256 Amount slashed.
-    function reportSlash(uint32 _paraId, address _reporter, address _recipient, uint256 _amount) internal {
-        require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
+    function reportSlash(IRegistry.Parachain memory _parachain, address _reporter, address _recipient, uint256 _amount) internal {
+        require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
 
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
-            registry.palletInstance(_paraId), // pallet index within runtime
+            _parachain.palletInstance, // pallet index within parachain runtime
             hex"0D", // fixed call index within pallet: 13
             _reporter, // account id of reporter on target parachain
             _recipient, // recipient
@@ -73,20 +73,20 @@ abstract contract Parachain {
         );
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
-        transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
     }
 
     /// @dev Report stake withdraw to a registered parachain.
-    /// @param _paraId uint32 The parachain identifier.
+    /// @param _parachain Para The registered parachain.
     /// @param _reporter address Address of staker on EVM compatible chain w/ Tellor controller contracts.
     /// @param _account bytes The account identifier on the parachain.
     /// @param _amount uint256 Amount withdrawn.
-    function reportStakeWithdrawn(uint32 _paraId, address _reporter, bytes memory _account, uint256 _amount) internal {
-        require(registry.owner(_paraId) != address(0x0), "Parachain not registered");
+    function reportStakeWithdrawn(IRegistry.Parachain memory _parachain, address _reporter, bytes memory _account, uint256 _amount) internal {
+        require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
 
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
-            registry.palletInstance(_paraId), // pallet index within runtime
+            _parachain.palletInstance, // pallet index within runtime
             hex"0C", // fixed call index within pallet: 12
             _reporter, // account id of reporter on target parachain
             _account, // account
@@ -94,16 +94,16 @@ abstract contract Parachain {
         );
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
-        transactThroughSigned(_paraId, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
     }
 
 
-     function transactThroughSigned(uint32 _paraId, uint64 _transactRequiredWeightAtMost, bytes memory _call, uint256 _feeAmount, uint64 _overallWeight) private {
-         // Create multi-location based on supplied paraId
-         XcmTransactorV2.Multilocation memory location = XcmTransactorV2.Multilocation(1, x1(_paraId));
-         // Send remote transact
-         xcmTransactor.transactThroughSignedMultilocation(location, location, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight);
-     }
+    function transactThroughSigned(uint32 _paraId, uint64 _transactRequiredWeightAtMost, bytes memory _call, uint256 _feeAmount, uint64 _overallWeight) private {
+        // Create multi-location based on supplied paraId
+        XcmTransactorV2.Multilocation memory location = XcmTransactorV2.Multilocation(1, x1(_paraId));
+        // Send remote transact
+        xcmTransactor.transactThroughSignedMultilocation(location, location, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight);
+    }
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
         // 0x00 denotes Parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
