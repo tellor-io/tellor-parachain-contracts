@@ -126,6 +126,7 @@ contract ParachainStaking is Parachain {
         require(parachain.owner != address(0x0), "parachain not registered");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
+        // todo: check if _account already used for another staker?
         _parachainStakeInfo._account = _account;
 
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
@@ -171,6 +172,7 @@ contract ParachainStaking is Parachain {
         require(parachain.owner != address(0x0), "parachain not registered");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
+        // todo: check stake info exists
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         require(
             _staker.stakedBalance >= _amount,
@@ -182,7 +184,7 @@ contract ParachainStaking is Parachain {
         emit StakeWithdrawRequested(msg.sender, _amount);
         emit ParachainStakeWithdrawRequested(_paraId, _parachainStakeInfo._account, _amount);
 
-        reportStakeWithdrawRequested(parachain, _parachainStakeInfo._account, _amount);
+        reportStakeWithdrawRequested(parachain, _parachainStakeInfo._account, _amount, msg.sender);
     }
 
     /// @dev Called by oracle consumer parachain. Prevents staker from withdrawing stake until consumer

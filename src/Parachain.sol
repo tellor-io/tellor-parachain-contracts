@@ -40,7 +40,8 @@ abstract contract Parachain {
     /// @param _parachain Para The registered parachain.
     /// @param _account bytes The account identifier on the parachain.
     /// @param _amount uint256 The staked amount for the parachain.
-    function reportStakeWithdrawRequested(IRegistry.Parachain memory _parachain, bytes memory _account, uint256 _amount) internal {
+    /// @param _staker address The address of the staker.
+    function reportStakeWithdrawRequested(IRegistry.Parachain memory _parachain, bytes memory _account, uint256 _amount, address _staker) internal {
         require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
 
         uint64 transactRequiredWeightAtMost = 5000000000;
@@ -48,7 +49,8 @@ abstract contract Parachain {
             _parachain.palletInstance, // pallet index within parachain runtime
             hex"0B", // fixed call index within pallet: 11
             _account,
-            bytes32(reverse(_amount))
+            bytes32(reverse(_amount)),
+            bytes20(_staker) // staker
         );
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
