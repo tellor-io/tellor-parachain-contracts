@@ -4,31 +4,37 @@ pragma solidity ^0.8.0;
 import "../lib/moonbeam/precompiles/XcmTransactorV2.sol";
 import "../lib/moonbeam/precompiles/XcmUtils.sol";
 
-    // error NotAllowed();
-    // error NotOwner();
-    // error ParachainNotRegistered();
+// error NotAllowed();
+// error NotOwner();
+// error ParachainNotRegistered();
 
 interface IRegistry {
-    function owner(uint32 _paraId) external view returns(address);
+    struct Parachain {
+        uint32 id;
+        address owner;
+        bytes palletInstance;
+        uint256 stakeAmount;
+    }
 
-    function palletInstance(uint32 _paraId) external view returns(bytes memory);
+    //    todo: suggestion to replace these with simpler below functions, so state only read once per outer calling function
+    //    todo: confirm that using struct via memory does indeed pass by reference for internal functions
+    //    function owner(uint32 _paraId) external view returns(address);
+    //    function palletInstance(uint32 _paraId) external view returns(bytes memory);
+    //    function stakeAmount(uint32 _paraId) external view returns(uint256);
 
-    function stakeAmount(uint32 _paraId) external view returns(uint256);
+    function getById(uint32 _id) external view returns(Parachain memory);
+    function getByAddress(address _address) external view returns(Parachain memory);
 }
 
 contract ParachainRegistry is IRegistry {
-    mapping(uint32 => ParachainRegistration) private registrations;
+    // todo: confirm optimisation for lookups based on parachain owner address over paraId
+    mapping(address => Parachain) private registrations;
+    mapping(uint => address) private owners;
 
     XcmTransactorV2 private constant xcmTransactor  = XCM_TRANSACTOR_V2_CONTRACT;
     XcmUtils private constant xcmUtils  = XCM_UTILS_CONTRACT;
 
     event ParachainRegistered(address caller, uint32 parachain, address owner);
-
-    struct ParachainRegistration{
-        address owner;
-        bytes palletInstance;
-        uint256 stakeAmount;
-    }
 
     modifier onlyParachain(uint32 _paraId, uint8 _palletInstance) {
         // Ensure sender is multilocation-derivative account of pallet on parachain
@@ -43,27 +49,37 @@ contract ParachainRegistry is IRegistry {
     /// @param _palletInstance uint8 The index of the Tellor pallet within the parachain's runtime.
     /// @param _stakeAmount uint256 The minimum stake amount for the parachain.
     function register(uint32 _paraId, uint8 _palletInstance, uint256 _stakeAmount) external onlyParachain(_paraId, _palletInstance) {
-        registrations[_paraId] = ParachainRegistration(msg.sender, abi.encodePacked(_palletInstance), _stakeAmount);
+        // todo: consider effects of changing pallet instance with re-registration
+        registrations[msg.sender] = Parachain(_paraId, msg.sender, abi.encodePacked(_palletInstance), _stakeAmount);
+        owners[_paraId] = msg.sender;
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }
 
     // Used for testing bc normal register was reverting bc of onlyParachain modifier
     // TODO: remove this
     function fakeRegister(uint32 _paraId, uint8 _palletInstance, uint256 _stakeAmount) external {
-        registrations[_paraId] = ParachainRegistration(msg.sender, abi.encodePacked(_palletInstance), _stakeAmount);
+        registrations[msg.sender] = Parachain(_paraId, msg.sender, abi.encodePacked(_palletInstance), _stakeAmount);
+        owners[_paraId] = msg.sender;
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }
 
-    function owner(uint32 _paraId) public override view returns(address) {
-        return registrations[_paraId].owner;
+    /// @dev Deregister parachain.
+    function deregister() external {
+        // Ensure parachain is registered & sender is parachain owner
+        IRegistry.Parachain memory parachain = registrations[msg.sender];
+        require(parachain.owner == msg.sender && parachain.owner != address(0x0), "not owner");
+
+        // todo: remove registrations after considering effects on existing stake/disputes etc.
     }
 
-    function palletInstance(uint32 _paraId) external override view returns(bytes memory) {
-        return registrations[_paraId].palletInstance;
+    function getById(uint32 _id) external view override returns(Parachain memory) {
+        // todo: confirm this creates a copy which is then passed around by reference within consuming functions
+        return registrations[owners[_id]];
     }
 
-    function stakeAmount(uint32 _paraId) external override view returns(uint256) {
-        return registrations[_paraId].stakeAmount;
+    function getByAddress(address _address) external view override returns(Parachain memory){
+        // todo: confirm this creates a copy which is then passed around by reference within consuming functions
+        return registrations[_address];
     }
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
