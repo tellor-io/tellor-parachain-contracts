@@ -59,19 +59,40 @@ contract ParachainStakingTest is Test {
     }
 
     function testBeginParachainDispute() public {
-        // call open dispute for nonexistent parachain
-        // vm.prank(bob);
-        // vm.expectRevert("parachain not registered");
-        // gov.beginParachainDispute(0);
+        // create fake dispute initiation inputs
+        bytes32 fakeQueryId = keccak256("blah");
+        uint256 fakeTimestamp = 1234;
+        bytes memory fakeValue = bytes("value");
+        address fakeDisputedReporter = address(0x1);
+        address fakeDisputeInitiator = address(0x2);
+        uint256 fakeDisputeFee = 1234;
+        uint256 fakeSlashAmount = 1234;
 
-        // // call by address not owner of parachain
-        // vm.expectRevert("not parachain owner");
-        // gov.beginParachainDispute(fakeParaId);
-        // vm.stopPrank();
+        // Check that only the owner can call beginParachainDispute
+        vm.startPrank(bob);
+        vm.expectRevert("not owner");
+        gov.beginParachainDispute(
+            fakeQueryId,
+            fakeTimestamp,
+            fakeValue,
+            fakeDisputedReporter,
+            fakeDisputeInitiator,
+            fakeDisputeFee,
+            fakeSlashAmount
+        );
+        vm.stopPrank();
 
         // successful call
-        // vm.prank(paraOwner);
-        // gov.beginParachainDispute(fakeParaId);
+        // vm.startPrank(paraOwner);
+        // gov.beginParachainDispute(
+        //     fakeQueryId,
+        //     fakeTimestamp,
+        //     fakeValue,
+        //     fakeDisputedReporter,
+        //     fakeDisputeInitiator,
+        //     fakeDisputeFee,
+        //     fakeSlashAmount
+        // );
         // vm.stopPrank();
         
     }
