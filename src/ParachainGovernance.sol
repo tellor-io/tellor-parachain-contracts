@@ -110,8 +110,8 @@ contract ParachainGovernance is Parachain {
     constructor(
         address _registry,
         address _teamMultiSig
-        )
-        Parachain(_registry) 
+    )
+    Parachain(_registry)
     {
         teamMultisig = _teamMultiSig;
         owner = msg.sender;
@@ -138,7 +138,6 @@ contract ParachainGovernance is Parachain {
     // Trusts that the corresponding value for the supplied query identifier and timestamp 
     // exists on the consumer parachain, that it has been removed during dispute initiation, 
     // and that a dispute fee has been locked.
-    * @param _paraId uint32 Parachain ID of the dispute
     * @param _queryId bytes32 Query ID of disputed value
     * @param _timestamp uint256 Timestamp of disputed value
     * @param _value bytes Value disputed
@@ -147,7 +146,6 @@ contract ParachainGovernance is Parachain {
     * @param _slashAmount uint256 Amount of tokens to be slashed of staker
     */
     function beginParachainDispute(
-        uint32 _paraId,
         bytes32 _queryId,
         uint256 _timestamp,
         bytes calldata _value,
@@ -155,14 +153,13 @@ contract ParachainGovernance is Parachain {
         address _disputeInitiator,
         uint256 _disputeFee,
         uint256 _slashAmount
-        ) external {
+    ) external {
         // Ensure parachain is registered & sender is parachain owner
-        address parachainOwner = registry.owner(_paraId);
-        require(parachainOwner != address(0x0), "parachain not registered");
-        require(msg.sender == parachainOwner, "not parachain owner");
+        IRegistry.Parachain memory parachain = registry.getByAddress(msg.sender);
+        require(parachain.owner == msg.sender && parachain.owner != address(0x0), "not owner");
 
         // Create unique identifier for this dispute
-        bytes32 _disputeId = keccak256(abi.encode(_paraId, _queryId, _timestamp));
+        bytes32 _disputeId = keccak256(abi.encode(parachain.id, _queryId, _timestamp));
         // Push new vote round
         voteRounds[_disputeId].push(_disputeId);
 
@@ -171,17 +168,17 @@ contract ParachainGovernance is Parachain {
         Dispute storage _thisDispute = disputeInfo[_disputeId];
 
         // Set dispute information
-        _thisDispute.paraId = _paraId;
+        _thisDispute.paraId = parachain.id;
         _thisDispute.queryId = _queryId;
         _thisDispute.timestamp = _timestamp;
         _thisDispute.disputedReporter = _disputedReporter;
         // Set vote information
         _thisVote.identifierHash = _disputeId;
         _thisVote.initiator = _disputeInitiator;
-        _thisVote.blockNumber = block.number; 
+        _thisVote.blockNumber = block.number;
         _thisVote.startDate = block.timestamp; // This is correct bc consumer parachain must submit votes before voting period ends
         _thisVote.voteRound = voteRounds[_disputeId].length;
-        
+
         disputeIdsByReporter[_disputedReporter].push(_disputeId);
 
         if (voteRounds[_disputeId].length == 1) { // Assumes voteRounds[_disputeId] will never be empty
@@ -192,7 +189,7 @@ contract ParachainGovernance is Parachain {
             // slash a single stakeAmount from reporter
             _thisDispute.slashedAmount = parachainStaking.slashParachainReporter(
                 _slashAmount,
-                _paraId,
+                parachain.id,
                 _thisDispute.disputedReporter,
                 address(this)
             );
@@ -210,7 +207,7 @@ contract ParachainGovernance is Parachain {
         voteCount++;
 
         emit NewParachainDispute(
-            _paraId,
+            parachain.id,
             _queryId,
             _timestamp,
             _disputedReporter
@@ -291,12 +288,12 @@ contract ParachainGovernance is Parachain {
         uint256 _totalReportsFor,
         uint256 _totalReportsAgainst,
         uint256 _totalReportsInvalid
-        ) external {
-        uint32 _paraId = disputeInfo[_disputeId].paraId;
-        address parachainOwner = registry.owner(_paraId);
+    ) external {
+        // Ensure parachain is registered & sender is parachain owner
+        IRegistry.Parachain memory parachain = registry.getByAddress(msg.sender);
+        require(parachain.owner == msg.sender && parachain.owner != address(0x0), "not owner");
 
-        require(parachainOwner != address(0x0), "parachain not registered");
-        require(msg.sender == parachainOwner, "not owner");
+        require(parachain.id == disputeInfo[_disputeId].paraId, "invalid dispute identifier");
 
         Vote storage _thisVote = voteInfo[_disputeId];
         require(_thisVote.identifierHash == _disputeId, "Vote does not exist");
@@ -315,8 +312,8 @@ contract ParachainGovernance is Parachain {
         emit ParachainVoted(_disputeId, _totalTipsFor, _totalTipsAgainst, _totalTipsInvalid, _totalReportsFor, _totalReportsAgainst, _totalReportsInvalid);
     }
 
-        /**
-     * @dev Tallies the votes and begins the 1 day challenge period
+    /**
+ * @dev Tallies the votes and begins the 1 day challenge period
      * @param _disputeId is the ID of the vote being tallied
      */
     function tallyVotes(bytes32 _disputeId) external {
@@ -328,7 +325,7 @@ contract ParachainGovernance is Parachain {
         // Determine appropriate vote duration dispute round
         // Vote time increases as rounds increase but only up to 6 days (withdrawal period)
         require(
-            // uint256 _elapsedVotingTime = block.timestamp - _thisVote.startDate
+        // uint256 _elapsedVotingTime = block.timestamp - _thisVote.startDate
             block.timestamp - _thisVote.startDate >= 1 days * _thisVote.voteRound ||
             block.timestamp - _thisVote.startDate >= 6 days, // todo: shouldn't it be <= 6 days? nick says correct
             "Time for voting has not elapsed"

@@ -3,6 +3,7 @@ pragma solidity 0.8.3;
 
 import "../lib/moonbeam/precompiles/ERC20.sol";
 import {Parachain} from "./Parachain.sol";
+import {IRegistry} from "./ParachainRegistry.sol";
 
 
 interface IParachainStaking {
@@ -121,10 +122,11 @@ contract ParachainStaking is Parachain {
         require(governance != address(0), "governance address not set");
 
         // Ensure parachain is registered
-        address parachainOwner = registry.owner(_paraId);
-        require(parachainOwner != address(0x0), "parachain not registered");
+        IRegistry.Parachain memory parachain = registry.getById(_paraId);
+        require(parachain.owner != address(0x0), "parachain not registered");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
+        // todo: check if _account already used for another staker?
         _parachainStakeInfo._account = _account;
 
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
@@ -156,20 +158,21 @@ contract ParachainStaking is Parachain {
         emit NewStaker(msg.sender, _amount);
         emit NewParachainStaker(_paraId, msg.sender, _account, _amount);
 
-        // Call XCM function to nofity consumer parachain of new staker
-        reportStakeDeposited(_paraId, msg.sender, _account, _amount);
+        // Call XCM function to notify consumer parachain of new staker
+        reportStakeDeposited(parachain, msg.sender, _account, _amount);
     }
 
-    /// @dev Allows a staker on EVM compatible parachain to request withdrawal of their stake for 
+    /// @dev Allows a staker on EVM compatible parachain to request withdrawal of their stake for
     /// a specific oracle consumer parachain.
     /// @param _paraId The unique identifier of the oracle consumer parachain.
     /// @param _amount The amount of tokens to withdraw.
     function requestParachainStakeWithdraw(uint32 _paraId, uint256 _amount) external {
         // Ensure parachain is registered
-        address parachainOwner = registry.owner(_paraId);
-        require(parachainOwner != address(0x0), "parachain not registered");
+        IRegistry.Parachain memory parachain = registry.getById(_paraId);
+        require(parachain.owner != address(0x0), "parachain not registered");
 
-        ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender]; 
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
+        // todo: check stake info exists
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         require(
             _staker.stakedBalance >= _amount,
@@ -181,30 +184,29 @@ contract ParachainStaking is Parachain {
         emit StakeWithdrawRequested(msg.sender, _amount);
         emit ParachainStakeWithdrawRequested(_paraId, _parachainStakeInfo._account, _amount);
 
-        reportStakeWithdrawRequested(_paraId, _parachainStakeInfo._account, _amount);
+        reportStakeWithdrawRequested(parachain, _parachainStakeInfo._account, _amount, msg.sender);
     }
 
     /// @dev Called by oracle consumer parachain. Prevents staker from withdrawing stake until consumer
     /// parachain has confirmed that the account cannot report anymore.
-    /// @param _paraId The unique identifier of the oracle consumer parachain.
     /// @param _staker The address of the staker requesting withdrawal.
     /// @param _amount The amount of tokens to withdraw.
-    function confirmParachainStakeWithdrawRequest(uint32 _paraId, address _staker, uint256 _amount) external {
-        address parachainOwner = registry.owner(_paraId);
-        require(parachainOwner != address(0x0), "parachain not registered");
-        require(msg.sender == registry.owner(_paraId), "not parachain owner");
+    function confirmParachainStakeWithdrawRequest(address _staker, uint256 _amount) external {
+        // Ensure parachain is registered & sender is parachain owner
+        IRegistry.Parachain memory parachain = registry.getByAddress(msg.sender);
+        require(parachain.owner == msg.sender && parachain.owner != address(0x0), "not owner");
 
-        ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][_staker];
+        ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[parachain.id][_staker];
         _parachainStakeInfo._lockedBalanceConfirmed = _amount;
 
-        emit ParachainStakeWithdrawRequestConfirmed(_paraId, _staker, _amount);
+        emit ParachainStakeWithdrawRequestConfirmed(parachain.id, _staker, _amount);
     }
 
     /// @dev Allows a staker to withdraw their stake.
     /// @param _paraId Identifier of the oracle consumer parachain.
     function withdrawParachainStake(uint32 _paraId) external {
-        address parachainOwner = registry.owner(_paraId);
-        require(parachainOwner != address(0x0), "parachain not registered");
+        IRegistry.Parachain memory parachain = registry.getById(_paraId);
+        require(parachain.owner != address(0x0), "parachain not registered");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
@@ -229,7 +231,7 @@ contract ParachainStaking is Parachain {
         emit StakeWithdrawn(msg.sender);
         emit ParachainStakeWithdrawn(_paraId, msg.sender);
 
-        reportStakeWithdrawn(_paraId, msg.sender, _parachainStakeInfo._account, _amount);
+        reportStakeWithdrawn(parachain, msg.sender, _parachainStakeInfo._account, _amount);
     }
 
     /**
@@ -242,8 +244,8 @@ contract ParachainStaking is Parachain {
      */
     function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient) external returns (uint256) {
         require(msg.sender == governance, "only governance can slash reporter");
-        address parachainOwner = registry.owner(_paraId);
-        require(parachainOwner != address(0x0), "parachain not registered");
+        IRegistry.Parachain memory parachain = registry.getById(_paraId);
+        require(parachain.owner != address(0x0), "parachain not registered");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][_reporter];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
@@ -253,7 +255,7 @@ contract ParachainStaking is Parachain {
         require(token.transfer(_recipient, _slashAmount), "transfer failed");
         emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
 
-        reportSlash(_paraId, _reporter, _recipient, _slashAmount);
+        reportSlash(parachain, _reporter, _recipient, _slashAmount);
         return _slashAmount;
     }
 

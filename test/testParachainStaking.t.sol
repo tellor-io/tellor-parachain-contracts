@@ -41,7 +41,7 @@ contract ParachainStakingTest is Test {
 
         vm.prank(paraOwner);
         registry.fakeRegister(fakeParaId, fakePalletInstance, fakeStakeAmount);
-        
+
         // set fake governance address
         staking.init(address(0x2));
 
@@ -74,9 +74,9 @@ contract ParachainStakingTest is Test {
             bytes("consumerChainAcct"), // _account
             100                         // _amount
         );
-        
+
         // Successfully deposit stake
-        assertEq(registry.owner(fakeParaId), paraOwner);
+        assertEq(registry.getById(fakeParaId).owner, paraOwner);
         token.mint(address(paraOwner), 100);
         token.approve(address(staking), 100);
         assertEq(token.balanceOf(address(paraOwner)), 100);
@@ -106,7 +106,7 @@ contract ParachainStakingTest is Test {
             fakeParaId,                 // _paraId
             100                         // _amount
         );
-        
+
         // Successfully request stake withdrawal
         token.mint(address(paraOwner), 100);
         token.approve(address(staking), 100);
@@ -158,7 +158,6 @@ contract ParachainStakingTest is Test {
 
         // Confirm stake withdrawal request
         staking.confirmParachainStakeWithdrawRequest(
-            fakeParaId,                 // _paraId
             paraOwner,                   // _staker
             20                          // _amount
         );
@@ -191,7 +190,6 @@ contract ParachainStakingTest is Test {
 
         // Confirm stake withdrawal request
         staking.confirmParachainStakeWithdrawRequest(
-            fakeParaId,                 // _paraId
             paraOwner,                   // _staker
             20                          // _amount
         );
