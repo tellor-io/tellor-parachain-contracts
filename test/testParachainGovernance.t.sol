@@ -31,9 +31,19 @@ contract ParachainStakingTest is Test {
     address public paraOwner = address(0x1111);
     address public paraDisputer = address(0x2222);
     address public fakeTeamMultiSig = address(0x3333);
+
+    // create fake dispute initiation inputs
     address public bob = address(0x4444);
     address public alice = address(0x5555);
     bytes public bobsFakeAccount = abi.encodePacked(bob, uint256(4444));
+    bytes32 fakeQueryId = keccak256(abi.encode("SpotPrice", abi.encode("btc", "usd")));
+    uint256 fakeTimestamp = block.timestamp;
+    bytes fakeValue = abi.encode(100_000 * 10 ** 8);
+    bytes32 fakeDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
+    address fakeDisputedReporter = bob;
+    address fakeDisputeInitiator = alice;
+    uint256 fakeDisputeFee = 10;
+    uint256 fakeSlashAmount = 50;
 
     // Parachain registration
     uint32 public fakeParaId = 12;
@@ -55,6 +65,10 @@ contract ParachainStakingTest is Test {
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
+
+        // Fund disputer/disputed
+        token.mint(bob, 100);
+        token.mint(alice, 100);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples
@@ -74,16 +88,6 @@ contract ParachainStakingTest is Test {
     }
 
     function testBeginParachainDispute() public {
-        // create fake dispute initiation inputs
-        // bytes32 fakeQueryId = keccak256("blah");
-        bytes32 fakeQueryId = keccak256(abi.encode("SpotPrice", abi.encode("btc", "usd")));
-        uint256 fakeTimestamp = block.timestamp;
-        bytes memory fakeValue = abi.encode(50_000 * 10 ** 8);
-        address fakeDisputedReporter = bob;
-        address fakeDisputeInitiator = alice;
-        uint256 fakeDisputeFee = 10;
-        uint256 fakeSlashAmount = 50;
-
         // Check that only the owner can call beginParachainDispute
         vm.startPrank(bob);
         vm.expectRevert("not owner");
@@ -97,10 +101,6 @@ contract ParachainStakingTest is Test {
             fakeSlashAmount
         );
         vm.stopPrank();
-
-        // Fund disputer/disputed
-        token.mint(bob, 100);
-        token.mint(alice, 100);
 
         // Reporter deposits stake
         vm.startPrank(bob);
@@ -139,9 +139,117 @@ contract ParachainStakingTest is Test {
     }
 
     function testVote() public {
+        // Try voting for nonexistent dispute
+        vm.startPrank(bob);
+        vm.expectRevert("Vote does not exist");
+        gov.vote(fakeDisputeId, true, true);
+        vm.stopPrank();
+
+        // Reporter deposits stake
+        vm.startPrank(bob);
+        token.approve(address(staking), 100);
+        staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
+        vm.stopPrank();
+
+        // Create dispute
+        vm.startPrank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId,
+            fakeTimestamp,
+            fakeValue,
+            fakeDisputedReporter,
+            fakeDisputeInitiator,
+            fakeDisputeFee,
+            fakeSlashAmount
+        );
+        vm.stopPrank();
+
+        // Vote successfully
+        token.mint(bob, 22);
+        vm.startPrank(bob);
+        bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
+        gov.vote(realDisputeId, true, true);
+        bool voted = gov.didVote(realDisputeId, bob);
+        assert(voted);
+        uint256 voteCount = gov.getVoteCount();
+        assertEq(voteCount, 1);
+
+        // Try voting twice
+        vm.expectRevert("Sender has already voted");
+        gov.vote(realDisputeId, true, true);
+        vm.stopPrank();
+
+        // Check vote info
+        (, uint256[17] memory voteInfo, , , ) = gov.getVoteInfo(realDisputeId);
+        assertEq(voteInfo[0], 1); // voteRound
+        assertEq(voteInfo[1], 1); // startDate
+        assertEq(voteInfo[2], 1); // blockNumber
+        assertEq(voteInfo[3], 10); // fee
+        assertEq(voteInfo[4], 0); // tallyDate
+        assertEq(voteInfo[5], 72); // tokenholders.doesSupport (50 staked + 22 minted above)
+        assertEq(voteInfo[6], 0); // tokenholders.against
+        assertEq(voteInfo[7], 0); // tokenholders.invalidQuery
+        assertEq(voteInfo[8], 0); // users.doesSupport
+        assertEq(voteInfo[9], 0); // users.against
+        assertEq(voteInfo[10], 0); // users.invalidQuery
+        assertEq(voteInfo[11], 0); // reporters.doesSupport
+        assertEq(voteInfo[12], 0); // reporters.against
+        assertEq(voteInfo[13], 0); // reporters.invalidQuery
+        assertEq(voteInfo[14], 0); // teamMultisig.doesSupport
+        assertEq(voteInfo[15], 0); // teamMultisig.against
+        assertEq(voteInfo[16], 0); // teamMultisig.invalidQuery
     }
 
     function testVoteParachain() public {
+        // Reporter deposits stake
+        vm.startPrank(bob);
+        token.approve(address(staking), 100);
+        staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
+        vm.stopPrank();
+
+        // Create dispute
+        vm.startPrank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId,
+            fakeTimestamp,
+            fakeValue,
+            fakeDisputedReporter,
+            fakeDisputeInitiator,
+            fakeDisputeFee,
+            fakeSlashAmount
+        );
+
+        // Vote successfully
+        bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
+        gov.voteParachain(
+            realDisputeId,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+        );
+
+        // Check vote info
+        (, uint256[17] memory voteInfo, , , ) = gov.getVoteInfo(realDisputeId);
+        assertEq(voteInfo[0], 1); // voteRound
+        assertEq(voteInfo[1], 1); // startDate
+        assertEq(voteInfo[2], 1); // blockNumber
+        assertEq(voteInfo[3], 10); // fee
+        assertEq(voteInfo[4], 0); // tallyDate
+        assertEq(voteInfo[5], 0); // tokenholders.doesSupport
+        assertEq(voteInfo[6], 0); // tokenholders.against
+        assertEq(voteInfo[7], 0); // tokenholders.invalidQuery
+        assertEq(voteInfo[8], 1); // users.doesSupport
+        assertEq(voteInfo[9], 2); // users.against
+        assertEq(voteInfo[10], 3); // users.invalidQuery
+        assertEq(voteInfo[11], 4); // reporters.doesSupport
+        assertEq(voteInfo[12], 5); // reporters.against
+        assertEq(voteInfo[13], 6); // reporters.invalidQuery
+        assertEq(voteInfo[14], 0); // teamMultisig.doesSupport
+        assertEq(voteInfo[15], 0); // teamMultisig.against
+        assertEq(voteInfo[16], 0); // teamMultisig.invalidQuery
     }
 
     function testTallyVotes() public {
