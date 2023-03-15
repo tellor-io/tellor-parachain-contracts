@@ -313,9 +313,9 @@ contract ParachainGovernance is Parachain {
     }
 
     /**
- * @dev Tallies the votes and begins the 1 day challenge period
+     * @dev Tallies the votes and begins the 1 day challenge period
      * @param _disputeId is the ID of the vote being tallied
-     */
+    */
     function tallyVotes(bytes32 _disputeId) external {
         Vote storage _thisVote = voteInfo[_disputeId];
 
@@ -436,7 +436,7 @@ contract ParachainGovernance is Parachain {
                         _thisDispute.slashedAmount
                     );
                 }
-                token.transfer(_thisVote.initiator, _thisVote.fee);
+                // token.transfer(_thisVote.initiator, _thisVote.fee); // todo: fix
             }
         } else if (_thisVote.result == VoteResult.INVALID) {
             // If vote is in dispute and is invalid, iterate through each vote round and transfer the dispute fee to initiator
