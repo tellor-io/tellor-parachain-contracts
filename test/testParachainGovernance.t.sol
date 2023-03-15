@@ -253,8 +253,92 @@ contract ParachainStakingTest is Test {
     }
 
     function testTallyVotes() public {
+        // Reporter deposits stake
+        vm.startPrank(bob);
+        token.approve(address(staking), 100);
+        staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
+        vm.stopPrank();
+
+        // Create dispute
+        vm.startPrank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId,
+            fakeTimestamp,
+            fakeValue,
+            fakeDisputedReporter,
+            fakeDisputeInitiator,
+            fakeDisputeFee,
+            fakeSlashAmount
+        );
+        vm.stopPrank();
+
+        // Vote successfully
+        token.mint(bob, 22);
+        vm.startPrank(bob);
+        bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
+        gov.vote(realDisputeId, true, true);
+        vm.stopPrank();
+
+        // Try to tally votes before voting time over
+        vm.startPrank(paraOwner);
+        vm.expectRevert("Time for voting has not elapsed");
+        gov.tallyVotes(realDisputeId);
+
+        // Tally votes
+        uint256 tallyDate = block.timestamp + 7 days;
+        vm.warp(tallyDate);
+        gov.tallyVotes(realDisputeId);
+        vm.stopPrank();
+
+        // Check vote info
+        (, uint256[17] memory voteInfo, , , ) = gov.getVoteInfo(realDisputeId);
+        assertEq(voteInfo[4], tallyDate); // tallyDate
+        assertEq(voteInfo[5], 72); // tokenholders.doesSupport
     }
 
     function testExecuteVote() public {
+        // Reporter deposits stake
+        vm.startPrank(bob);
+        token.approve(address(staking), 100);
+        staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
+        vm.stopPrank();
+
+        // Create dispute
+        vm.startPrank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId,
+            fakeTimestamp,
+            fakeValue,
+            fakeDisputedReporter,
+            fakeDisputeInitiator,
+            fakeDisputeFee,
+            fakeSlashAmount
+        );
+        vm.stopPrank();
+
+        // Vote successfully
+        token.mint(bob, 22);
+        vm.startPrank(bob);
+        bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
+        gov.vote(realDisputeId, true, true);
+        vm.stopPrank();
+
+        // Tally votes
+        uint256 tallyDate = block.timestamp + 7 days;
+        vm.warp(tallyDate);
+        gov.tallyVotes(realDisputeId);
+        vm.stopPrank();
+
+        // One day passes before executing vote
+        vm.warp(tallyDate + 1 days);
+
+        // Execute vote
+        vm.startPrank(paraOwner);
+        gov.executeVote(realDisputeId);
+        vm.stopPrank();
+
+        // Ensure vote executed was emitted
+
+        // Try to execute vote again
     }
 }
