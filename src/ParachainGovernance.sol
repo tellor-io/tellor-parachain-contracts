@@ -236,7 +236,7 @@ contract ParachainGovernance is Parachain {
         // Update voting status and increment total queries for support, invalid, or against based on vote
         _thisVote.voted[msg.sender] = true;
         uint256 _tokenBalance = token.balanceOf(msg.sender);
-        (, uint256 _stakedBalance, uint256 _lockedBalance, , , , , ) = parachainStaking.getParachainStakeInfo(
+        (, uint256 _stakedBalance, uint256 _lockedBalance, , , , , , ) = parachainStaking.getParachainStakerInfo(
             _thisDispute.paraId,
             msg.sender
         );
@@ -451,7 +451,7 @@ contract ParachainGovernance is Parachain {
             }
             // Transfer slashed tokens back to disputed reporter
             token.transfer(
-                _thisDispute.disputedReporter,
+                _thisDispute.disputedReporter, // todo: should the tokens be transferred from the gov contract to the disputed reporter?
                 _thisDispute.slashedAmount
             );
         } else if (_thisVote.result == VoteResult.FAILED) {
