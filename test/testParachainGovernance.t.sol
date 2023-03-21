@@ -116,6 +116,12 @@ contract ParachainStakingTest is Test {
         );
         assertEq(stakedBalanceBefore, 100);
 
+        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
+        token.mint(fakeDisputeInitiator, fakeDisputeFee);
+        vm.prank(fakeDisputeInitiator);
+        token.approve(address(gov), fakeDisputeFee);
+        assertEq(token.balanceOf(alice), 100 + fakeDisputeFee);
+
         // Successfully begin dispute
         vm.startPrank(paraOwner);
         gov.beginParachainDispute(
@@ -135,7 +141,7 @@ contract ParachainStakingTest is Test {
         );
         assertEq(_stakedBalance, 50);
         assertEq(token.balanceOf(address(staking)), 50);
-        assertEq(token.balanceOf(address(gov)), 50);
+        assertEq(token.balanceOf(address(gov)), fakeDisputeFee + fakeSlashAmount);
     }
 
     function testVote() public {
@@ -150,6 +156,11 @@ contract ParachainStakingTest is Test {
         token.approve(address(staking), 100);
         staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
         vm.stopPrank();
+
+        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
+        token.mint(fakeDisputeInitiator, fakeDisputeFee);
+        vm.prank(fakeDisputeInitiator);
+        token.approve(address(gov), fakeDisputeFee);
 
         // Create dispute
         vm.startPrank(paraOwner);
@@ -207,6 +218,11 @@ contract ParachainStakingTest is Test {
         staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
         vm.stopPrank();
 
+        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
+        token.mint(fakeDisputeInitiator, fakeDisputeFee);
+        vm.prank(fakeDisputeInitiator);
+        token.approve(address(gov), fakeDisputeFee);
+
         // Create dispute
         vm.startPrank(paraOwner);
         gov.beginParachainDispute(
@@ -259,6 +275,11 @@ contract ParachainStakingTest is Test {
         staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
         vm.stopPrank();
 
+        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
+        token.mint(fakeDisputeInitiator, fakeDisputeFee);
+        vm.prank(fakeDisputeInitiator);
+        token.approve(address(gov), fakeDisputeFee);
+
         // Create dispute
         vm.startPrank(paraOwner);
         gov.beginParachainDispute(
@@ -303,6 +324,11 @@ contract ParachainStakingTest is Test {
         staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
         vm.stopPrank();
 
+        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
+        token.mint(fakeDisputeInitiator, fakeDisputeFee);
+        vm.prank(fakeDisputeInitiator);
+        token.approve(address(gov), fakeDisputeFee);
+
         // Create dispute
         vm.startPrank(paraOwner);
         gov.beginParachainDispute(
@@ -315,12 +341,19 @@ contract ParachainStakingTest is Test {
             fakeSlashAmount
         );
         vm.stopPrank();
+        // Check gov contract balance
+        assertEq(token.balanceOf(address(gov)), fakeDisputeFee + fakeSlashAmount);
 
         // Vote successfully
-        token.mint(bob, 22);
-        vm.startPrank(bob);
+        token.mint(alice, 22);
+        vm.startPrank(alice);
         bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
         gov.vote(realDisputeId, true, true);
+        vm.stopPrank();
+
+        token.mint(bob, 33);
+        vm.startPrank(bob);
+        gov.vote(realDisputeId, false, true);
         vm.stopPrank();
 
         // Tally votes
@@ -338,6 +371,7 @@ contract ParachainStakingTest is Test {
         vm.stopPrank();
 
         // Ensure vote executed was emitted
+
 
         // Try to execute vote again
     }
