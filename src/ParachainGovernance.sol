@@ -205,6 +205,10 @@ contract ParachainGovernance is Parachain {
         }
         _thisVote.fee = _disputeFee;
         voteCount++;
+        require(
+            token.transferFrom(_disputeInitiator, address(this), _disputeFee),
+            "Fee must be paid"
+        ); // This is the dispute fee. Returned if dispute passes
 
         emit NewParachainDispute(
             parachain.id,
@@ -436,7 +440,7 @@ contract ParachainGovernance is Parachain {
                         _thisDispute.slashedAmount
                     );
                 }
-                // token.transfer(_thisVote.initiator, _thisVote.fee); // todo: fix
+                token.transfer(_thisVote.initiator, _thisVote.fee);
             }
         } else if (_thisVote.result == VoteResult.INVALID) {
             // If vote is in dispute and is invalid, iterate through each vote round and transfer the dispute fee to initiator
