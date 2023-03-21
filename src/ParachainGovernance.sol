@@ -104,21 +104,34 @@ contract ParachainGovernance is Parachain {
     /**
      * @dev Initializes contract parameters
      * @param _registry address of ParachainRegistry contract
-     * @param _parachainStaking address of ParachainStaking contract
      * @param _teamMultiSig address of tellor team multisig, one of four voting
      * stakeholder groups
      */
     constructor(
         address _registry,
-        address payable _parachainStaking,
         address _teamMultiSig
     )
     Parachain(_registry)
     {
+        teamMultisig = _teamMultiSig;
+        owner = msg.sender;
+    }
+
+    /**
+     * @dev Allows the owner to initialize the ParachainStaking and token interfaces
+     * @param _parachainStaking address of ParachainStaking contract
+     */
+    // todo: does it need to be "address payable"?
+    function init(address _parachainStaking) external onlyOwner {
+        require(address(parachainStaking) == address(0), "parachainStaking address already set");
+        require(
+            _parachainStaking != address(0),
+            "parachainStaking address can't be zero address"
+        );
         parachainStaking = IParachainStaking(_parachainStaking);
         token = IERC20(parachainStaking.getTokenAddress());
-        teamMultisig = _teamMultiSig;
     }
+
 
     /**
     * @dev Start dispute/vote for a specific parachain
@@ -192,6 +205,10 @@ contract ParachainGovernance is Parachain {
         }
         _thisVote.fee = _disputeFee;
         voteCount++;
+        require(
+            token.transferFrom(_disputeInitiator, address(this), _disputeFee),
+            "Fee must be paid"
+        ); // This is the dispute fee. Returned if dispute passes
 
         emit NewParachainDispute(
             parachain.id,
@@ -223,7 +240,7 @@ contract ParachainGovernance is Parachain {
         // Update voting status and increment total queries for support, invalid, or against based on vote
         _thisVote.voted[msg.sender] = true;
         uint256 _tokenBalance = token.balanceOf(msg.sender);
-        (, uint256 _stakedBalance, uint256 _lockedBalance, , , , , ) = parachainStaking.getParachainStakeInfo(
+        (, uint256 _stakedBalance, uint256 _lockedBalance, , , , , , ) = parachainStaking.getParachainStakerInfo(
             _thisDispute.paraId,
             msg.sender
         );
@@ -300,9 +317,9 @@ contract ParachainGovernance is Parachain {
     }
 
     /**
- * @dev Tallies the votes and begins the 1 day challenge period
+     * @dev Tallies the votes and begins the 1 day challenge period
      * @param _disputeId is the ID of the vote being tallied
-     */
+    */
     function tallyVotes(bytes32 _disputeId) external {
         Vote storage _thisVote = voteInfo[_disputeId];
 
@@ -438,7 +455,7 @@ contract ParachainGovernance is Parachain {
             }
             // Transfer slashed tokens back to disputed reporter
             token.transfer(
-                _thisDispute.disputedReporter,
+                _thisDispute.disputedReporter, // todo: should the tokens be transferred from the gov contract to the disputed reporter?
                 _thisDispute.slashedAmount
             );
         } else if (_thisVote.result == VoteResult.FAILED) {

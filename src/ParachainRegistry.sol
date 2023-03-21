@@ -29,7 +29,7 @@ interface IRegistry {
 contract ParachainRegistry is IRegistry {
     // todo: confirm optimisation for lookups based on parachain owner address over paraId
     mapping(address => Parachain) private registrations;
-    mapping(uint => address) private owners;
+    mapping(uint32 => address) private owners;
 
     XcmTransactorV2 private constant xcmTransactor  = XCM_TRANSACTOR_V2_CONTRACT;
     XcmUtils private constant xcmUtils  = XCM_UTILS_CONTRACT;

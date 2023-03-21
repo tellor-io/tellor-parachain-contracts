@@ -7,8 +7,6 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "solmate/tokens/ERC20.sol";
 
-// import "../lib/moonbeam/precompiles/ERC20.sol";
-
 import "../src/ParachainRegistry.sol";
 import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";

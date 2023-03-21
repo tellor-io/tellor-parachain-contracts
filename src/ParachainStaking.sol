@@ -13,7 +13,7 @@ interface IParachainStaking {
     function withdrawParachainStake(uint32 _paraId, address _staker, uint256 _amount) external;
     function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient) external returns (uint256);
     function getTokenAddress() external view returns (address);
-    function getParachainStakeInfo(uint32 _paraId, address _staker) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool);
+    function getParachainStakerInfo(uint32 _paraId, address _staker) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool);
     function getParachainStakerDetails(uint32 _paraId, address _staker) external view returns (bytes memory, uint256);
 }
 
@@ -99,8 +99,8 @@ contract ParachainStaking is Parachain {
     }
 
     /**
-     * @dev Allows the owner to initialize the governance (flex addy needed for governance deployment)
-     * @param _governanceAddress address of governance contract (github.com/tellor-io/governance)
+     * @dev Allows the owner to initialize the ParachainGovernance contract address
+     * @param _governanceAddress address of ParachainGovernance contract 
      */
     function init(address _governanceAddress) external {
         require(msg.sender == owner, "only owner can set governance address");
@@ -249,8 +249,26 @@ contract ParachainStaking is Parachain {
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][_reporter];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
-        if (_slashAmount > _staker.stakedBalance) {
-            _slashAmount = _staker.stakedBalance;
+        uint256 _stakedBalance = _staker.stakedBalance;
+        uint256 _lockedBalance = _staker.lockedBalance;
+        require(_stakedBalance + _lockedBalance > 0, "zero staker balance");
+        if (_lockedBalance >= _slashAmount) {
+            // if locked balance is at least _slashAmount, slash from locked balance
+            _staker.lockedBalance -= _slashAmount;
+            toWithdraw -= _slashAmount;
+        } else if (_lockedBalance + _stakedBalance >= _slashAmount) {
+            // if locked balance + staked balance is at least _slashAmount,
+            // reduce locked balance first, then the remainder from staked balance
+            _staker.stakedBalance = _stakedBalance - (_slashAmount - _lockedBalance);
+            toWithdraw -= _lockedBalance;
+            _staker.lockedBalance = 0;
+        } else {
+            // if sum(locked balance + staked balance) is less than _slashAmount,
+            // slash sum
+            _slashAmount = _stakedBalance + _lockedBalance;
+            toWithdraw -= _lockedBalance;
+            _staker.stakedBalance = 0;
+            _staker.lockedBalance = 0;
         }
         require(token.transfer(_recipient, _slashAmount), "transfer failed");
         emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
