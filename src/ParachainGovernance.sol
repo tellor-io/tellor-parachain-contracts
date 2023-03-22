@@ -109,8 +109,8 @@ contract ParachainGovernance is Parachain {
 
     /**
      * @dev Start dispute/vote for a specific parachain
-     * // Trusts that the corresponding value for the supplied query identifier and timestamp 
-     * // exists on the consumer parachain, that it has been removed during dispute initiation, 
+     * // Trusts that the corresponding value for the supplied query identifier and timestamp
+     * // exists on the consumer parachain, that it has been removed during dispute initiation,
      * // and that a dispute fee has been locked.
      * @param _queryId bytes32 Query ID of disputed value
      * @param _timestamp uint256 Timestamp of disputed value
