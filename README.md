@@ -22,12 +22,8 @@
 - see PolkaTellor checklist google sheet
 - 
 
-### from call w/ Frank
+### todo from Frank
 - make parachain contract extendable to include the ability to set fee amounts for xcm calls when each parachain registers
 - do benchmarking for xcm calls
-- ensure pallet implementation works well w/ contracts side (3/13)
-- 
-
-### qs for Nick/Brenda (3/10/23)
-- the structure is a bit different than the spec outlined in the grand proposal [here](https://github.com/tellor-io/Grants-Program/blob/master/applications/Tellor.md#project-details), since the oracle functionality is not included in the `ParachainStaking.sol` contract. is this ok?
+- ensure pallet implementation works well w/ contracts side
 - 

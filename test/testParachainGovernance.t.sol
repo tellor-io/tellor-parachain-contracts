@@ -22,7 +22,7 @@ contract TestToken is ERC20 {
     }
 }
 
-contract ParachainStakingTest is Test {
+contract ParachainGovernanceTest is Test {
     TestToken public token;
     ParachainRegistry public registry;
     ParachainStaking public staking;
@@ -135,7 +135,7 @@ contract ParachainStakingTest is Test {
         );
         vm.stopPrank();
         // Check reporter was slashed
-        (, uint256 _stakedBalance, uint256 _lockedBalance, , , , , , ) = staking.getParachainStakerInfo(
+        (, uint256 _stakedBalance, , , , , , , ) = staking.getParachainStakerInfo(
             fakeParaId,
             bob
         );
