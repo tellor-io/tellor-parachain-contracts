@@ -54,5 +54,17 @@ contract ParachainRegistryTest is Test {
         vm.etch(_address, deployed.code);
     }
 
-    function testConstructor() public {}
+    function testRegister() public {}
+
+    function testDeregister() public {}
+
+    function testGetById() public {}
+
+    function testGetByAddress() public {}
+
+    function testParachain() public {}
+
+    function testPallet() public {}
+
+    function testX2() public {}
 }

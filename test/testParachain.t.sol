@@ -55,4 +55,24 @@ contract ParachainTest is Test {
     }
 
     function testConstructor() public {}
+
+    function testReportStakeDeposited() public {}
+
+    function testReportStakeWithdrawRequested() public {}
+
+    function testReportSlash() public {}
+
+    function testReportStakeWithdrawn() public {}
+
+    function testTransactThroughSigned() public {}
+
+    function testParachain() public {}
+
+    function testPallet() public {}
+
+    function testX1() public {}
+
+    function testReverse() public {}
+
+    function testRegistryAddress() public {}
 }
