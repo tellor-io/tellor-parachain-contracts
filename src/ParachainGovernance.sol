@@ -370,22 +370,22 @@ contract ParachainGovernance is Parachain {
                 _thisVote = voteInfo[_voteID];
                 // If the first vote round, also make sure to transfer the reporter's slashed stake to the initiator
                 if (_i == 1) {
-                    token.transfer(_thisVote.initiator, _thisDispute.slashedAmount);
+                    token.transfer(_thisVote.initiator, _thisDispute.slashedAmount); // todo: should be wrapped in require statement?
                 }
-                token.transfer(_thisVote.initiator, _thisVote.fee);
+                token.transfer(_thisVote.initiator, _thisVote.fee); // todo: should be wrapped in require statement?
             }
         } else if (_thisVote.result == VoteResult.INVALID) {
             // If vote is in dispute and is invalid, iterate through each vote round and transfer the dispute fee to initiator
             for (_i = voteRounds[_thisVote.identifierHash].length; _i > 0; _i--) {
                 _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
                 _thisVote = voteInfo[_voteID];
-                token.transfer(_thisVote.initiator, _thisVote.fee);
+                token.transfer(_thisVote.initiator, _thisVote.fee); // todo: should be wrapped in require statement?
             }
             // Transfer slashed tokens back to disputed reporter
             token.transfer(
                 _thisDispute.disputedReporter, // todo: should the tokens be transferred from the gov contract to the disputed reporter?
                 _thisDispute.slashedAmount
-            );
+            ); // todo: should be wrapped in require statement?
         } else if (_thisVote.result == VoteResult.FAILED) {
             // If vote is in dispute and fails, iterate through each vote round and transfer the dispute fee to disputed reporter
             uint256 _reporterReward = 0;
@@ -395,7 +395,7 @@ contract ParachainGovernance is Parachain {
                 _reporterReward += _thisVote.fee;
             }
             _reporterReward += _thisDispute.slashedAmount;
-            token.transfer(_thisDispute.disputedReporter, _reporterReward);
+            token.transfer(_thisDispute.disputedReporter, _reporterReward); // todo: should be wrapped in require statement?
         }
         emit VoteExecuted(_disputeId, voteInfo[_disputeId].result);
     }
