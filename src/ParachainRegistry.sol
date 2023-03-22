@@ -64,10 +64,10 @@ contract ParachainRegistry is IRegistry {
     }
 
     /// @dev Deregister parachain.
-    function deregister() external {
+    function deregister() external view {
         // Ensure parachain is registered & sender is parachain owner
-        IRegistry.Parachain memory parachain = registrations[msg.sender];
-        require(parachain.owner == msg.sender && parachain.owner != address(0x0), "not owner");
+        IRegistry.Parachain memory _parachain = registrations[msg.sender];
+        require(_parachain.owner == msg.sender && _parachain.owner != address(0x0), "not owner");
 
         // todo: remove registrations after considering effects on existing stake/disputes etc.
     }
