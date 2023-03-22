@@ -83,12 +83,6 @@ contract ParachainGovernance is Parachain {
         uint32 _paraId, bytes32 _queryId, uint256 _timestamp, bool _supports, address _voter, bool _invalidQuery
     ); // Emitted when an individual staker or the multisig casts their vote
 
-    modifier onlyOwner() {
-        // if (msg.sender != owner) revert NotOwner();
-        require(msg.sender == owner, "not owner");
-        _;
-    }
-
     /**
      * @dev Initializes contract parameters
      * @param _registry address of ParachainRegistry contract
@@ -105,7 +99,8 @@ contract ParachainGovernance is Parachain {
      * @param _parachainStaking address of ParachainStaking contract
      */
     // todo: does it need to be "address payable"?
-    function init(address _parachainStaking) external onlyOwner {
+    function init(address _parachainStaking) external {
+        require(msg.sender == owner, "not owner");
         require(address(parachainStaking) == address(0), "parachainStaking address already set");
         require(_parachainStaking != address(0), "parachainStaking address can't be zero address");
         parachainStaking = IParachainStaking(_parachainStaking);

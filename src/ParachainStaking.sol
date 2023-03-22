@@ -344,12 +344,4 @@ contract ParachainStaking is Parachain {
     function getTotalStakers() external view returns (uint256) {
         return totalStakers;
     }
-
-    /**
-     * @dev Used during the upgrade process to verify valid Tellor contracts
-     * @return bool value used to verify valid Tellor contracts
-     */
-    function verify() external pure returns (uint256) {
-        return 9999;
-    }
 }
