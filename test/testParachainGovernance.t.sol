@@ -12,11 +12,11 @@ import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";
 import "../src/ParachainGovernance.sol";
 
-
 contract TestToken is ERC20 {
     constructor(uint256 initialSupply) ERC20("TestToken", "TT", 18) {
         // _mint(msg.sender, initialSupply);
     }
+
     function mint(address to, uint256 amount) external virtual {
         _mint(to, amount);
     }
@@ -76,7 +76,9 @@ contract ParachainGovernanceTest is Test {
         // Deploy supplied contract
         bytes memory bytecode = abi.encodePacked(vm.getCode(_contract));
         address deployed;
-        assembly { deployed := create(0, add(bytecode, 0x20), mload(bytecode)) }
+        assembly {
+            deployed := create(0, add(bytecode, 0x20), mload(bytecode))
+        }
         // Set the bytecode of supplied precompile address
         vm.etch(_address, deployed.code);
     }
@@ -110,10 +112,7 @@ contract ParachainGovernanceTest is Test {
         assertEq(token.balanceOf(address(staking)), 100);
         assertEq(token.balanceOf(address(gov)), 0);
         assertEq(token.balanceOf(bob), 0);
-        ( , uint256 stakedBalanceBefore, , , , , , , ) = staking.getParachainStakerInfo(
-            fakeParaId,
-            bob
-        );
+        (, uint256 stakedBalanceBefore,,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
         assertEq(stakedBalanceBefore, 100);
 
         // Fund dispute initiator w/ fee amount & approve dispute fee transfer
@@ -135,10 +134,7 @@ contract ParachainGovernanceTest is Test {
         );
         vm.stopPrank();
         // Check reporter was slashed
-        (, uint256 _stakedBalance, , , , , , , ) = staking.getParachainStakerInfo(
-            fakeParaId,
-            bob
-        );
+        (, uint256 _stakedBalance,,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
         assertEq(_stakedBalance, 50);
         assertEq(token.balanceOf(address(staking)), 50);
         assertEq(token.balanceOf(address(gov)), fakeDisputeFee + fakeSlashAmount);
@@ -191,7 +187,7 @@ contract ParachainGovernanceTest is Test {
         vm.stopPrank();
 
         // Check vote info
-        (, uint256[17] memory voteInfo, , , ) = gov.getVoteInfo(realDisputeId);
+        (, uint256[17] memory voteInfo,,,) = gov.getVoteInfo(realDisputeId);
         assertEq(voteInfo[0], 1); // voteRound
         assertEq(voteInfo[1], 1); // startDate
         assertEq(voteInfo[2], 1); // blockNumber
@@ -237,18 +233,10 @@ contract ParachainGovernanceTest is Test {
 
         // Vote successfully
         bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
-        gov.voteParachain(
-            realDisputeId,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6
-        );
+        gov.voteParachain(realDisputeId, 1, 2, 3, 4, 5, 6);
 
         // Check vote info
-        (, uint256[17] memory voteInfo, , , ) = gov.getVoteInfo(realDisputeId);
+        (, uint256[17] memory voteInfo,,,) = gov.getVoteInfo(realDisputeId);
         assertEq(voteInfo[0], 1); // voteRound
         assertEq(voteInfo[1], 1); // startDate
         assertEq(voteInfo[2], 1); // blockNumber
@@ -312,7 +300,7 @@ contract ParachainGovernanceTest is Test {
         vm.stopPrank();
 
         // Check vote info
-        (, uint256[17] memory voteInfo, , , ) = gov.getVoteInfo(realDisputeId);
+        (, uint256[17] memory voteInfo,,,) = gov.getVoteInfo(realDisputeId);
         assertEq(voteInfo[4], tallyDate); // tallyDate
         assertEq(voteInfo[5], 72); // tokenholders.doesSupport
     }
@@ -371,7 +359,6 @@ contract ParachainGovernanceTest is Test {
         vm.stopPrank();
 
         // Ensure vote executed was emitted
-
 
         // Try to execute vote again
     }

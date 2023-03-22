@@ -9,11 +9,11 @@ import "solmate/tokens/ERC20.sol";
 
 import "../src/ParachainRegistry.sol";
 
-
 contract TestToken is ERC20 {
     constructor(uint256 initialSupply) ERC20("TestToken", "TT", 18) {
         // _mint(msg.sender, initialSupply);
     }
+
     function mint(address to, uint256 amount) external virtual {
         _mint(to, amount);
     }
@@ -47,11 +47,12 @@ contract ParachainRegistryTest is Test {
         // Deploy supplied contract
         bytes memory bytecode = abi.encodePacked(vm.getCode(_contract));
         address deployed;
-        assembly { deployed := create(0, add(bytecode, 0x20), mload(bytecode)) }
+        assembly {
+            deployed := create(0, add(bytecode, 0x20), mload(bytecode))
+        }
         // Set the bytecode of supplied precompile address
         vm.etch(_address, deployed.code);
     }
 
-    function testConstructor() public {
-    }
+    function testConstructor() public {}
 }

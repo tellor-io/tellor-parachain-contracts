@@ -2,15 +2,15 @@ pragma solidity ^0.8.0;
 
 import "../lib/moonbeam/precompiles/XcmTransactorV2.sol"; // Various helper methods for interfacing with the Tellor pallet on another parachain via XCM
 // import { IRegistry, ParachainNotRegistered } from "./ParachainRegistry.sol";
-import { IRegistry } from "./ParachainRegistry.sol";
+import {IRegistry} from "./ParachainRegistry.sol";
 
 // Helper contract providing cross-chain messaging functionality
 abstract contract Parachain {
     IRegistry internal registry; // registry as separate contract to share state between staking and governance contracts
 
-    XcmTransactorV2 private constant xcmTransactor  = XCM_TRANSACTOR_V2_CONTRACT;
+    XcmTransactorV2 private constant xcmTransactor = XCM_TRANSACTOR_V2_CONTRACT;
 
-    constructor (address _registry) {
+    constructor(address _registry) {
         registry = IRegistry(_registry);
     }
 
@@ -19,7 +19,12 @@ abstract contract Parachain {
     /// @param _staker address The address of the staker.
     /// @param _reporter bytes The corresponding address of the reporter on the parachain.
     /// @param _amount uint256 The staked amount for the parachain.
-    function reportStakeDeposited(IRegistry.Parachain memory _parachain, address _staker, bytes calldata _reporter, uint256 _amount) internal {
+    function reportStakeDeposited(
+        IRegistry.Parachain memory _parachain,
+        address _staker,
+        bytes calldata _reporter,
+        uint256 _amount
+    ) internal {
         require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
 
         // Prepare remote call and send
@@ -41,7 +46,12 @@ abstract contract Parachain {
     /// @param _account bytes The account identifier on the parachain.
     /// @param _amount uint256 The staked amount for the parachain.
     /// @param _staker address The address of the staker.
-    function reportStakeWithdrawRequested(IRegistry.Parachain memory _parachain, bytes memory _account, uint256 _amount, address _staker) internal {
+    function reportStakeWithdrawRequested(
+        IRegistry.Parachain memory _parachain,
+        bytes memory _account,
+        uint256 _amount,
+        address _staker
+    ) internal {
         require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
 
         uint64 transactRequiredWeightAtMost = 5000000000;
@@ -62,7 +72,9 @@ abstract contract Parachain {
     /// @param _reporter address The corresponding address of the reporter on the parachain.
     /// @param _recipient address The address of the recipient of the slashed stake.
     /// @param _amount uint256 Amount slashed.
-    function reportSlash(IRegistry.Parachain memory _parachain, address _reporter, address _recipient, uint256 _amount) internal {
+    function reportSlash(IRegistry.Parachain memory _parachain, address _reporter, address _recipient, uint256 _amount)
+        internal
+    {
         require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
 
         uint64 transactRequiredWeightAtMost = 5000000000;
@@ -83,7 +95,12 @@ abstract contract Parachain {
     /// @param _reporter address Address of staker on EVM compatible chain w/ Tellor controller contracts.
     /// @param _account bytes The account identifier on the parachain.
     /// @param _amount uint256 Amount withdrawn.
-    function reportStakeWithdrawn(IRegistry.Parachain memory _parachain, address _reporter, bytes memory _account, uint256 _amount) internal {
+    function reportStakeWithdrawn(
+        IRegistry.Parachain memory _parachain,
+        address _reporter,
+        bytes memory _account,
+        uint256 _amount
+    ) internal {
         require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
 
         uint64 transactRequiredWeightAtMost = 5000000000;
@@ -99,12 +116,19 @@ abstract contract Parachain {
         transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
     }
 
-
-    function transactThroughSigned(uint32 _paraId, uint64 _transactRequiredWeightAtMost, bytes memory _call, uint256 _feeAmount, uint64 _overallWeight) private {
+    function transactThroughSigned(
+        uint32 _paraId,
+        uint64 _transactRequiredWeightAtMost,
+        bytes memory _call,
+        uint256 _feeAmount,
+        uint64 _overallWeight
+    ) private {
         // Create multi-location based on supplied paraId
         XcmTransactorV2.Multilocation memory location = XcmTransactorV2.Multilocation(1, x1(_paraId));
         // Send remote transact
-        xcmTransactor.transactThroughSignedMultilocation(location, location, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight);
+        xcmTransactor.transactThroughSignedMultilocation(
+            location, location, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight
+        );
     }
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
@@ -128,20 +152,20 @@ abstract contract Parachain {
         v = input;
 
         // swap bytes
-        v = ((v & 0xFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00) >> 8) |
-        ((v & 0x00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF) << 8);
+        v = ((v & 0xFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00) >> 8)
+            | ((v & 0x00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF) << 8);
 
         // swap 2-byte long pairs
-        v = ((v & 0xFFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000) >> 16) |
-        ((v & 0x0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF) << 16);
+        v = ((v & 0xFFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000) >> 16)
+            | ((v & 0x0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF) << 16);
 
         // swap 4-byte long pairs
-        v = ((v & 0xFFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000) >> 32) |
-        ((v & 0x00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF) << 32);
+        v = ((v & 0xFFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000) >> 32)
+            | ((v & 0x00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF) << 32);
 
         // swap 8-byte long pairs
-        v = ((v & 0xFFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF0000000000000000) >> 64) |
-        ((v & 0x0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF) << 64);
+        v = ((v & 0xFFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF0000000000000000) >> 64)
+            | ((v & 0x0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF) << 64);
 
         // swap 16-byte long pairs
         v = (v >> 128) | (v << 128);

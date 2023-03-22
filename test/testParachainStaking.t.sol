@@ -11,11 +11,11 @@ import "../src/ParachainRegistry.sol";
 import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";
 
-
 contract TestToken is ERC20 {
     constructor(uint256 initialSupply) ERC20("TestToken", "TT", 18) {
         // _mint(msg.sender, initialSupply);
     }
+
     function mint(address to, uint256 amount) external virtual {
         _mint(to, amount);
     }
@@ -54,7 +54,9 @@ contract ParachainStakingTest is Test {
         // Deploy supplied contract
         bytes memory bytecode = abi.encodePacked(vm.getCode(_contract));
         address deployed;
-        assembly { deployed := create(0, add(bytecode, 0x20), mload(bytecode)) }
+        assembly {
+            deployed := create(0, add(bytecode, 0x20), mload(bytecode))
+        }
         // Set the bytecode of supplied precompile address
         vm.etch(_address, deployed.code);
     }
@@ -70,9 +72,9 @@ contract ParachainStakingTest is Test {
         vm.startPrank(paraOwner);
         vm.expectRevert("parachain not registered");
         staking.depositParachainStake(
-            uint32(1234),               // _paraId
+            uint32(1234), // _paraId
             bytes("consumerChainAcct"), // _account
-            100                         // _amount
+            100 // _amount
         );
 
         // Successfully deposit stake
@@ -81,9 +83,9 @@ contract ParachainStakingTest is Test {
         token.approve(address(staking), 100);
         assertEq(token.balanceOf(address(paraOwner)), 100);
         staking.depositParachainStake(
-            fakeParaId,                 // _paraId
+            fakeParaId, // _paraId
             bytes("consumerChainAcct"), // _account
-            20                          // _amount
+            20 // _amount
         );
         assertEq(token.balanceOf(address(paraOwner)), 80);
         assertEq(token.balanceOf(address(staking)), 20);
@@ -96,34 +98,31 @@ contract ParachainStakingTest is Test {
         vm.startPrank(paraOwner);
         vm.expectRevert("parachain not registered");
         staking.requestParachainStakeWithdraw(
-            uint32(1234),               // _paraId
-            100                         // _amount
+            uint32(1234), // _paraId
+            100 // _amount
         );
 
         // Try to request stake that's not deposited
         vm.expectRevert("insufficient staked balance");
         staking.requestParachainStakeWithdraw(
-            fakeParaId,                 // _paraId
-            100                         // _amount
+            fakeParaId, // _paraId
+            100 // _amount
         );
 
         // Successfully request stake withdrawal
         token.mint(address(paraOwner), 100);
         token.approve(address(staking), 100);
         staking.depositParachainStake(
-            fakeParaId,                 // _paraId
+            fakeParaId, // _paraId
             bytes("consumerChainAcct"), // _account
-            20                          // _amount
+            20 // _amount
         );
         assertEq(token.balanceOf(address(staking)), 20);
         staking.requestParachainStakeWithdraw(
-            fakeParaId,                 // _paraId
-            20                          // _amount
+            fakeParaId, // _paraId
+            20 // _amount
         );
-        (, , uint256 lockedBalance, , , , , ,) = staking.getParachainStakerInfo(
-            fakeParaId,
-            paraOwner
-        );
+        (,, uint256 lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId, paraOwner);
         assertEq(lockedBalance, 20);
 
         vm.stopPrank();
@@ -139,33 +138,27 @@ contract ParachainStakingTest is Test {
         token.mint(address(paraOwner), 100);
         token.approve(address(staking), 100);
         staking.depositParachainStake(
-            fakeParaId,                 // _paraId
+            fakeParaId, // _paraId
             bytes("consumerChainAcct"), // _account
-            20                          // _amount
+            20 // _amount
         );
 
         // Request stake withdrawal
         staking.requestParachainStakeWithdraw(
-            fakeParaId,                 // _paraId
-            20                          // _amount
+            fakeParaId, // _paraId
+            20 // _amount
         );
         // Check confirmed locked balance
-        (, uint256 lockedBalanceConfirmed) = staking.getParachainStakerDetails(
-            fakeParaId,
-            paraOwner
-        );
+        (, uint256 lockedBalanceConfirmed) = staking.getParachainStakerDetails(fakeParaId, paraOwner);
         assertEq(lockedBalanceConfirmed, 0);
 
         // Confirm stake withdrawal request
         staking.confirmParachainStakeWithdrawRequest(
-            paraOwner,                   // _staker
-            20                          // _amount
+            paraOwner, // _staker
+            20 // _amount
         );
         // Check confirmed locked balance
-        (, lockedBalanceConfirmed) = staking.getParachainStakerDetails(
-            fakeParaId,
-            paraOwner
-        );
+        (, lockedBalanceConfirmed) = staking.getParachainStakerDetails(fakeParaId, paraOwner);
         assertEq(lockedBalanceConfirmed, 20);
 
         vm.stopPrank();
@@ -177,21 +170,21 @@ contract ParachainStakingTest is Test {
         token.mint(address(paraOwner), 100);
         token.approve(address(staking), 100);
         staking.depositParachainStake(
-            fakeParaId,                 // _paraId
+            fakeParaId, // _paraId
             bytes("consumerChainAcct"), // _account
-            20                          // _amount
+            20 // _amount
         );
 
         // Request stake withdrawal
         staking.requestParachainStakeWithdraw(
-            fakeParaId,                 // _paraId
-            20                          // _amount
+            fakeParaId, // _paraId
+            20 // _amount
         );
 
         // Confirm stake withdrawal request
         staking.confirmParachainStakeWithdrawRequest(
-            paraOwner,                   // _staker
-            20                          // _amount
+            paraOwner, // _staker
+            20 // _amount
         );
         assertEq(token.balanceOf(address(staking)), 20);
         assertEq(token.balanceOf(address(paraOwner)), 80);
@@ -216,9 +209,9 @@ contract ParachainStakingTest is Test {
         token.mint(address(paraOwner), 100);
         token.approve(address(staking), 100);
         staking.depositParachainStake(
-            fakeParaId,                 // _paraId
+            fakeParaId, // _paraId
             bytes("consumerChainAcct"), // _account
-            20                          // _amount
+            20 // _amount
         );
         assertEq(token.balanceOf(address(staking)), 20);
         vm.stopPrank();
@@ -226,10 +219,10 @@ contract ParachainStakingTest is Test {
         // Slash stake
         vm.startPrank(staking.governance());
         staking.slashParachainReporter(
-            10,                        // _slashAmount
-            fakeParaId,                // _paraId
-            paraOwner,                 // _reporter
-            paraDisputer               // _recipient
+            10, // _slashAmount
+            fakeParaId, // _paraId
+            paraOwner, // _reporter
+            paraDisputer // _recipient
         );
         // Check balances
         assertEq(token.balanceOf(address(staking)), 10);
