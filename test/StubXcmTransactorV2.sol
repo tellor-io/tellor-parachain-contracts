@@ -73,8 +73,6 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
             );
     }
 
-
     // add this to be excluded from coverage report
     function test() public {}
-
 }
