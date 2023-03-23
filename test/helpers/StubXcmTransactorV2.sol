@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.3;
 
-import "../lib/moonbeam/precompiles/XcmTransactorV2.sol";
+import "../../lib/moonbeam/precompiles/XcmTransactorV2.sol";
 
 contract StubXcmTransactorV2 is XcmTransactorV2 {
     event TransactThroughSigned(

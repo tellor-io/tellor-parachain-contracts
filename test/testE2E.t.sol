@@ -5,19 +5,13 @@ pragma solidity ^0.8.3;
 import "forge-std/Test.sol";
 import "forge-std/Vm.sol";
 import "forge-std/console.sol";
-import "solmate/tokens/ERC20.sol";
+import "./helpers/TestToken.sol";
 
 import "../src/ParachainRegistry.sol";
+import "../src/Parachain.sol";
+import "../src/ParachainStaking.sol";
+import "../src/ParachainGovernance.sol";
 
-contract TestToken is ERC20 {
-    constructor(uint256 initialSupply) ERC20("TestToken", "TT", 18) {
-        // _mint(msg.sender, initialSupply);
-    }
-
-    function mint(address to, uint256 amount) external virtual {
-        _mint(to, amount);
-    }
-}
 
 contract E2ETests is Test {
     TestToken public token;

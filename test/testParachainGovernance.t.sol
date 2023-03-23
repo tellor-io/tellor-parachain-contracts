@@ -7,20 +7,13 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "solmate/tokens/ERC20.sol";
 
+import "./helpers/TestToken.sol";
+
 import "../src/ParachainRegistry.sol";
 import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";
 import "../src/ParachainGovernance.sol";
 
-contract TestToken is ERC20 {
-    constructor(uint256 initialSupply) ERC20("TestToken", "TT", 18) {
-        // _mint(msg.sender, initialSupply);
-    }
-
-    function mint(address to, uint256 amount) external virtual {
-        _mint(to, amount);
-    }
-}
 
 contract ParachainGovernanceTest is Test {
     TestToken public token;
