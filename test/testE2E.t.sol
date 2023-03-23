@@ -5,6 +5,7 @@ pragma solidity ^0.8.3;
 import "forge-std/Test.sol";
 import "forge-std/Vm.sol";
 import "forge-std/console.sol";
+
 import "./helpers/TestToken.sol";
 
 import "../src/ParachainRegistry.sol";
@@ -46,22 +47,6 @@ contract E2ETests is Test {
         }
         // Set the bytecode of supplied precompile address
         vm.etch(_address, deployed.code);
-    }
-
-    function test1() public {
-        // user withdraws stake from evm parachain, revoking reporting privilege
-    }
-
-    function test2() public {
-        // user opens dispute on oracle consumer parachain, slashing reporter
-    }
-
-    function test3() public {
-        // vote is executed for open dispute, tokens transferred to correct parties
-    }
-
-    function test4() public {
-        // register oracle consumer parachain
     }
 
     function test5() public {
