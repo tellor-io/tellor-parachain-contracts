@@ -11,7 +11,6 @@ import "./helpers/TestToken.sol";
 
 import "../src/ParachainRegistry.sol";
 
-
 contract ParachainRegistryTest is Test {
     TestToken public token;
     ParachainRegistry public registry;

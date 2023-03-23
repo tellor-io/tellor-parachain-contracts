@@ -13,7 +13,6 @@ import "../src/ParachainRegistry.sol";
 import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";
 
-
 contract ParachainStakingTest is Test {
     TestToken public token;
     ParachainRegistry public registry;
