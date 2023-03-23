@@ -5,27 +5,30 @@ import "../lib/moonbeam/precompiles/ERC20.sol";
 import {Parachain} from "./Parachain.sol";
 import {IRegistry} from "./ParachainRegistry.sol";
 
-
 interface IParachainStaking {
     function depositParachainStake(uint32 _paraId, bytes calldata _account, uint256 _amount) external;
     function requestParachainStakeWithdrawal(uint32 _paraId, uint256 _amount) external;
     function confirmParachainStakeWidthrawRequest(uint32 _paraId, address _staker, uint256 _amount) external;
     function withdrawParachainStake(uint32 _paraId, address _staker, uint256 _amount) external;
-    function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient) external returns (uint256);
+    function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient)
+        external
+        returns (uint256);
     function getTokenAddress() external view returns (address);
-    function getParachainStakerInfo(uint32 _paraId, address _staker) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool);
+    function getParachainStakerInfo(uint32 _paraId, address _staker)
+        external
+        view
+        returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool);
     function getParachainStakerDetails(uint32 _paraId, address _staker) external view returns (bytes memory, uint256);
 }
 
-
 /**
- @author Tellor Inc.
- @title ParachainStaking
- @dev This contract handles staking and slashing of stakers who enable reporting
+ * @author Tellor Inc.
+ *  @title ParachainStaking
+ *  @dev This contract handles staking and slashing of stakers who enable reporting
  * linked accounts on oracle consumer parachains. This contract is controlled
  * by a single address known as 'governance', which could be an externally owned
  * account or a contract, allowing for a flexible, modular design.
-*/
+ */
 contract ParachainStaking is Parachain {
     // Storage
     IERC20 public token; // token used for staking and rewards
@@ -69,11 +72,7 @@ contract ParachainStaking is Parachain {
 
     // Events
     event NewStaker(address indexed _staker, uint256 indexed _amount);
-    event ReporterSlashed(
-        address indexed _reporter,
-        address _recipient,
-        uint256 _slashAmount
-    );
+    event ReporterSlashed(address indexed _reporter, address _recipient, uint256 _slashAmount);
     event StakeWithdrawn(address _staker);
     event StakeWithdrawRequested(address _staker, uint256 _amount);
     event NewParachainStaker(uint32 _paraId, address _staker, bytes _account, uint256 _amount);
@@ -88,10 +87,7 @@ contract ParachainStaking is Parachain {
      * @param _registry address of Parachain Registry contract
      * @param _token address of token used for staking and rewards
      */
-    constructor(
-        address _registry,
-        address _token
-    ) Parachain(_registry) {
+    constructor(address _registry, address _token) Parachain(_registry) {
         require(_token != address(0), "must set token address");
 
         token = IERC20(_token);
@@ -100,15 +96,12 @@ contract ParachainStaking is Parachain {
 
     /**
      * @dev Allows the owner to initialize the ParachainGovernance contract address
-     * @param _governanceAddress address of ParachainGovernance contract 
+     * @param _governanceAddress address of ParachainGovernance contract
      */
     function init(address _governanceAddress) external {
         require(msg.sender == owner, "only owner can set governance address");
         require(governance == address(0), "governance address already set");
-        require(
-            _governanceAddress != address(0),
-            "governance address can't be zero address"
-        );
+        require(_governanceAddress != address(0), "governance address can't be zero address");
         governance = _governanceAddress;
     }
 
@@ -140,12 +133,7 @@ contract ParachainStaking is Parachain {
                 // otherwise, stake the whole locked balance and transfer the
                 // remaining amount from the staker's address
                 require(
-                    token.transferFrom(
-                        msg.sender,
-                        address(this),
-                        _amount - _lockedBalance
-                    ),
-                    "transfer case 1 failed"
+                    token.transferFrom(msg.sender, address(this), _amount - _lockedBalance), "transfer case 1 failed"
                 );
                 toWithdraw -= _staker.lockedBalance;
                 _staker.lockedBalance = 0;
@@ -174,10 +162,7 @@ contract ParachainStaking is Parachain {
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
         // todo: check stake info exists
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
-        require(
-            _staker.stakedBalance >= _amount,
-            "insufficient staked balance"
-        );
+        require(_staker.stakedBalance >= _amount, "insufficient staked balance");
         // _staker.startDate = block.timestamp; // todo: need this?
         _staker.lockedBalance += _amount;
         toWithdraw += _amount;
@@ -210,17 +195,10 @@ contract ParachainStaking is Parachain {
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
+        require(block.timestamp - _staker.startDate >= 7 days, "lock period not expired");
+        require(_staker.lockedBalance > 0, "no locked balance to withdraw");
         require(
-            block.timestamp - _staker.startDate >= 7 days,
-            "lock period not expired"
-        );
-        require(
-            _staker.lockedBalance > 0,
-            "no locked balance to withdraw"
-        );
-        require(
-            _staker.lockedBalance == _parachainStakeInfo._lockedBalanceConfirmed,
-            "withdraw stake request not confirmed"
+            _staker.lockedBalance == _parachainStakeInfo._lockedBalanceConfirmed, "withdraw stake request not confirmed"
         );
         uint256 _amount = _staker.lockedBalance;
         require(token.transfer(msg.sender, _amount), "withdraw stake token transfer failed");
@@ -242,7 +220,10 @@ contract ParachainStaking is Parachain {
      * @param _recipient is the address receiving the reporter's stake
      * @return _slashAmount uint256 amount of token slashed and sent to recipient address
      */
-    function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient) external returns (uint256) {
+    function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient)
+        external
+        returns (uint256)
+    {
         require(msg.sender == governance, "only governance can slash reporter");
         IRegistry.Parachain memory parachain = registry.getById(_paraId);
         require(parachain.owner != address(0x0), "parachain not registered");
@@ -298,47 +279,38 @@ contract ParachainStaking is Parachain {
      * @return bool whether staker is counted in totalStakers
      */
     function getParachainStakerInfo(uint32 _paraId, address _stakerAddress)
-    external
-    view
-    returns (
-        uint256,
-        uint256,
-        uint256,
-        uint256,
-        uint256,
-        uint256,
-        uint256,
-        uint256,
-        bool
-    )
+        external
+        view
+        returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool)
     {
         StakeInfo storage _staker = parachainStakerDetails[_paraId][_stakerAddress]._stakeInfo;
         return (
-        _staker.startDate,
-        _staker.stakedBalance,
-        _staker.lockedBalance,
-        _staker.rewardDebt,
-        _staker.reporterLastTimestamp,
-        _staker.reportsSubmitted,
-        _staker.startVoteCount,
-        _staker.startVoteTally,
-        _staker.staked
+            _staker.startDate,
+            _staker.stakedBalance,
+            _staker.lockedBalance,
+            _staker.rewardDebt,
+            _staker.reporterLastTimestamp,
+            _staker.reportsSubmitted,
+            _staker.startVoteCount,
+            _staker.startVoteTally,
+            _staker.staked
         );
     }
 
     /**
-    * @dev Returns info relevant to parachain staking
-    * @param _paraId is the parachain ID of the oracle consumer parachain
-    * @param _stakerAddress address of staker inquiring about
-    * @return bytes account on consumer parachain enabled to report by staker
-    * @return uint256 amount of locked token confirmed by consumer parachain
+     * @dev Returns info relevant to parachain staking
+     * @param _paraId is the parachain ID of the oracle consumer parachain
+     * @param _stakerAddress address of staker inquiring about
+     * @return bytes account on consumer parachain enabled to report by staker
+     * @return uint256 amount of locked token confirmed by consumer parachain
      */
-    function getParachainStakerDetails(uint32 _paraId, address _stakerAddress) external view returns (bytes memory, uint256) {
+    function getParachainStakerDetails(uint32 _paraId, address _stakerAddress)
+        external
+        view
+        returns (bytes memory, uint256)
+    {
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][_stakerAddress];
-        return (
-        _parachainStakeInfo._account,
-        _parachainStakeInfo._lockedBalanceConfirmed
-        );
+        return (_parachainStakeInfo._account, _parachainStakeInfo._lockedBalanceConfirmed);
     }
 
     /**
@@ -372,13 +344,4 @@ contract ParachainStaking is Parachain {
     function getTotalStakers() external view returns (uint256) {
         return totalStakers;
     }
-
-    /**
-     * @dev Used during the upgrade process to verify valid Tellor contracts
-     * @return bool value used to verify valid Tellor contracts
-     */
-    function verify() external pure returns (uint256) {
-        return 9999;
-    }
-
 }

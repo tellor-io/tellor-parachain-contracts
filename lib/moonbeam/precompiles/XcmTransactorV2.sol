@@ -46,12 +46,12 @@ interface XcmTransactorV2 {
     /// Get fee per second charged in its reserve chain for an asset
     /// @custom:selector 906c9990
     /// @param multilocation The asset location for which we want to know the fee per second value
-    /// @return feePerSecond The fee per second that the reserve chain charges for this asset
+    /// @return _feePerSecond The fee per second that the reserve chain charges for this asset
     ///
     function feePerSecond(Multilocation memory multilocation)
         external
         view
-        returns (uint256 feePerSecond);
+        returns (uint256 _feePerSecond);
 
     /// Transact through XCM using fee based on its multilocation
     /// @custom:selector fe430475
