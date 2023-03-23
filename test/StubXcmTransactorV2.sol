@@ -72,4 +72,9 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
             dest, feeLocationAddress, transactRequiredWeightAtMost, call, feeAmount, overallWeight
             );
     }
+
+
+    // add this to be excluded from coverage report
+    function test() public {}
+
 }
