@@ -2,12 +2,21 @@
 pragma solidity >=0.8.3;
 
 import "../../lib/moonbeam/precompiles/XcmUtils.sol";
+import "forge-std/console.sol";
 
 contract StubXcmUtils {
     // A multilocation is defined by its number of parents and the encoded junctions (interior)
     struct Multilocation {
         uint8 parents;
         bytes[] interior;
+    }
+
+    mapping(bytes32 => address) public fakeMultilocationToAddressMapping;
+    
+    function fakeSetOwnerMultilocationAddress(uint32 paraId, uint8 palletInstance, address owner) public {
+        Multilocation memory multilocation = Multilocation(1, x2(paraId, palletInstance));
+        bytes32 hash = keccak256(abi.encode(multilocation));
+        fakeMultilocationToAddressMapping[hash] = owner;
     }
 
     /// Get retrieve the account associated to a given MultiLocation
@@ -19,7 +28,9 @@ contract StubXcmUtils {
         view
         returns (address account) 
     {
-        return address(0);
+        bytes32 hash = keccak256(abi.encode(multilocation));
+        account = fakeMultilocationToAddressMapping[hash];
+        console.log("multilocationToAddress: %s", account);
     }
 
     /// Get the weight that a message will consume in our chain
@@ -59,5 +70,25 @@ contract StubXcmUtils {
     /// @param message The versioned message to be sent scale-encoded
     function xcmSend(Multilocation memory dest, bytes memory message) external {
         revert("StubXcmUtils: xcmSend not implemented");
+    }
+
+    function parachain(uint32 _paraId) private pure returns (bytes memory) {
+        // 0x00 denotes Parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
+        // return bytes.concat(hex"00", bytes4(_paraId));
+        // TypeError: Member "concat" not found or not visible after argument-dependent lookup in type(bytes storage pointer)
+        return abi.encodePacked(hex"00", abi.encodePacked(_paraId));
+    }
+
+    function pallet(uint8 _palletInstance) private pure returns (bytes memory) {
+        // 0x04 denotes PalletInstance: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
+        // return bytes.concat(hex"04", bytes1(_palletInstance));
+        return abi.encodePacked(hex"04", abi.encodePacked(_palletInstance));
+    }
+
+    function x2(uint32 _paraId, uint8 _palletInstance) public pure returns (bytes[] memory) {
+        bytes[] memory interior = new bytes[](2);
+        interior[0] = parachain(_paraId);
+        interior[1] = pallet(_palletInstance);
+        return interior;
     }
 }

@@ -10,6 +10,7 @@ import "solmate/tokens/ERC20.sol";
 import "./helpers/TestToken.sol";
 
 import "../src/ParachainRegistry.sol";
+import { StubXcmUtils } from "./helpers/StubXcmUtils.sol";
 
 contract ParachainRegistryTest is Test {
     TestToken public token;
@@ -23,6 +24,9 @@ contract ParachainRegistryTest is Test {
     uint8 public fakePalletInstance = 8;
     uint256 public fakeStakeAmount = 20;
 
+    XcmTransactorV2 private constant xcmTransactor = XCM_TRANSACTOR_V2_CONTRACT;
+    StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
+
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
@@ -32,6 +36,7 @@ contract ParachainRegistryTest is Test {
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
+        deployPrecompile("StubXcmUtils.sol", XCM_UTILS_ADDRESS);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples
@@ -46,7 +51,16 @@ contract ParachainRegistryTest is Test {
         vm.etch(_address, deployed.code);
     }
 
-    function testRegister() public {}
+    function testRegister() public {
+        uint32 _paraId = 13;
+        uint8 _palletInstance = 9;
+        uint256 _stakeAmount = 50;
+        xcmUtils.fakeSetOwnerMultilocationAddress(_paraId, _palletInstance, paraOwner);
+        vm.prank(paraOwner);
+        registry.register(_paraId, _palletInstance, _stakeAmount);
+
+
+    }
 
     function testDeregister() public {}
 
