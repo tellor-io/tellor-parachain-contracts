@@ -52,14 +52,36 @@ contract ParachainRegistryTest is Test {
     }
 
     function testRegister() public {
-        uint32 _paraId = 13;
-        uint8 _palletInstance = 9;
-        uint256 _stakeAmount = 50;
-        xcmUtils.fakeSetOwnerMultilocationAddress(_paraId, _palletInstance, paraOwner);
-        vm.prank(paraOwner);
-        registry.register(_paraId, _palletInstance, _stakeAmount);
+        // setup
+        uint32 fakeParaId2 = 13;
+        uint8 fakePalletInstance2 = 9;
+        uint256 fakeStakeAmount2 = 50;
+        address paraOwner2 = address(0x3333);
+        address nonParaOwner = address(0x4444);
+        xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId2, fakePalletInstance2, paraOwner2);
+        
+        // test non owner trying to register
+        vm.prank(nonParaOwner);
+        vm.expectRevert("Not owner");
+        registry.register(fakeParaId2, fakePalletInstance2, fakeStakeAmount2);
 
+        // successful register
+        vm.prank(paraOwner2);
+        registry.register(fakeParaId2, fakePalletInstance2, fakeStakeAmount2);
 
+        // check storage
+        ParachainRegistry.Parachain memory parachain = registry.getByAddress(paraOwner2);
+        assertEq(parachain.id, fakeParaId2);
+        assertEq(parachain.owner, paraOwner2);
+        assertEq(parachain.palletInstance, abi.encodePacked(fakePalletInstance2));
+        assertEq(parachain.stakeAmount, fakeStakeAmount2);
+
+        // indirectly check that paraOwner was saved to 'owners' mapping
+        parachain = registry.getById(fakeParaId2);
+        assertEq(parachain.id, fakeParaId2);
+        assertEq(parachain.owner, paraOwner2);
+        assertEq(parachain.palletInstance, abi.encodePacked(fakePalletInstance2));
+        assertEq(parachain.stakeAmount, fakeStakeAmount2);
     }
 
     function testDeregister() public {}
