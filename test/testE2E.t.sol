@@ -158,7 +158,10 @@ contract E2ETests is Test {
 
     function test10() public {
         // simulate bad values places on multiple consumer parachains, stake withdraws requested across each consumer parachain, disputes started across each parachain
-        console.log("Starting test10");
+        console.log("---------------------------------- START TEST ----------------------------------");
+        console.log(
+            "simulate bad values places on multiple consumer parachains, stake withdraws requested across each consumer parachain, disputes started across each parachain"
+        );
 
         // Register other parachains
         vm.prank(paraOwner2);
@@ -173,7 +176,7 @@ contract E2ETests is Test {
         console.log("Gov contract starting balance: ", balanceGovContract);
         console.log("Slash amount for each parachain: ", fakeSlashAmount);
         console.log("Dispute fee for each parachain: ", fakeDisputeFee);
-        console.log("\n\n");
+        console.log("\n");
 
         // Fund staker
         token.mint(bob, fakeStakeAmount2 + fakeStakeAmount3);
@@ -239,7 +242,7 @@ contract E2ETests is Test {
         console.log("Gov contract balance after dispute for 1st parachain: ", balanceGovContract);
         assertEq(balanceStakingContract, 50);
         assertEq(balanceGovContract, fakeDisputeFee + fakeSlashAmount);
-        console.log("\n\n");
+        console.log("\n");
 
         // FOR 2ND PARACHAIN
         console.log("PARACHAIN #2");
@@ -301,7 +304,7 @@ contract E2ETests is Test {
         console.log("Gov contract balance after dispute for 2nd parachain: ", balanceGovContract);
         assertEq(balanceStakingContract, 50); // todo: check if this is correct
         assertEq(balanceGovContract, (fakeDisputeFee + fakeSlashAmount) * 2);
-        console.log("\n\n");
+        console.log("\n");
 
         // FOR 3RD PARACHAIN
         console.log("PARACHAIN #3");
@@ -362,11 +365,74 @@ contract E2ETests is Test {
         console.log("Gov contract balance after dispute for 3rd parachain: ", balanceGovContract);
         assertEq(token.balanceOf(address(staking)), 25);
         assertEq(token.balanceOf(address(gov)), (fakeDisputeFee + fakeSlashAmount) * 3);
+
+        console.log("---------------------------------- END TEST ----------------------------------");
+        console.log("\n");
     }
 
-    // function test11() public {
-    //     // multiple disputes
-    // }
+    function test11() public {
+        // multiple disputes for single parachain
+        console.log("---------------------------------- START TEST ----------------------------------");
+        console.log("multiple disputes for single parachain");
+
+        // Two accounts stake a lot each
+        token.mint(address(bob), 1000);
+        token.mint(address(alice), 1000);
+        vm.startPrank(bob);
+        token.approve(address(staking), 1000);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            1000 // _amount
+        );
+        vm.stopPrank();
+        vm.startPrank(alice);
+        token.approve(address(staking), 1000);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            1000 // _amount
+        );
+        vm.stopPrank();
+
+        // Multiple disputes are started against each of those reporters on the same parachain
+        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
+        token.mint(address(bob), fakeDisputeFee * 4);
+        vm.prank(bob);
+        token.approve(address(gov), fakeDisputeFee * 4);
+        token.mint(address(alice), fakeDisputeFee * 4);
+        vm.prank(alice);
+        token.approve(address(gov), fakeDisputeFee * 4);
+        // Open disputes
+        vm.startPrank(paraOwner);
+        for (uint256 i = 0; i < 4; i++) {
+            gov.beginParachainDispute(
+                fakeQueryId,
+                fakeTimestamp,
+                fakeValue,
+                alice, // fakeDisputedReporter
+                bob, // fakeDisputeInitiator
+                fakeDisputeFee,
+                fakeSlashAmount
+            );
+        }
+        for (uint256 i = 0; i < 4; i++) {
+            gov.beginParachainDispute(
+                fakeQueryId,
+                fakeTimestamp,
+                fakeValue,
+                bob, // fakeDisputedReporter
+                alice, // fakeDisputeInitiator
+                fakeDisputeFee,
+                fakeSlashAmount
+            );
+        }
+        vm.stopPrank();
+
+        // todo: Check that the correct amount of tokens are slashed from each reporter and any other relevant state is updated correctly
+
+        console.log("---------------------------------- END TEST ----------------------------------");
+    }
 
     // function test12() public {
     //     // multiple disputes, increase stake amount mid dispute
