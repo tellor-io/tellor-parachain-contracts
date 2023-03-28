@@ -10,10 +10,12 @@ import "solmate/tokens/ERC20.sol";
 import "./helpers/TestToken.sol";
 
 import "../src/ParachainRegistry.sol";
+import "./helpers/TestParachain.sol";
 
 contract ParachainTest is Test {
     TestToken public token;
     ParachainRegistry public registry;
+    TestParachain public parachain;
 
     address public paraOwner = address(0x1111);
     address public paraDisputer = address(0x2222);
@@ -26,6 +28,7 @@ contract ParachainTest is Test {
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
+        parachain = new TestParachain(address(registry));
 
         vm.prank(paraOwner);
         registry.fakeRegister(fakeParaId, fakePalletInstance, fakeStakeAmount);
@@ -46,7 +49,9 @@ contract ParachainTest is Test {
         vm.etch(_address, deployed.code);
     }
 
-    function testConstructor() public {}
+    function testConstructor() public {
+        assertEq(address(registry), parachain.registryAddress());
+    }
 
     function testReportStakeDeposited() public {}
 

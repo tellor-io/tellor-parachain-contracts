@@ -86,13 +86,41 @@ contract ParachainRegistryTest is Test {
 
     function testDeregister() public {}
 
-    function testGetById() public {}
+    function testGetById() public {
+        ParachainRegistry.Parachain memory parachain = registry.getById(fakeParaId);
+        assertEq(parachain.id, fakeParaId);
+        assertEq(parachain.owner, paraOwner);
+        assertEq(parachain.palletInstance, abi.encodePacked(fakePalletInstance));
+        assertEq(parachain.stakeAmount, fakeStakeAmount);
+    }
 
-    function testGetByAddress() public {}
+    function testGetByAddress() public {
+        ParachainRegistry.Parachain memory parachain = registry.getByAddress(paraOwner);
+        assertEq(parachain.id, fakeParaId);
+        assertEq(parachain.owner, paraOwner);
+        assertEq(parachain.palletInstance, abi.encodePacked(fakePalletInstance));
+        assertEq(parachain.stakeAmount, fakeStakeAmount);
+    }
 
-    function testParachain() public {}
+    function testParachain() public {
+        // indirect testing through 'x2' function since 'parachain' is private
+        bytes[] memory interior = registry.x2(fakeParaId, fakePalletInstance);
+        bytes memory expected = abi.encodePacked(hex"00", abi.encodePacked(fakeParaId));
+        assertEq(interior[0], expected);
+    }
 
-    function testPallet() public {}
+    function testPallet() public {
+        // indirect testing through 'x2' function since 'pallet' is private
+        bytes[] memory interior = registry.x2(fakeParaId, fakePalletInstance);
+        bytes memory expected = abi.encodePacked(hex"04", abi.encodePacked(fakePalletInstance));
+        assertEq(interior[1], expected);
+    }
 
-    function testX2() public {}
+    function testX2() public {
+        bytes[] memory interior = registry.x2(fakeParaId, fakePalletInstance);
+        bytes memory expected = abi.encodePacked(hex"00", abi.encodePacked(fakeParaId));
+        assertEq(interior[0], expected);
+        expected = abi.encodePacked(hex"04", abi.encodePacked(fakePalletInstance));
+        assertEq(interior[1], expected);
+    }
 }
