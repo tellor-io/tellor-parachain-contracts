@@ -84,9 +84,55 @@ contract E2ETests is Test {
         vm.etch(_address, deployed.code);
     }
 
-    // function test5() public {
-    //     // staked and multiple times disputed on one consumer parachain but keeps reporting on that chain
-    // }
+    function test5() public {
+        // staked and multiple times disputed on one consumer parachain but keeps reporting on that chain
+        uint256 _numDisputes = 5;
+        uint256 initialBalance = token.balanceOf(address(bob));
+        token.mint(bob, fakeStakeAmount * _numDisputes);
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount * _numDisputes);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount * _numDisputes // _amount
+        );
+        vm.stopPrank();
+        (, uint256 stakedBalance, uint256 lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(lockedBalance, 0);
+        assertEq(stakedBalance, fakeStakeAmount * _numDisputes);
+        assertEq(token.balanceOf(address(bob)), initialBalance);
+
+        // Dispute a few times
+        uint256 _initialBalanceDisputer = token.balanceOf(address(alice));
+        token.mint(alice, fakeDisputeFee * _numDisputes);
+        vm.prank(alice);
+        token.approve(address(gov), fakeDisputeFee * _numDisputes);
+        vm.startPrank(paraOwner);
+        for (uint256 i = 0; i < _numDisputes; i++) {
+            vm.warp(fakeTimestamp + i + 1);
+            gov.beginParachainDispute(
+                fakeQueryId,
+                fakeTimestamp + i,
+                fakeValue,
+                fakeDisputedReporter,
+                fakeDisputeInitiator,
+                fakeDisputeFee,
+                fakeSlashAmount
+            );
+            (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+            console.log("dispute #%s lockedBalance: %s", i + 1, lockedBalance);
+            console.log("dispute #%s stakedBalance: %s", i + 1, stakedBalance);
+            assertEq(stakedBalance, fakeStakeAmount * _numDisputes - fakeSlashAmount * (i + 1));
+        }
+        vm.stopPrank();
+
+        // Check state
+        bytes32[] memory disputes = gov.getDisputesByReporter(fakeDisputedReporter);
+        assertEq(disputes.length, _numDisputes);
+        assertEq(token.balanceOf(address(alice)), _initialBalanceDisputer);
+
+        // Assumes reporting is happening on the oracle parachain
+    }
 
     // function test6() public {
     //     // staked and multiple times disputed across different consumer parachains, but keeps reporting on each
