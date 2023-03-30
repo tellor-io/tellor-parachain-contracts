@@ -372,14 +372,14 @@ contract ParachainGovernance is Parachain {
                 if (_i == 1) {
                     token.transfer(_thisVote.initiator, _thisDispute.slashedAmount); // todo: should be wrapped in require statement?
                 }
-                token.transfer(_thisVote.initiator, _thisVote.fee); // todo: should be wrapped in require statement?
+                token.transfer(_thisVote.initiator, _thisVote.fee); // todo: remove all dispute fee stuff
             }
         } else if (_thisVote.result == VoteResult.INVALID) {
             // If vote is in dispute and is invalid, iterate through each vote round and transfer the dispute fee to initiator
             for (_i = voteRounds[_thisVote.identifierHash].length; _i > 0; _i--) {
                 _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
                 _thisVote = voteInfo[_voteID];
-                token.transfer(_thisVote.initiator, _thisVote.fee); // todo: should be wrapped in require statement?
+                token.transfer(_thisVote.initiator, _thisVote.fee); // todo: remove all dispute fee stuff
             }
             // Transfer slashed tokens back to disputed reporter
             token.transfer(
