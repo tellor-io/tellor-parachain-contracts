@@ -358,21 +358,11 @@ contract ParachainGovernance is Parachain {
         require(block.timestamp - _thisVote.tallyDate >= 1 days, "1 day has to pass after tally to allow for disputes");
         _thisVote.executed = true;
         Dispute storage _thisDispute = disputeInfo[_disputeId];
-        uint256 _i;
-        bytes32 _voteID;
         if (_thisVote.result == VoteResult.PASSED) {
-            // If vote is in dispute and passed, iterate through each vote round and transfer the dispute to initiator
-            for (_i = voteRounds[_thisVote.identifierHash].length; _i > 0; _i--) {
-                _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
-                _thisVote = voteInfo[_voteID];
-                // If the first vote round, also make sure to transfer the reporter's slashed stake to the initiator
-                if (_i == 1) {
-                    token.transfer(_thisVote.initiator, _thisDispute.slashedAmount); // todo: should be wrapped in require statement?
-                }
-            }
+            // If vote is in dispute and passed, iterate through each vote round and transfer reporter's slashed stake to initiator
+            token.transfer(_thisVote.initiator, _thisDispute.slashedAmount); // todo: should be wrapped in require statement?
         } else {
             // If vote is in dispute and fails, or if dispute is invalid, transfer the slashed stake to the reporter
-            // todo: ensure all vote round dispute fees transfered to disputed reporter
             token.transfer(_thisDispute.disputedReporter, _thisDispute.slashedAmount); // todo: should be wrapped in require statement?
         }
         IRegistry.Parachain memory _parachain = registry.getById(_thisDispute.paraId);
