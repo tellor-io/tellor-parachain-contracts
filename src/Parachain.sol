@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 import "../lib/moonbeam/precompiles/XcmTransactorV2.sol"; // Various helper methods for interfacing with the Tellor pallet on another parachain via XCM
 // import { IRegistry, ParachainNotRegistered } from "./ParachainRegistry.sol";
 import {IRegistry} from "./ParachainRegistry.sol";
+import {IParachainGovernance} from "./interfaces/IParachainGovernance.sol";
 
 // Helper contract providing cross-chain messaging functionality
 abstract contract Parachain {
@@ -110,6 +111,30 @@ abstract contract Parachain {
             _reporter, // account id of reporter on target parachain
             _account, // account
             bytes32(reverse(_amount)) // amount
+        );
+        uint256 feeAmount = 10000000000;
+        uint64 overallWeight = 9000000000;
+        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+    }
+
+    /// @dev Report vote executed to a registered parachain.
+    /// @param _parachain Para The registered parachain.
+    /// @param _disputeId bytes32 The unique identifier of the dispute.
+    /// @param _outcome VoteResult The outcome of the vote.
+    function reportVoteExecuted(
+        IRegistry.Parachain memory _parachain,
+        bytes32 _disputeId,
+        IParachainGovernance.VoteResult _outcome
+    ) internal {
+        require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
+
+        // todo: fix call index, or construct call data based on vote result
+        uint64 transactRequiredWeightAtMost = 5000000000;
+        bytes memory call = abi.encodePacked(
+            _parachain.palletInstance, // pallet index within runtime
+            hex"0B", // fixed call index within pallet: 11
+            _disputeId, // dispute id
+            uint8(_outcome) // outcome
         );
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;

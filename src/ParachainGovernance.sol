@@ -5,6 +5,7 @@ import {Parachain} from "./Parachain.sol";
 // import { IRegistry, ParachainRegistry, ParachainNotRegistered, NotOwner } from "./ParachainRegistry.sol";
 import {IRegistry, ParachainRegistry} from "./ParachainRegistry.sol";
 import {IParachainStaking} from "./ParachainStaking.sol";
+import {IParachainGovernance} from "./interfaces/IParachainGovernance.sol";
 
 /**
  * @author Tellor Inc.
@@ -368,35 +369,16 @@ contract ParachainGovernance is Parachain {
                 if (_i == 1) {
                     token.transfer(_thisVote.initiator, _thisDispute.slashedAmount); // todo: should be wrapped in require statement?
                 }
-                // token.transfer(_thisVote.initiator, _thisVote.fee); // todo: remove all dispute fee stuff
-                // todo: replace transfer with reporting the vote outcome to orance consumer parachain
             }
-        } else if (_thisVote.result == VoteResult.INVALID) {
-            // If vote is in dispute and is invalid, iterate through each vote round and transfer the dispute fee to initiator
-            for (_i = voteRounds[_thisVote.identifierHash].length; _i > 0; _i--) {
-                _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
-                _thisVote = voteInfo[_voteID];
-                // token.transfer(_thisVote.initiator, _thisVote.fee); // todo: remove all dispute fee stuff
-                // todo: replace transfer with reporting the vote outcome to orance consumer parachain
-            }
-            // Transfer slashed tokens back to disputed reporter
-            token.transfer(
-                _thisDispute.disputedReporter, // todo: should the tokens be transferred from the gov contract to the disputed reporter?
-                _thisDispute.slashedAmount
-            ); // todo: should be wrapped in require statement?
-        } else if (_thisVote.result == VoteResult.FAILED) {
-            // If vote is in dispute and fails, iterate through each vote round and transfer the dispute fee to disputed reporter
-            uint256 _reporterReward = 0;
-            for (_i = voteRounds[_thisVote.identifierHash].length; _i > 0; _i--) {
-                _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
-                _thisVote = voteInfo[_voteID];
-                // _reporterReward += _thisVote.fee;
-                // todo: replace transfer with reporting the vote outcome to orance consumer parachain
-            }
-            _reporterReward += _thisDispute.slashedAmount;
-            token.transfer(_thisDispute.disputedReporter, _reporterReward); // todo: should be wrapped in require statement?
+        } else {
+            // If vote is in dispute and fails, or if dispute is invalid, transfer the slashed stake to the reporter
+            // todo: ensure all vote round dispute fees transfered to disputed reporter
+            token.transfer(_thisDispute.disputedReporter, _thisDispute.slashedAmount); // todo: should be wrapped in require statement?
         }
-        emit VoteExecuted(_disputeId, voteInfo[_disputeId].result);
+        IRegistry.Parachain memory _parachain = registry.getById(_thisDispute.paraId);
+        IParachainGovernance.VoteResult _convertedVoteResult = IParachainGovernance.VoteResult(uint8(_thisVote.result));
+        reportVoteExecuted(_parachain, _disputeId, _convertedVoteResult);
+        emit VoteExecuted(_disputeId, _thisVote.result);
     }
 
     // *****************************************************************************
