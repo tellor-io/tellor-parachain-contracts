@@ -35,7 +35,6 @@ contract E2ETests is Test {
     bytes32 fakeDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
     address fakeDisputedReporter = bob;
     address fakeDisputeInitiator = alice;
-    uint256 fakeDisputeFee = 10;
     uint256 fakeSlashAmount = 50;
 
     // Parachain registration
@@ -104,20 +103,11 @@ contract E2ETests is Test {
 
         // Dispute a few times
         uint256 _initialBalanceDisputer = token.balanceOf(address(alice));
-        token.mint(alice, fakeDisputeFee * _numDisputes);
-        vm.prank(alice);
-        token.approve(address(gov), fakeDisputeFee * _numDisputes);
         vm.startPrank(paraOwner);
         for (uint256 i = 0; i < _numDisputes; i++) {
             vm.warp(fakeTimestamp + i + 1);
             gov.beginParachainDispute(
-                fakeQueryId,
-                fakeTimestamp + i,
-                fakeValue,
-                fakeDisputedReporter,
-                fakeDisputeInitiator,
-                fakeDisputeFee,
-                fakeSlashAmount
+                fakeQueryId, fakeTimestamp + i, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
             );
             (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
             console.log("dispute #%s lockedBalance: %s", i + 1, lockedBalance);
@@ -172,22 +162,10 @@ contract E2ETests is Test {
 
         // Can assume bad value was submitted on oracle consumer parachain 🪄
 
-        // Dispute
-        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
-        token.mint(fakeDisputeInitiator, fakeDisputeFee);
-        vm.prank(fakeDisputeInitiator);
-        token.approve(address(gov), fakeDisputeFee);
-
         // Successfully begin dispute
         vm.prank(paraOwner);
         gov.beginParachainDispute(
-            fakeQueryId,
-            fakeTimestamp,
-            fakeValue,
-            fakeDisputedReporter,
-            fakeDisputeInitiator,
-            fakeDisputeFee,
-            fakeSlashAmount
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
         // Check reporter was slashed
         (, uint256 _stakedBalAfter, uint256 _lockedBalAfter,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
@@ -196,7 +174,7 @@ contract E2ETests is Test {
         assertEq(_lockedBalAfter, fakeStakeAmount - fakeSlashAmount);
 
         assertEq(token.balanceOf(address(staking)), 50);
-        assertEq(token.balanceOf(address(gov)), fakeDisputeFee + fakeSlashAmount);
+        assertEq(token.balanceOf(address(gov)), fakeSlashAmount);
 
         // todo: what if the slash amount is more than the stake amount?
         // todo: check if stake amount is supposed to remain the same after requesting withdrawal & slashed from dispute
@@ -221,7 +199,6 @@ contract E2ETests is Test {
         console.log("Staking contract starting balance: ", balanceStakingContract);
         console.log("Gov contract starting balance: ", balanceGovContract);
         console.log("Slash amount for each parachain: ", fakeSlashAmount);
-        console.log("Dispute fee for each parachain: ", fakeDisputeFee);
         console.log("\n");
 
         // Fund staker
@@ -256,22 +233,10 @@ contract E2ETests is Test {
 
         // Can assume bad value was submitted on oracle consumer parachain 🪄
 
-        // Dispute
-        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
-        token.mint(fakeDisputeInitiator, fakeDisputeFee);
-        vm.prank(fakeDisputeInitiator);
-        token.approve(address(gov), fakeDisputeFee);
-
         // Successfully begin dispute
         vm.prank(paraOwner);
         gov.beginParachainDispute(
-            fakeQueryId,
-            fakeTimestamp,
-            fakeValue,
-            fakeDisputedReporter,
-            fakeDisputeInitiator,
-            fakeDisputeFee,
-            fakeSlashAmount
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
         // Check reporter was slashed
         console.log("bob balance after dispute for 1st parachain: ", token.balanceOf(address(bob)));
@@ -287,7 +252,7 @@ contract E2ETests is Test {
         console.log("Staking contract balance after dispute for 1st parachain: ", balanceStakingContract);
         console.log("Gov contract balance after dispute for 1st parachain: ", balanceGovContract);
         assertEq(balanceStakingContract, 50);
-        assertEq(balanceGovContract, fakeDisputeFee + fakeSlashAmount);
+        assertEq(balanceGovContract, fakeSlashAmount);
         console.log("\n");
 
         // FOR 2ND PARACHAIN
@@ -318,22 +283,10 @@ contract E2ETests is Test {
 
         // Can assume bad value was submitted on oracle consumer parachain 🪄
 
-        // Dispute
-        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
-        token.mint(fakeDisputeInitiator, fakeDisputeFee);
-        vm.prank(fakeDisputeInitiator);
-        token.approve(address(gov), fakeDisputeFee);
-
         // Successfully begin dispute
         vm.prank(paraOwner2);
         gov.beginParachainDispute(
-            fakeQueryId,
-            fakeTimestamp,
-            fakeValue,
-            fakeDisputedReporter,
-            fakeDisputeInitiator,
-            fakeDisputeFee,
-            fakeSlashAmount
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
         // Check reporter was slashed
         console.log("bob balance after dispute for 2nd parachain: ", token.balanceOf(address(bob)));
@@ -349,7 +302,7 @@ contract E2ETests is Test {
         console.log("Staking contract balance after dispute for 2nd parachain: ", balanceStakingContract);
         console.log("Gov contract balance after dispute for 2nd parachain: ", balanceGovContract);
         assertEq(balanceStakingContract, 50); // todo: check if this is correct
-        assertEq(balanceGovContract, (fakeDisputeFee + fakeSlashAmount) * 2);
+        assertEq(balanceGovContract, fakeSlashAmount * 2);
         console.log("\n");
 
         // FOR 3RD PARACHAIN
@@ -379,22 +332,10 @@ contract E2ETests is Test {
 
         // Can assume bad value was submitted on oracle consumer parachain 🪄
 
-        // Dispute
-        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
-        token.mint(fakeDisputeInitiator, fakeDisputeFee);
-        vm.prank(fakeDisputeInitiator);
-        token.approve(address(gov), fakeDisputeFee);
-
         // Successfully begin dispute
         vm.prank(paraOwner3);
         gov.beginParachainDispute(
-            fakeQueryId,
-            fakeTimestamp,
-            fakeValue,
-            fakeDisputedReporter,
-            fakeDisputeInitiator,
-            fakeDisputeFee,
-            fakeSlashAmount
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
         // Check reporter was slashed
         console.log("bob balance after dispute for 3rd parachain: ", token.balanceOf(address(bob)));
@@ -410,7 +351,7 @@ contract E2ETests is Test {
         console.log("Staking contract balance after dispute for 3rd parachain: ", balanceStakingContract);
         console.log("Gov contract balance after dispute for 3rd parachain: ", balanceGovContract);
         assertEq(token.balanceOf(address(staking)), 25);
-        assertEq(token.balanceOf(address(gov)), (fakeDisputeFee + fakeSlashAmount) * 3);
+        assertEq(token.balanceOf(address(gov)), fakeSlashAmount * 3);
 
         console.log("---------------------------------- END TEST ----------------------------------");
         console.log("\n");
@@ -442,13 +383,6 @@ contract E2ETests is Test {
         vm.stopPrank();
 
         // Multiple disputes are started against each of those reporters on the same parachain
-        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
-        token.mint(address(bob), fakeDisputeFee * 4);
-        vm.prank(bob);
-        token.approve(address(gov), fakeDisputeFee * 4);
-        token.mint(address(alice), fakeDisputeFee * 4);
-        vm.prank(alice);
-        token.approve(address(gov), fakeDisputeFee * 4);
         // Open disputes
         vm.startPrank(paraOwner);
         for (uint256 i = 0; i < 4; i++) {
@@ -458,7 +392,6 @@ contract E2ETests is Test {
                 fakeValue,
                 alice, // fakeDisputedReporter
                 bob, // fakeDisputeInitiator
-                fakeDisputeFee,
                 fakeSlashAmount
             );
         }
@@ -469,7 +402,6 @@ contract E2ETests is Test {
                 fakeValue,
                 bob, // fakeDisputedReporter
                 alice, // fakeDisputeInitiator
-                fakeDisputeFee,
                 fakeSlashAmount
             );
         }

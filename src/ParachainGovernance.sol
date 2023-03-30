@@ -16,7 +16,7 @@ contract ParachainGovernance is Parachain {
     // Storage
     address public owner;
     IParachainStaking public parachainStaking;
-    IERC20 public token; // token used for dispute fees, same as reporter staking token
+    IERC20 public token; // token used for staking
     address public teamMultisig; // address of team multisig wallet, one of four stakeholder groups
     uint256 public voteCount; // total number of votes initiated
     bytes32 public autopayAddrsQueryId = keccak256(abi.encode("AutopayAddresses", abi.encode(bytes("")))); // query id for autopay addresses array
@@ -53,7 +53,6 @@ contract ParachainGovernance is Parachain {
         uint256 voteRound; // the round of voting on a given dispute or proposal
         uint256 startDate; // timestamp of when vote was initiated
         uint256 blockNumber; // block number of when vote was initiated
-        uint256 fee; // fee paid to initiate the vote round
         uint256 tallyDate; // timestamp of when the votes were tallied
         Tally tokenholders; // vote tally of tokenholders
         Tally users; // vote tally of users
@@ -125,7 +124,6 @@ contract ParachainGovernance is Parachain {
         bytes calldata _value,
         address _disputedReporter,
         address _disputeInitiator,
-        uint256 _disputeFee,
         uint256 _slashAmount
     ) external {
         // Ensure parachain is registered & sender is parachain owner
@@ -171,9 +169,7 @@ contract ParachainGovernance is Parachain {
             _thisDispute.slashedAmount = disputeInfo[voteRounds[_disputeId][0]].slashedAmount;
             _thisDispute.value = disputeInfo[voteRounds[_disputeId][0]].value;
         }
-        _thisVote.fee = _disputeFee;
         voteCount++;
-        require(token.transferFrom(_disputeInitiator, address(this), _disputeFee), "Fee must be paid"); // This is the dispute fee. Returned if dispute passes
 
         emit NewParachainDispute(parachain.id, _queryId, _timestamp, _disputedReporter);
     }
@@ -372,14 +368,16 @@ contract ParachainGovernance is Parachain {
                 if (_i == 1) {
                     token.transfer(_thisVote.initiator, _thisDispute.slashedAmount); // todo: should be wrapped in require statement?
                 }
-                token.transfer(_thisVote.initiator, _thisVote.fee); // todo: remove all dispute fee stuff
+                // token.transfer(_thisVote.initiator, _thisVote.fee); // todo: remove all dispute fee stuff
+                // todo: replace transfer with reporting the vote outcome to orance consumer parachain
             }
         } else if (_thisVote.result == VoteResult.INVALID) {
             // If vote is in dispute and is invalid, iterate through each vote round and transfer the dispute fee to initiator
             for (_i = voteRounds[_thisVote.identifierHash].length; _i > 0; _i--) {
                 _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
                 _thisVote = voteInfo[_voteID];
-                token.transfer(_thisVote.initiator, _thisVote.fee); // todo: remove all dispute fee stuff
+                // token.transfer(_thisVote.initiator, _thisVote.fee); // todo: remove all dispute fee stuff
+                // todo: replace transfer with reporting the vote outcome to orance consumer parachain
             }
             // Transfer slashed tokens back to disputed reporter
             token.transfer(
@@ -392,7 +390,8 @@ contract ParachainGovernance is Parachain {
             for (_i = voteRounds[_thisVote.identifierHash].length; _i > 0; _i--) {
                 _voteID = voteRounds[_thisVote.identifierHash][_i - 1];
                 _thisVote = voteInfo[_voteID];
-                _reporterReward += _thisVote.fee;
+                // _reporterReward += _thisVote.fee;
+                // todo: replace transfer with reporting the vote outcome to orance consumer parachain
             }
             _reporterReward += _thisDispute.slashedAmount;
             token.transfer(_thisDispute.disputedReporter, _reporterReward); // todo: should be wrapped in require statement?
@@ -445,7 +444,7 @@ contract ParachainGovernance is Parachain {
      * @dev Returns info on a vote for a given vote ID
      * @param _disputeId is the ID of a specific vote
      * @return bytes32 identifier hash of the vote
-     * @return uint256[17] memory of the pertinent round info (vote rounds, start date, fee, etc.)
+     * @return uint256[17] memory of the pertinent round info (vote rounds, start date, etc.)
      * @return bool memory of both whether or not the vote was executed
      * @return VoteResult result of the vote
      * @return address memory of the vote initiator
@@ -453,7 +452,7 @@ contract ParachainGovernance is Parachain {
     function getVoteInfo(bytes32 _disputeId)
         external
         view
-        returns (bytes32, uint256[17] memory, bool, VoteResult, address)
+        returns (bytes32, uint256[16] memory, bool, VoteResult, address)
     {
         Vote storage _v = voteInfo[_disputeId];
         return (
@@ -462,7 +461,6 @@ contract ParachainGovernance is Parachain {
                 _v.voteRound,
                 _v.startDate,
                 _v.blockNumber,
-                _v.fee,
                 _v.tallyDate,
                 _v.tokenholders.doesSupport,
                 _v.tokenholders.against,
