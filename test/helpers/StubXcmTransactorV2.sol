@@ -14,6 +14,27 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
         uint64 overallWeight
     );
 
+    TransactThroughSignedCall[] public transactThroughSignedArray;
+    TransactThroughSignedMultilocationCall[] public transactThroughSignedMultilocationArray;
+
+    struct TransactThroughSignedCall {
+        Multilocation dest;
+        address feeLocationAddress;
+        uint64 transactRequiredWeightAtMost;
+        bytes call;
+        uint256 feeAmount;
+        uint64 overallWeight;
+    }
+
+    struct TransactThroughSignedMultilocationCall {
+        Multilocation dest;
+        Multilocation feeLocation;
+        uint64 transactRequiredWeightAtMost;
+        bytes call;
+        uint256 feeAmount;
+        uint64 overallWeight;
+    }
+
     function indexToAccount(uint16 index) external view override returns (address owner) {
         return address(0x0);
     }
@@ -58,7 +79,18 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
         bytes memory call,
         uint256 feeAmount,
         uint64 overallWeight
-    ) external override {}
+    ) external override {
+        transactThroughSignedMultilocationArray.push(
+            TransactThroughSignedMultilocationCall(
+                dest,
+                feeLocation,
+                transactRequiredWeightAtMost,
+                call,
+                feeAmount,
+                overallWeight
+            )
+        );
+    }
 
     function transactThroughSigned(
         Multilocation memory dest,
@@ -68,6 +100,16 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
         uint256 feeAmount,
         uint64 overallWeight
     ) external override {
+        transactThroughSignedArray.push(
+            TransactThroughSignedCall(
+                dest,
+                feeLocationAddress,
+                transactRequiredWeightAtMost,
+                call,
+                feeAmount,
+                overallWeight
+            )
+        );
         emit TransactThroughSigned(
             dest, feeLocationAddress, transactRequiredWeightAtMost, call, feeAmount, overallWeight
             );
@@ -75,4 +117,12 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
 
     // add this to be excluded from coverage report
     function test() public {}
+
+    function getTransactThroughSignedArray() public view returns(TransactThroughSignedCall[] memory) {
+        return transactThroughSignedArray;
+    }
+
+    function getTransactThroughSignedMultilocationArray() public view returns(TransactThroughSignedMultilocationCall[] memory) {
+        return transactThroughSignedMultilocationArray;
+    }
 }
