@@ -83,7 +83,7 @@ contract E2ETests is Test {
         vm.etch(_address, deployed.code);
     }
 
-    function test5() public {
+    function testMultipleDisputesSingleChain() public {
         // staked and multiple times disputed on one consumer parachain but keeps reporting on that chain
         uint256 _numDisputes = 5;
         uint256 initialBalance = token.balanceOf(address(bob));
@@ -124,19 +124,7 @@ contract E2ETests is Test {
         // Assumes reporting is happening on the oracle parachain
     }
 
-    // function test6() public {
-    //     // staked and multiple times disputed across different consumer parachains, but keeps reporting on each
-    // }
-
-    // function test7() public {
-    //     // check updating stake amount (increase/decrease) for different parachains
-    // }
-
-    // function test8() public {
-    //     // check updating stake amount (increase/decrease) for same parachain
-    // }
-
-    function test9() public {
+    function testRequestWithdrawStakeThenDispute() public {
         /*
         simulate bad value placed, stake withdraw requested, dispute started on oracle consumer parachain
         */
@@ -180,7 +168,7 @@ contract E2ETests is Test {
         // todo: check if stake amount is supposed to remain the same after requesting withdrawal & slashed from dispute
     }
 
-    function test10() public {
+    function testMultipleStakeWithdrawRequestsDisputesOnMultipleChains() public {
         // simulate bad values places on multiple consumer parachains, stake withdraws requested across each consumer parachain, disputes started across each parachain
         console.log("---------------------------------- START TEST ----------------------------------");
         console.log(
@@ -356,91 +344,4 @@ contract E2ETests is Test {
         console.log("---------------------------------- END TEST ----------------------------------");
         console.log("\n");
     }
-
-    function test11() public {
-        // multiple disputes for single parachain
-        console.log("---------------------------------- START TEST ----------------------------------");
-        console.log("multiple disputes for single parachain");
-
-        // Two accounts stake a lot each
-        token.mint(address(bob), 1000);
-        token.mint(address(alice), 1000);
-        vm.startPrank(bob);
-        token.approve(address(staking), 1000);
-        staking.depositParachainStake(
-            fakeParaId, // _paraId
-            bytes("consumerChainAcct"), // _account
-            1000 // _amount
-        );
-        vm.stopPrank();
-        vm.startPrank(alice);
-        token.approve(address(staking), 1000);
-        staking.depositParachainStake(
-            fakeParaId, // _paraId
-            bytes("consumerChainAcct"), // _account
-            1000 // _amount
-        );
-        vm.stopPrank();
-
-        // Multiple disputes are started against each of those reporters on the same parachain
-        // Open disputes
-        vm.startPrank(paraOwner);
-        for (uint256 i = 0; i < 4; i++) {
-            gov.beginParachainDispute(
-                fakeQueryId,
-                fakeTimestamp,
-                fakeValue,
-                alice, // fakeDisputedReporter
-                bob, // fakeDisputeInitiator
-                fakeSlashAmount
-            );
-        }
-        for (uint256 i = 0; i < 4; i++) {
-            gov.beginParachainDispute(
-                fakeQueryId,
-                fakeTimestamp,
-                fakeValue,
-                bob, // fakeDisputedReporter
-                alice, // fakeDisputeInitiator
-                fakeSlashAmount
-            );
-        }
-        vm.stopPrank();
-
-        // todo: Check that the correct amount of tokens are slashed from each reporter and any other relevant state is updated correctly
-
-        console.log("---------------------------------- END TEST ----------------------------------");
-    }
-
-    // function test12() public {
-    //     // multiple disputes, increase stake amount mid dispute
-    // }
-
-    // function test13() public {
-    //     // multiple disputes, decrease stake amount mid dispute
-    // }
-
-    // function test14() public {
-    //     // multiple disputes, changing governance address mid dispute
-    // }
-
-    // function test15() public {
-    //     // no votes on a dispute
-    // }
-
-    // function test16() public {
-    //     // multiple vote rounds on a dispute, all passing
-    // }
-
-    // function test17() public {
-    //     // multiple vote rounds on a dispute, overturn result
-    // }
-
-    // function test18() public {
-    //     // multiple votes from all stakeholders (tokenholders, reporters, users, teamMultisig) (test the handling of edge cases in voting rounds (e.g., voting ties, uneven votes, partial participation))
-    // }
-
-    // function test19() public {
-    //     // test submitting bad identical values (same value, query id, & submission timestamp) on different parachains, disputes open for all, ensure no cross contamination in gov/staking contracts
-    // }
 }
