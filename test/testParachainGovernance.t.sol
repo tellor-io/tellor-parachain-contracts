@@ -140,8 +140,6 @@ contract ParachainGovernanceTest is Test {
         gov.vote(realDisputeId, true, true);
         bool voted = gov.didVote(realDisputeId, bob);
         assert(voted);
-        uint256 voteCount = gov.getVoteCount();
-        assertEq(voteCount, 1);
 
         // Try voting twice
         vm.expectRevert("Sender has already voted");

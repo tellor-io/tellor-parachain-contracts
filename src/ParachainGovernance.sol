@@ -19,7 +19,6 @@ contract ParachainGovernance is Parachain {
     IParachainStaking public parachainStaking;
     IERC20 public token; // token used for staking
     address public teamMultisig; // address of team multisig wallet, one of four stakeholder groups
-    uint256 public voteCount; // total number of votes initiated // todo: can this be removed?
     bytes32 public autopayAddrsQueryId = keccak256(abi.encode("AutopayAddresses", abi.encode(bytes("")))); // query id for autopay addresses array
     mapping(bytes32 => Dispute) private disputeInfo; // mapping of dispute IDs to the details of the dispute
     mapping(bytes32 => mapping(uint8 => Vote)) private voteInfo; // mapping of dispute IDs to vote round number to vote details
@@ -170,7 +169,6 @@ contract ParachainGovernance is Parachain {
             _thisDispute.slashedAmount = disputeInfo[_disputeId].slashedAmount;
             _thisDispute.value = disputeInfo[_disputeId].value;
         }
-        voteCount++;
 
         emit NewParachainDispute(parachain.id, _queryId, _timestamp, _disputedReporter);
     }
@@ -402,14 +400,6 @@ contract ParachainGovernance is Parachain {
     function getDisputeInfo(bytes32 _disputeId) external view returns (bytes32, uint256, bytes memory, address) {
         Dispute storage _d = disputeInfo[_disputeId];
         return (_d.queryId, _d.timestamp, _d.value, _d.disputedReporter);
-    }
-
-    /**
-     * @dev Returns the total number of votes
-     * @return uint256 of the total number of votes
-     */
-    function getVoteCount() external view returns (uint256) {
-        return voteCount;
     }
 
     /**
