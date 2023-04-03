@@ -132,42 +132,43 @@ contract ParachainGovernance is Parachain {
 
         // Create unique identifier for this dispute
         bytes32 _disputeId = keccak256(abi.encode(parachain.id, _queryId, _timestamp));
-        // Increment vote rounds for this dispute
+
+        // Check if able to start new voting round
+        if (voteRounds[_disputeId] >= 1) {
+            require(
+                block.timestamp - voteInfo[_disputeId][voteRounds[_disputeId]].tallyDate < 1 days,
+                "New dispute round must be started within a day"
+            );
+        }
         voteRounds[_disputeId]++;
 
-        // Create new vote and dispute
+        // Set vote info
         Vote storage _thisVote = voteInfo[_disputeId][voteRounds[_disputeId]];
-        Dispute storage _thisDispute = disputeInfo[_disputeId];
-
-        // Set dispute information
-        _thisDispute.paraId = parachain.id;
-        _thisDispute.queryId = _queryId;
-        _thisDispute.timestamp = _timestamp;
-        _thisDispute.disputedReporter = _disputedReporter;
-        // Set vote information
         _thisVote.identifierHash = _disputeId;
         _thisVote.initiator = _disputeInitiator;
         _thisVote.blockNumber = block.number;
         _thisVote.startDate = block.timestamp; // This is correct bc consumer parachain must submit votes before voting period ends
         _thisVote.voteRound = voteRounds[_disputeId];
 
-        disputeIdsByReporter[_disputedReporter].push(_disputeId);
-
         if (voteRounds[_disputeId] == 1) {
+            // First round of voting
             require(block.timestamp - _timestamp < 12 hours, "Dispute must be started within reporting lock time");
+
+            // Set dispute information
+            Dispute storage _thisDispute = disputeInfo[_disputeId];
+            _thisDispute.value = _value;
+            _thisDispute.paraId = parachain.id;
+            _thisDispute.queryId = _queryId;
+            _thisDispute.timestamp = _timestamp;
+            _thisDispute.disputedReporter = _disputedReporter;
+            _thisDispute.slashedAmount = disputeInfo[_disputeId].slashedAmount;
+
+            disputeIdsByReporter[_disputedReporter].push(_disputeId);
+
             // slash a single stakeAmount from reporter
             _thisDispute.slashedAmount = parachainStaking.slashParachainReporter(
                 _slashAmount, parachain.id, _thisDispute.disputedReporter, address(this)
             );
-            _thisDispute.value = _value;
-        } else {
-            uint8 _prevVoteRound = voteRounds[_disputeId] - 1;
-            require(
-                block.timestamp - voteInfo[_disputeId][_prevVoteRound].tallyDate < 1 days,
-                "New dispute round must be started within a day"
-            );
-            _thisDispute.slashedAmount = disputeInfo[_disputeId].slashedAmount;
-            _thisDispute.value = disputeInfo[_disputeId].value;
         }
 
         emit NewParachainDispute(parachain.id, _queryId, _timestamp, _disputedReporter);
