@@ -453,4 +453,51 @@ contract E2ETests is Test {
         console.log("---------------------------------- END TEST ----------------------------------");
         console.log("\n");
     }
+
+    function testMultipleVotesOnDisputeAllPassing() public {
+        // test multiple vote rounds on a dispute for one parachain, all passing
+
+        // stake for parachain
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount // _amount
+        );
+        vm.stopPrank();
+
+        // disputer already funded
+
+        // begin initial dispute
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+
+        // VOTE ROUND 1
+        // reporter votes against the dispute
+        // random reporter votes against the dispute
+        // multisig votes for the dispute
+        // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
+        // dispute passes
+
+        // todo: how does the reporter check that the vote passes?
+
+        // VOTE ROUND 2
+        // reporter opens dispute again, starting another vote round
+        // reporter votes against the dispute
+        // random reporter votes against the dispute
+        // multisig votes for the dispute
+        // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
+        // dispute passes
+
+        // VOTE ROUND 3
+        // reporter opens dispute again, starting another vote round
+        // reporter votes against the dispute
+        // random reporter votes against the dispute
+        // multisig votes for the dispute
+        // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
+        // dispute passes
+    }
 }
