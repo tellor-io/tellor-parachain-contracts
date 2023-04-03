@@ -19,11 +19,11 @@ contract ParachainGovernance is Parachain {
     IParachainStaking public parachainStaking;
     IERC20 public token; // token used for staking
     address public teamMultisig; // address of team multisig wallet, one of four stakeholder groups
-    uint256 public voteCount; // total number of votes initiated
+    uint256 public voteCount; // total number of votes initiated // todo: can this be removed?
     bytes32 public autopayAddrsQueryId = keccak256(abi.encode("AutopayAddresses", abi.encode(bytes("")))); // query id for autopay addresses array
     mapping(bytes32 => Dispute) private disputeInfo; // mapping of dispute IDs to the details of the dispute
-    mapping(bytes32 => Vote) private voteInfo; // mapping of dispute IDs to the details of the vote
-    mapping(bytes32 => bytes32[]) private voteRounds; // mapping of vote identifier hashes to an array of dispute IDs
+    mapping(bytes32 => mapping(uint8 => Vote)) private voteInfo; // mapping of dispute IDs to vote round number to vote details
+    mapping(bytes32 => uint8) private voteRounds; // mapping of dispute IDs to the number of vote rounds
     mapping(address => uint256) private voteTallyByAddress; // mapping of addresses to the number of votes they have cast
     mapping(address => bytes32[]) private disputeIdsByReporter; // mapping of reporter addresses to an array of dispute IDs
 
@@ -133,11 +133,11 @@ contract ParachainGovernance is Parachain {
 
         // Create unique identifier for this dispute
         bytes32 _disputeId = keccak256(abi.encode(parachain.id, _queryId, _timestamp));
-        // Push new vote round
-        voteRounds[_disputeId].push(_disputeId);
+        // Increment vote rounds for this dispute
+        voteRounds[_disputeId]++;
 
         // Create new vote and dispute
-        Vote storage _thisVote = voteInfo[_disputeId];
+        Vote storage _thisVote = voteInfo[_disputeId][voteRounds[_disputeId]];
         Dispute storage _thisDispute = disputeInfo[_disputeId];
 
         // Set dispute information
@@ -150,12 +150,11 @@ contract ParachainGovernance is Parachain {
         _thisVote.initiator = _disputeInitiator;
         _thisVote.blockNumber = block.number;
         _thisVote.startDate = block.timestamp; // This is correct bc consumer parachain must submit votes before voting period ends
-        _thisVote.voteRound = voteRounds[_disputeId].length;
+        _thisVote.voteRound = voteRounds[_disputeId];
 
         disputeIdsByReporter[_disputedReporter].push(_disputeId);
 
-        if (voteRounds[_disputeId].length == 1) {
-            // Assumes voteRounds[_disputeId] will never be empty
+        if (voteRounds[_disputeId] == 1) {
             require(block.timestamp - _timestamp < 12 hours, "Dispute must be started within reporting lock time");
             // slash a single stakeAmount from reporter
             _thisDispute.slashedAmount = parachainStaking.slashParachainReporter(
@@ -163,12 +162,13 @@ contract ParachainGovernance is Parachain {
             );
             _thisDispute.value = _value;
         } else {
-            bytes32 _prevId = voteRounds[_disputeId][voteRounds[_disputeId].length - 2];
+            uint8 _prevVoteRound = voteRounds[_disputeId] - 1;
             require(
-                block.timestamp - voteInfo[_prevId].tallyDate < 1 days, "New dispute round must be started within a day"
+                block.timestamp - voteInfo[_disputeId][_prevVoteRound].tallyDate < 1 days,
+                "New dispute round must be started within a day"
             );
-            _thisDispute.slashedAmount = disputeInfo[voteRounds[_disputeId][0]].slashedAmount;
-            _thisDispute.value = disputeInfo[voteRounds[_disputeId][0]].value;
+            _thisDispute.slashedAmount = disputeInfo[_disputeId].slashedAmount;
+            _thisDispute.value = disputeInfo[_disputeId].value;
         }
         voteCount++;
 
@@ -182,7 +182,7 @@ contract ParachainGovernance is Parachain {
      * @param _validDispute is whether or not the dispute is valid (e.g. false if the dispute is invalid)
      */
     function vote(bytes32 _disputeId, bool _supports, bool _validDispute) external {
-        Vote storage _thisVote = voteInfo[_disputeId];
+        Vote storage _thisVote = voteInfo[_disputeId][voteRounds[_disputeId]];
 
         require(_thisVote.identifierHash == _disputeId, "Vote does not exist");
         require(_thisVote.tallyDate == 0, "Vote has already been tallied");
@@ -246,7 +246,7 @@ contract ParachainGovernance is Parachain {
 
         require(parachain.id == disputeInfo[_disputeId].paraId, "invalid dispute identifier");
 
-        Vote storage _thisVote = voteInfo[_disputeId];
+        Vote storage _thisVote = voteInfo[_disputeId][voteRounds[_disputeId]];
         require(_thisVote.identifierHash == _disputeId, "Vote does not exist");
         require(_thisVote.tallyDate == 0, "Vote has already been tallied");
 
@@ -276,7 +276,7 @@ contract ParachainGovernance is Parachain {
      * @param _disputeId is the ID of the vote being tallied
      */
     function tallyVotes(bytes32 _disputeId) external {
-        Vote storage _thisVote = voteInfo[_disputeId];
+        Vote storage _thisVote = voteInfo[_disputeId][voteRounds[_disputeId]];
 
         require(_thisVote.identifierHash == _disputeId, "Vote does not exist");
         require(_thisVote.tallyDate == 0, "Vote has already been tallied");
@@ -346,14 +346,14 @@ contract ParachainGovernance is Parachain {
      * @param _disputeId is the ID of the vote being executed
      */
     function executeVote(bytes32 _disputeId) external {
-        Vote storage _thisVote = voteInfo[_disputeId];
+        Vote storage _thisVote = voteInfo[_disputeId][voteRounds[_disputeId]];
 
         require(_thisVote.identifierHash == _disputeId, "Vote does not exist");
         require(_thisVote.tallyDate > 0, "Vote must be tallied");
         require(!_thisVote.executed, "Vote has already been executed");
         // Ensure vote must be final vote and that time has to be pass (86400 = 24 * 60 * 60 for seconds in a day)
         // todo: what exactly is this comment saying? ^
-        require(voteRounds[_thisVote.identifierHash].length == _thisVote.voteRound, "Must be the final vote");
+        require(voteRounds[_thisVote.identifierHash] == _thisVote.voteRound, "Must be the final vote");
         //The time  has to pass after the vote is tallied
         require(block.timestamp - _thisVote.tallyDate >= 1 days, "1 day has to pass after tally to allow for disputes");
         _thisVote.executed = true;
@@ -384,7 +384,7 @@ contract ParachainGovernance is Parachain {
      * @return bool of whether or note the address voted for the specific vote
      */
     function didVote(bytes32 _disputeId, address _voter) external view returns (bool) {
-        return voteInfo[_disputeId].voted[_voter];
+        return voteInfo[_disputeId][voteRounds[_disputeId]].voted[_voter];
     }
 
     function getDisputesByReporter(address _reporter) external view returns (bytes32[] memory) {
@@ -426,7 +426,7 @@ contract ParachainGovernance is Parachain {
         view
         returns (bytes32, uint256[16] memory, bool, VoteResult, address)
     {
-        Vote storage _v = voteInfo[_disputeId];
+        Vote storage _v = voteInfo[_disputeId][voteRounds[_disputeId]];
         return (
             _v.identifierHash,
             [
@@ -456,9 +456,9 @@ contract ParachainGovernance is Parachain {
     /**
      * @dev Returns an array of voting rounds for a given vote
      * @param _hash is the identifier hash for a vote
-     * @return uint256[] memory dispute IDs of the vote rounds
+     * @return uint8 Number of voting rounds for a given disputeId
      */
-    function getVoteRounds(bytes32 _hash) external view returns (bytes32[] memory) {
+    function getVoteRounds(bytes32 _hash) external view returns (uint8) {
         return voteRounds[_hash];
     }
 
