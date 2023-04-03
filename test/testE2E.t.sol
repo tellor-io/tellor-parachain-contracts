@@ -44,11 +44,11 @@ contract E2ETests is Test {
 
     uint32 public fakeParaId2 = 13;
     uint8 public fakePalletInstance2 = 9;
-    uint256 public fakeStakeAmount2 = 50;
+    uint256 public fakeStakeAmount2 = 75;
 
     uint32 public fakeParaId3 = 14;
     uint8 public fakePalletInstance3 = 10;
-    uint256 public fakeStakeAmount3 = 25;
+    uint256 public fakeStakeAmount3 = 50;
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
@@ -59,6 +59,10 @@ contract E2ETests is Test {
         // Register parachains
         vm.prank(paraOwner);
         registry.fakeRegister(fakeParaId, fakePalletInstance, fakeStakeAmount);
+        vm.prank(paraOwner2);
+        registry.fakeRegister(fakeParaId2, fakePalletInstance2, fakeStakeAmount2);
+        vm.prank(paraOwner3);
+        registry.fakeRegister(fakeParaId3, fakePalletInstance3, fakeStakeAmount3);
 
         gov.init(address(staking));
         staking.init(address(gov));
@@ -122,6 +126,108 @@ contract E2ETests is Test {
         assertEq(token.balanceOf(address(alice)), _initialBalanceDisputer);
 
         // Assumes reporting is happening on the oracle parachain
+    }
+
+    function testMultipleDisputesDifferentChains() public {
+        // test multiple disputes on different parachains
+
+        // deposit stakes for parachain 1
+        uint256 _numDisputes = 5;
+        uint256 initialBalance = token.balanceOf(address(bob));
+        token.mint(bob, fakeStakeAmount * _numDisputes);
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount * _numDisputes);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount * _numDisputes // _amount
+        );
+        vm.stopPrank();
+        (, uint256 stakedBalance, uint256 lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(lockedBalance, 0);
+        assertEq(stakedBalance, fakeStakeAmount * _numDisputes);
+        assertEq(token.balanceOf(address(bob)), initialBalance);
+
+        // deposit stakes for parachain 2
+        uint256 _numDisputes2 = 3;
+        uint256 initialBalance2 = token.balanceOf(address(bob));
+        token.mint(bob, fakeStakeAmount2 * _numDisputes2);
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount2 * _numDisputes2);
+        staking.depositParachainStake(
+            fakeParaId2, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount2 * _numDisputes2 // _amount
+        );
+        vm.stopPrank();
+        (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId2, bob);
+        assertEq(lockedBalance, 0);
+        assertEq(stakedBalance, fakeStakeAmount2 * _numDisputes2);
+        assertEq(token.balanceOf(address(bob)), initialBalance2);
+
+        // deposit stakes for parachain 3
+        uint256 _numDisputes3 = 2;
+        uint256 initialBalance3 = token.balanceOf(address(bob));
+        token.mint(bob, fakeStakeAmount3 * _numDisputes3);
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount3 * _numDisputes3);
+        staking.depositParachainStake(
+            fakeParaId3, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount3 * _numDisputes3 // _amount
+        );
+        vm.stopPrank();
+        (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, bob);
+        assertEq(lockedBalance, 0);
+        assertEq(stakedBalance, fakeStakeAmount3 * _numDisputes3);
+        assertEq(token.balanceOf(address(bob)), initialBalance3);
+
+        // Dispute a few times for parachain 1
+        vm.startPrank(paraOwner);
+        for (uint256 i = 0; i < _numDisputes; i++) {
+            vm.warp(fakeTimestamp + i + 1);
+            gov.beginParachainDispute(
+                fakeQueryId, fakeTimestamp + i, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+            );
+            (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+            console.log("dispute #%s lockedBalance: %s", i + 1, lockedBalance);
+            console.log("dispute #%s stakedBalance: %s", i + 1, stakedBalance);
+            assertEq(stakedBalance, fakeStakeAmount * _numDisputes - fakeSlashAmount * (i + 1));
+        }
+        vm.stopPrank();
+        assertEq(token.balanceOf(address(gov)), fakeSlashAmount * _numDisputes);
+
+        // Dispute a few times for parachain 2
+        uint256 _govBalance = token.balanceOf(address(gov));
+        vm.startPrank(paraOwner2);
+        for (uint256 i = 0; i < _numDisputes2; i++) {
+            vm.warp(fakeTimestamp + i + 1);
+            gov.beginParachainDispute(
+                fakeQueryId, fakeTimestamp + i, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+            );
+            (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId2, bob);
+            console.log("dispute #%s lockedBalance: %s", i + 1, lockedBalance);
+            console.log("dispute #%s stakedBalance: %s", i + 1, stakedBalance);
+            assertEq(stakedBalance, fakeStakeAmount2 * _numDisputes2 - fakeSlashAmount * (i + 1));
+        }
+        vm.stopPrank();
+        assertEq(token.balanceOf(address(gov)), _govBalance + fakeSlashAmount * _numDisputes2);
+
+        // Dispute a few times for parachain 3
+        _govBalance = token.balanceOf(address(gov));
+        vm.startPrank(paraOwner3);
+        for (uint256 i = 0; i < _numDisputes3; i++) {
+            vm.warp(fakeTimestamp + i + 1);
+            gov.beginParachainDispute(
+                fakeQueryId, fakeTimestamp + i, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+            );
+            (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, bob);
+            console.log("dispute #%s lockedBalance: %s", i + 1, lockedBalance);
+            console.log("dispute #%s stakedBalance: %s", i + 1, stakedBalance);
+            assertEq(stakedBalance, fakeStakeAmount3 * _numDisputes3 - fakeSlashAmount * (i + 1));
+        }
+        vm.stopPrank();
+        assertEq(token.balanceOf(address(gov)), _govBalance + fakeSlashAmount * _numDisputes3);
     }
 
     function testRequestWithdrawStakeThenDispute() public {
@@ -239,7 +345,7 @@ contract E2ETests is Test {
         balanceGovContract = token.balanceOf(address(gov));
         console.log("Staking contract balance after dispute for 1st parachain: ", balanceStakingContract);
         console.log("Gov contract balance after dispute for 1st parachain: ", balanceGovContract);
-        assertEq(balanceStakingContract, 50);
+        assertEq(balanceStakingContract, fakeStakeAmount - fakeSlashAmount);
         assertEq(balanceGovContract, fakeSlashAmount);
         console.log("\n");
 
@@ -289,7 +395,7 @@ contract E2ETests is Test {
         balanceGovContract = token.balanceOf(address(gov));
         console.log("Staking contract balance after dispute for 2nd parachain: ", balanceStakingContract);
         console.log("Gov contract balance after dispute for 2nd parachain: ", balanceGovContract);
-        assertEq(balanceStakingContract, 50); // todo: check if this is correct
+        assertEq(balanceStakingContract, (fakeStakeAmount + fakeStakeAmount2) - fakeSlashAmount * 2); // todo: check if this is correct
         assertEq(balanceGovContract, fakeSlashAmount * 2);
         console.log("\n");
 
@@ -330,15 +436,18 @@ contract E2ETests is Test {
         (, _stakedBalAfter, _lockedBalAfter,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, bob);
         console.log("bob staked balance after dispute for 3rd parachain: ", _stakedBalAfter);
         console.log("bob locked balance after dispute for 3rd parachain: ", _lockedBalAfter);
-        assertEq(_stakedBalAfter, 0);
+        assertEq(_stakedBalAfter, fakeStakeAmount3);
         assertEq(token.balanceOf(address(bob)), initialBalance - fakeStakeAmount3);
-        assertEq(_lockedBalAfter, 0);
+        assertEq(_lockedBalAfter, fakeStakeAmount3 - fakeSlashAmount);
 
         balanceStakingContract = token.balanceOf(address(staking));
         balanceGovContract = token.balanceOf(address(gov));
         console.log("Staking contract balance after dispute for 3rd parachain: ", balanceStakingContract);
         console.log("Gov contract balance after dispute for 3rd parachain: ", balanceGovContract);
-        assertEq(token.balanceOf(address(staking)), 25);
+        assertEq(
+            token.balanceOf(address(staking)),
+            fakeStakeAmount + fakeStakeAmount2 + fakeStakeAmount3 - fakeSlashAmount * 3
+        );
         assertEq(token.balanceOf(address(gov)), fakeSlashAmount * 3);
 
         console.log("---------------------------------- END TEST ----------------------------------");
