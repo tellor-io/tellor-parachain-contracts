@@ -470,7 +470,7 @@ contract E2ETests is Test {
         vm.stopPrank();
 
         // begin initial dispute
-        uint256 _startDisputeTimestamp = block.timestamp;
+        uint256 _startVote = block.timestamp;
         vm.prank(paraOwner);
         gov.beginParachainDispute(
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
@@ -513,9 +513,9 @@ contract E2ETests is Test {
         // check vote state
         (, uint256[16] memory _voteInfo,, ParachainGovernance.VoteResult _voteResult,) = gov.getVoteInfo(_disputeId);
         assertEq(_voteInfo[0], 1); // vote round
-        assertEq(_voteInfo[1], _startDisputeTimestamp); // start date
+        assertEq(_voteInfo[1], _startVote); // start date
         assertEq(_voteInfo[2], block.number); // block number
-        assertEq(_voteInfo[3], _startDisputeTimestamp + 1 days); // tally date
+        assertEq(_voteInfo[3], _startVote + 1 days); // tally date
         assertEq(_voteInfo[4], _balTeamMultiSig); // tokenholders does support
         assertEq(_voteInfo[5], _bobTotalBalance + _darylTotalBalance); // tokenholders against
         assertEq(_voteInfo[6], 0); // tokenholders invalid query
@@ -529,24 +529,104 @@ contract E2ETests is Test {
         assertEq(_voteInfo[14], 0); // team multisig against
         assertEq(_voteInfo[15], 0); // team multisig invalid query
         assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.PASSED)); // vote result
-        console.log("vote result: ", uint8(_voteResult));
+        console.log("vote #1 result: ", uint8(_voteResult));
 
         // VOTE ROUND 2
         // reporter opens dispute again, starting another vote round
-        // _startVoteRound2 = block.timestamp;
-
+        _startVote = block.timestamp;
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteInfo[0], 2); // vote round
         // reporter votes against the dispute
+        vm.prank(bob);
+        gov.vote(_disputeId, false, true);
         // random reporter votes against the dispute
+        vm.prank(daryl);
+        gov.vote(_disputeId, false, true);
         // multisig votes for the dispute
+        vm.prank(fakeTeamMultiSig);
+        gov.vote(_disputeId, true, true);
         // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
+        vm.prank(paraOwner);
+        gov.voteParachain(
+            _disputeId,
+            100, // _totalTipsFor
+            100, // _totalTipsAgainst
+            100, // _totalTipsInvalid
+            100, // _totalReportsFor
+            100, // _totalReportsAgainst
+            100 // _totalReportsInvalid
+        );
         // tally votes
+        vm.warp(block.timestamp + 2 days);
+        gov.tallyVotes(_disputeId);
+
+        // check vote state
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteInfo[0], 2); // vote round
+        assertEq(_voteInfo[1], _startVote); // start date
+        assertEq(_voteInfo[2], block.number); // block number
+        assertEq(_voteInfo[3], _startVote + 2 days); // tally date
+        assertEq(_voteInfo[4], _balTeamMultiSig); // tokenholders does support
+        assertEq(_voteInfo[5], _bobTotalBalance + _darylTotalBalance); // tokenholders against
+        assertEq(_voteInfo[6], 0); // tokenholders invalid query
+        assertEq(_voteInfo[7], 100); // users does support
+        assertEq(_voteInfo[10], 100); // reporters does support
+        assertEq(_voteInfo[13], 1); // team multisig does support
+        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.PASSED)); // vote result
+        console.log("vote #2 result: ", uint8(_voteResult));
 
         // VOTE ROUND 3
         // reporter opens dispute again, starting another vote round
+        _startVote = block.timestamp;
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteInfo[0], 3); // vote round
         // reporter votes against the dispute
+        vm.prank(bob);
+        gov.vote(_disputeId, false, true);
         // random reporter votes against the dispute
+        vm.prank(daryl);
+        gov.vote(_disputeId, false, true);
         // multisig votes for the dispute
+        vm.prank(fakeTeamMultiSig);
+        gov.vote(_disputeId, true, true);
         // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
+        vm.prank(paraOwner);
+        gov.voteParachain(
+            _disputeId,
+            100, // _totalTipsFor
+            100, // _totalTipsAgainst
+            100, // _totalTipsInvalid
+            100, // _totalReportsFor
+            100, // _totalReportsAgainst
+            100 // _totalReportsInvalid
+        );
         // tally votes
+        vm.warp(block.timestamp + 3 days);
+        gov.tallyVotes(_disputeId);
+
+        // check vote state
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteInfo[0], 3); // vote round
+        assertEq(_voteInfo[1], _startVote); // start date
+        assertEq(_voteInfo[2], block.number); // block number
+        assertEq(_voteInfo[3], _startVote + 3 days); // tally date
+        assertEq(_voteInfo[4], _balTeamMultiSig); // tokenholders does support
+        assertEq(_voteInfo[5], _bobTotalBalance + _darylTotalBalance); // tokenholders against
+        assertEq(_voteInfo[6], 0); // tokenholders invalid query
+        assertEq(_voteInfo[7], 100); // users does support
+        assertEq(_voteInfo[10], 100); // reporters does support
+        assertEq(_voteInfo[13], 1); // team multisig does support
+        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.PASSED)); // vote result
+        console.log("vote #3 result: ", uint8(_voteResult));
+
+        // exectue vote
     }
 }
