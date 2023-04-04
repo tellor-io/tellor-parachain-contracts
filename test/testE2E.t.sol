@@ -628,5 +628,9 @@ contract E2ETests is Test {
         console.log("vote #3 result: ", uint8(_voteResult));
 
         // exectue vote
+        vm.warp(block.timestamp + 1 days);
+        gov.executeVote(_disputeId);
+        (,, bool _voteExecuted,,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteExecuted, true);
     }
 }
