@@ -22,12 +22,12 @@ contract E2ETests is Test {
     address public paraOwner = address(0x1111);
     address public paraOwner2 = address(0x1112);
     address public paraOwner3 = address(0x1113);
-    address public paraDisputer = address(0x2222);
     address public fakeTeamMultiSig = address(0x3333);
 
     // create fake dispute initiation inputs
     address public bob = address(0x4444);
     address public alice = address(0x5555);
+    address public daryl = address(0x6666);
     bytes public bobsFakeAccount = abi.encodePacked(bob, uint256(4444));
     bytes32 fakeQueryId = keccak256(abi.encode("SpotPrice", abi.encode("btc", "usd")));
     uint256 fakeTimestamp = block.timestamp;
@@ -70,9 +70,11 @@ contract E2ETests is Test {
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
 
-        // Fund disputer/disputed
+        // Fund test accounts
         token.mint(bob, fakeStakeAmount * 2);
         token.mint(alice, 100);
+        token.mint(daryl, 100);
+        token.mint(fakeTeamMultiSig, 1000);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples
@@ -467,30 +469,77 @@ contract E2ETests is Test {
         );
         vm.stopPrank();
 
-        // disputer already funded
-
         // begin initial dispute
+        uint256 _startDisputeTimestamp = block.timestamp;
         vm.prank(paraOwner);
         gov.beginParachainDispute(
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
 
+        bytes32 _disputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
+
         // VOTE ROUND 1
         // reporter votes against the dispute
+        uint256 _bobBalance = token.balanceOf(address(bob));
+        (, uint256 _stakedBal, uint256 _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        uint256 _bobTotalBalance = _bobBalance + _stakedBal + _lockedBal;
+        vm.prank(bob);
+        gov.vote(_disputeId, false, true);
         // random reporter votes against the dispute
+        uint256 _darylBalance = token.balanceOf(address(daryl));
+        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, daryl);
+        uint256 _darylTotalBalance = _darylBalance + _stakedBal + _lockedBal;
+        vm.prank(daryl);
+        gov.vote(_disputeId, false, true);
         // multisig votes for the dispute
+        uint256 _balTeamMultiSig = token.balanceOf(address(fakeTeamMultiSig));
+        vm.prank(fakeTeamMultiSig);
+        gov.vote(_disputeId, true, true);
         // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
-        // dispute passes
+        vm.prank(paraOwner);
+        gov.voteParachain(
+            _disputeId,
+            100, // _totalTipsFor
+            100, // _totalTipsAgainst
+            100, // _totalTipsInvalid
+            100, // _totalReportsFor
+            100, // _totalReportsAgainst
+            100 // _totalReportsInvalid
+        );
+        // tally votes
+        vm.warp(block.timestamp + 1 days);
+        gov.tallyVotes(_disputeId);
 
-        // todo: how does the reporter check that the vote passes?
+        // check vote state
+        (, uint256[16] memory _voteInfo,, ParachainGovernance.VoteResult _voteResult,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteInfo[0], 1); // vote round
+        assertEq(_voteInfo[1], _startDisputeTimestamp); // start date
+        assertEq(_voteInfo[2], block.number); // block number
+        assertEq(_voteInfo[3], _startDisputeTimestamp + 1 days); // tally date
+        assertEq(_voteInfo[4], _balTeamMultiSig); // tokenholders does support
+        assertEq(_voteInfo[5], _bobTotalBalance + _darylTotalBalance); // tokenholders against
+        assertEq(_voteInfo[6], 0); // tokenholders invalid query
+        assertEq(_voteInfo[7], 100); // users does support
+        assertEq(_voteInfo[8], 100); // users against
+        assertEq(_voteInfo[9], 100); // users invalid query
+        assertEq(_voteInfo[10], 100); // reporters does support
+        assertEq(_voteInfo[11], 100); // reporters against
+        assertEq(_voteInfo[12], 100); // reporters invalid query
+        assertEq(_voteInfo[13], 1); // team multisig does support
+        assertEq(_voteInfo[14], 0); // team multisig against
+        assertEq(_voteInfo[15], 0); // team multisig invalid query
+        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.PASSED)); // vote result
+        console.log("vote result: ", uint8(_voteResult));
 
         // VOTE ROUND 2
         // reporter opens dispute again, starting another vote round
+        _startVoteRound2 = block.timestamp;
+
         // reporter votes against the dispute
         // random reporter votes against the dispute
         // multisig votes for the dispute
         // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
-        // dispute passes
+        // tally votes
 
         // VOTE ROUND 3
         // reporter opens dispute again, starting another vote round
@@ -498,6 +547,6 @@ contract E2ETests is Test {
         // random reporter votes against the dispute
         // multisig votes for the dispute
         // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
-        // dispute passes
+        // tally votes
     }
 }
