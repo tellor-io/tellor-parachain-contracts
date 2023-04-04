@@ -10,8 +10,6 @@ contract CounterScript is Script {
         vm.broadcast();
     }
 
-
     // add this to be excluded from coverage report
     function test() public {}
-
 }
