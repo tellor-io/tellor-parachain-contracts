@@ -35,7 +35,6 @@ contract E2ETests is Test {
     bytes32 fakeDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
     address fakeDisputedReporter = bob;
     address fakeDisputeInitiator = alice;
-    uint256 fakeDisputeFee = 10;
     uint256 fakeSlashAmount = 50;
 
     // Parachain registration
@@ -45,11 +44,11 @@ contract E2ETests is Test {
 
     uint32 public fakeParaId2 = 13;
     uint8 public fakePalletInstance2 = 9;
-    uint256 public fakeStakeAmount2 = 50;
+    uint256 public fakeStakeAmount2 = 75;
 
     uint32 public fakeParaId3 = 14;
     uint8 public fakePalletInstance3 = 10;
-    uint256 public fakeStakeAmount3 = 25;
+    uint256 public fakeStakeAmount3 = 50;
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
@@ -60,6 +59,10 @@ contract E2ETests is Test {
         // Register parachains
         vm.prank(paraOwner);
         registry.fakeRegister(fakeParaId, fakePalletInstance, fakeStakeAmount);
+        vm.prank(paraOwner2);
+        registry.fakeRegister(fakeParaId2, fakePalletInstance2, fakeStakeAmount2);
+        vm.prank(paraOwner3);
+        registry.fakeRegister(fakeParaId3, fakePalletInstance3, fakeStakeAmount3);
 
         gov.init(address(staking));
         staking.init(address(gov));
@@ -84,23 +87,150 @@ contract E2ETests is Test {
         vm.etch(_address, deployed.code);
     }
 
-    // function test5() public {
-    //     // staked and multiple times disputed on one consumer parachain but keeps reporting on that chain
-    // }
+    function testMultipleDisputesSingleChain() public {
+        // staked and multiple times disputed on one consumer parachain but keeps reporting on that chain
+        uint256 _numDisputes = 5;
+        uint256 initialBalance = token.balanceOf(address(bob));
+        token.mint(bob, fakeStakeAmount * _numDisputes);
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount * _numDisputes);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount * _numDisputes // _amount
+        );
+        vm.stopPrank();
+        (, uint256 stakedBalance, uint256 lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(lockedBalance, 0);
+        assertEq(stakedBalance, fakeStakeAmount * _numDisputes);
+        assertEq(token.balanceOf(address(bob)), initialBalance);
 
-    // function test6() public {
-    //     // staked and multiple times disputed across different consumer parachains, but keeps reporting on each
-    // }
+        // Dispute a few times
+        uint256 _initialBalanceDisputer = token.balanceOf(address(alice));
+        vm.startPrank(paraOwner);
+        for (uint256 i = 0; i < _numDisputes; i++) {
+            vm.warp(fakeTimestamp + i + 1);
+            gov.beginParachainDispute(
+                fakeQueryId, fakeTimestamp + i, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+            );
+            (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+            console.log("dispute #%s lockedBalance: %s", i + 1, lockedBalance);
+            console.log("dispute #%s stakedBalance: %s", i + 1, stakedBalance);
+            assertEq(stakedBalance, fakeStakeAmount * _numDisputes - fakeSlashAmount * (i + 1));
+        }
+        vm.stopPrank();
 
-    // function test7() public {
-    //     // check updating stake amount (increase/decrease) for different parachains
-    // }
+        // Check state
+        bytes32[] memory disputes = gov.getDisputesByReporter(fakeDisputedReporter);
+        assertEq(disputes.length, _numDisputes);
+        assertEq(token.balanceOf(address(alice)), _initialBalanceDisputer);
 
-    // function test8() public {
-    //     // check updating stake amount (increase/decrease) for same parachain
-    // }
+        // Assumes reporting is happening on the oracle parachain
+    }
 
-    function test9() public {
+    function testMultipleDisputesDifferentChains() public {
+        // test multiple disputes on different parachains
+
+        // deposit stakes for parachain 1
+        uint256 _numDisputes = 5;
+        uint256 initialBalance = token.balanceOf(address(bob));
+        token.mint(bob, fakeStakeAmount * _numDisputes);
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount * _numDisputes);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount * _numDisputes // _amount
+        );
+        vm.stopPrank();
+        (, uint256 stakedBalance, uint256 lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(lockedBalance, 0);
+        assertEq(stakedBalance, fakeStakeAmount * _numDisputes);
+        assertEq(token.balanceOf(address(bob)), initialBalance);
+
+        // deposit stakes for parachain 2
+        uint256 _numDisputes2 = 3;
+        uint256 initialBalance2 = token.balanceOf(address(bob));
+        token.mint(bob, fakeStakeAmount2 * _numDisputes2);
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount2 * _numDisputes2);
+        staking.depositParachainStake(
+            fakeParaId2, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount2 * _numDisputes2 // _amount
+        );
+        vm.stopPrank();
+        (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId2, bob);
+        assertEq(lockedBalance, 0);
+        assertEq(stakedBalance, fakeStakeAmount2 * _numDisputes2);
+        assertEq(token.balanceOf(address(bob)), initialBalance2);
+
+        // deposit stakes for parachain 3
+        uint256 _numDisputes3 = 2;
+        uint256 initialBalance3 = token.balanceOf(address(bob));
+        token.mint(bob, fakeStakeAmount3 * _numDisputes3);
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount3 * _numDisputes3);
+        staking.depositParachainStake(
+            fakeParaId3, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount3 * _numDisputes3 // _amount
+        );
+        vm.stopPrank();
+        (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, bob);
+        assertEq(lockedBalance, 0);
+        assertEq(stakedBalance, fakeStakeAmount3 * _numDisputes3);
+        assertEq(token.balanceOf(address(bob)), initialBalance3);
+
+        // Dispute a few times for parachain 1
+        vm.startPrank(paraOwner);
+        for (uint256 i = 0; i < _numDisputes; i++) {
+            vm.warp(fakeTimestamp + i + 1);
+            gov.beginParachainDispute(
+                fakeQueryId, fakeTimestamp + i, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+            );
+            (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+            console.log("dispute #%s lockedBalance: %s", i + 1, lockedBalance);
+            console.log("dispute #%s stakedBalance: %s", i + 1, stakedBalance);
+            assertEq(stakedBalance, fakeStakeAmount * _numDisputes - fakeSlashAmount * (i + 1));
+        }
+        vm.stopPrank();
+        assertEq(token.balanceOf(address(gov)), fakeSlashAmount * _numDisputes);
+
+        // Dispute a few times for parachain 2
+        uint256 _govBalance = token.balanceOf(address(gov));
+        vm.startPrank(paraOwner2);
+        for (uint256 i = 0; i < _numDisputes2; i++) {
+            vm.warp(fakeTimestamp + i + 1);
+            gov.beginParachainDispute(
+                fakeQueryId, fakeTimestamp + i, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+            );
+            (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId2, bob);
+            console.log("dispute #%s lockedBalance: %s", i + 1, lockedBalance);
+            console.log("dispute #%s stakedBalance: %s", i + 1, stakedBalance);
+            assertEq(stakedBalance, fakeStakeAmount2 * _numDisputes2 - fakeSlashAmount * (i + 1));
+        }
+        vm.stopPrank();
+        assertEq(token.balanceOf(address(gov)), _govBalance + fakeSlashAmount * _numDisputes2);
+
+        // Dispute a few times for parachain 3
+        _govBalance = token.balanceOf(address(gov));
+        vm.startPrank(paraOwner3);
+        for (uint256 i = 0; i < _numDisputes3; i++) {
+            vm.warp(fakeTimestamp + i + 1);
+            gov.beginParachainDispute(
+                fakeQueryId, fakeTimestamp + i, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+            );
+            (, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, bob);
+            console.log("dispute #%s lockedBalance: %s", i + 1, lockedBalance);
+            console.log("dispute #%s stakedBalance: %s", i + 1, stakedBalance);
+            assertEq(stakedBalance, fakeStakeAmount3 * _numDisputes3 - fakeSlashAmount * (i + 1));
+        }
+        vm.stopPrank();
+        assertEq(token.balanceOf(address(gov)), _govBalance + fakeSlashAmount * _numDisputes3);
+    }
+
+    function testRequestWithdrawStakeThenDispute() public {
         /*
         simulate bad value placed, stake withdraw requested, dispute started on oracle consumer parachain
         */
@@ -126,22 +256,10 @@ contract E2ETests is Test {
 
         // Can assume bad value was submitted on oracle consumer parachain 🪄
 
-        // Dispute
-        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
-        token.mint(fakeDisputeInitiator, fakeDisputeFee);
-        vm.prank(fakeDisputeInitiator);
-        token.approve(address(gov), fakeDisputeFee);
-
         // Successfully begin dispute
         vm.prank(paraOwner);
         gov.beginParachainDispute(
-            fakeQueryId,
-            fakeTimestamp,
-            fakeValue,
-            fakeDisputedReporter,
-            fakeDisputeInitiator,
-            fakeDisputeFee,
-            fakeSlashAmount
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
         // Check reporter was slashed
         (, uint256 _stakedBalAfter, uint256 _lockedBalAfter,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
@@ -150,13 +268,13 @@ contract E2ETests is Test {
         assertEq(_lockedBalAfter, fakeStakeAmount - fakeSlashAmount);
 
         assertEq(token.balanceOf(address(staking)), 50);
-        assertEq(token.balanceOf(address(gov)), fakeDisputeFee + fakeSlashAmount);
+        assertEq(token.balanceOf(address(gov)), fakeSlashAmount);
 
         // todo: what if the slash amount is more than the stake amount?
         // todo: check if stake amount is supposed to remain the same after requesting withdrawal & slashed from dispute
     }
 
-    function test10() public {
+    function testMultipleStakeWithdrawRequestsDisputesOnMultipleChains() public {
         // simulate bad values places on multiple consumer parachains, stake withdraws requested across each consumer parachain, disputes started across each parachain
         console.log("---------------------------------- START TEST ----------------------------------");
         console.log(
@@ -175,7 +293,6 @@ contract E2ETests is Test {
         console.log("Staking contract starting balance: ", balanceStakingContract);
         console.log("Gov contract starting balance: ", balanceGovContract);
         console.log("Slash amount for each parachain: ", fakeSlashAmount);
-        console.log("Dispute fee for each parachain: ", fakeDisputeFee);
         console.log("\n");
 
         // Fund staker
@@ -210,22 +327,10 @@ contract E2ETests is Test {
 
         // Can assume bad value was submitted on oracle consumer parachain 🪄
 
-        // Dispute
-        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
-        token.mint(fakeDisputeInitiator, fakeDisputeFee);
-        vm.prank(fakeDisputeInitiator);
-        token.approve(address(gov), fakeDisputeFee);
-
         // Successfully begin dispute
         vm.prank(paraOwner);
         gov.beginParachainDispute(
-            fakeQueryId,
-            fakeTimestamp,
-            fakeValue,
-            fakeDisputedReporter,
-            fakeDisputeInitiator,
-            fakeDisputeFee,
-            fakeSlashAmount
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
         // Check reporter was slashed
         console.log("bob balance after dispute for 1st parachain: ", token.balanceOf(address(bob)));
@@ -240,8 +345,8 @@ contract E2ETests is Test {
         balanceGovContract = token.balanceOf(address(gov));
         console.log("Staking contract balance after dispute for 1st parachain: ", balanceStakingContract);
         console.log("Gov contract balance after dispute for 1st parachain: ", balanceGovContract);
-        assertEq(balanceStakingContract, 50);
-        assertEq(balanceGovContract, fakeDisputeFee + fakeSlashAmount);
+        assertEq(balanceStakingContract, fakeStakeAmount - fakeSlashAmount);
+        assertEq(balanceGovContract, fakeSlashAmount);
         console.log("\n");
 
         // FOR 2ND PARACHAIN
@@ -272,22 +377,10 @@ contract E2ETests is Test {
 
         // Can assume bad value was submitted on oracle consumer parachain 🪄
 
-        // Dispute
-        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
-        token.mint(fakeDisputeInitiator, fakeDisputeFee);
-        vm.prank(fakeDisputeInitiator);
-        token.approve(address(gov), fakeDisputeFee);
-
         // Successfully begin dispute
         vm.prank(paraOwner2);
         gov.beginParachainDispute(
-            fakeQueryId,
-            fakeTimestamp,
-            fakeValue,
-            fakeDisputedReporter,
-            fakeDisputeInitiator,
-            fakeDisputeFee,
-            fakeSlashAmount
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
         // Check reporter was slashed
         console.log("bob balance after dispute for 2nd parachain: ", token.balanceOf(address(bob)));
@@ -302,8 +395,8 @@ contract E2ETests is Test {
         balanceGovContract = token.balanceOf(address(gov));
         console.log("Staking contract balance after dispute for 2nd parachain: ", balanceStakingContract);
         console.log("Gov contract balance after dispute for 2nd parachain: ", balanceGovContract);
-        assertEq(balanceStakingContract, 50); // todo: check if this is correct
-        assertEq(balanceGovContract, (fakeDisputeFee + fakeSlashAmount) * 2);
+        assertEq(balanceStakingContract, (fakeStakeAmount + fakeStakeAmount2) - fakeSlashAmount * 2); // todo: check if this is correct
+        assertEq(balanceGovContract, fakeSlashAmount * 2);
         console.log("\n");
 
         // FOR 3RD PARACHAIN
@@ -333,136 +426,78 @@ contract E2ETests is Test {
 
         // Can assume bad value was submitted on oracle consumer parachain 🪄
 
-        // Dispute
-        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
-        token.mint(fakeDisputeInitiator, fakeDisputeFee);
-        vm.prank(fakeDisputeInitiator);
-        token.approve(address(gov), fakeDisputeFee);
-
         // Successfully begin dispute
         vm.prank(paraOwner3);
         gov.beginParachainDispute(
-            fakeQueryId,
-            fakeTimestamp,
-            fakeValue,
-            fakeDisputedReporter,
-            fakeDisputeInitiator,
-            fakeDisputeFee,
-            fakeSlashAmount
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
         // Check reporter was slashed
         console.log("bob balance after dispute for 3rd parachain: ", token.balanceOf(address(bob)));
         (, _stakedBalAfter, _lockedBalAfter,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, bob);
         console.log("bob staked balance after dispute for 3rd parachain: ", _stakedBalAfter);
         console.log("bob locked balance after dispute for 3rd parachain: ", _lockedBalAfter);
-        assertEq(_stakedBalAfter, 0);
+        assertEq(_stakedBalAfter, fakeStakeAmount3);
         assertEq(token.balanceOf(address(bob)), initialBalance - fakeStakeAmount3);
-        assertEq(_lockedBalAfter, 0);
+        assertEq(_lockedBalAfter, fakeStakeAmount3 - fakeSlashAmount);
 
         balanceStakingContract = token.balanceOf(address(staking));
         balanceGovContract = token.balanceOf(address(gov));
         console.log("Staking contract balance after dispute for 3rd parachain: ", balanceStakingContract);
         console.log("Gov contract balance after dispute for 3rd parachain: ", balanceGovContract);
-        assertEq(token.balanceOf(address(staking)), 25);
-        assertEq(token.balanceOf(address(gov)), (fakeDisputeFee + fakeSlashAmount) * 3);
+        assertEq(
+            token.balanceOf(address(staking)),
+            fakeStakeAmount + fakeStakeAmount2 + fakeStakeAmount3 - fakeSlashAmount * 3
+        );
+        assertEq(token.balanceOf(address(gov)), fakeSlashAmount * 3);
 
         console.log("---------------------------------- END TEST ----------------------------------");
         console.log("\n");
     }
 
-    function test11() public {
-        // multiple disputes for single parachain
-        console.log("---------------------------------- START TEST ----------------------------------");
-        console.log("multiple disputes for single parachain");
+    function testMultipleVotesOnDisputeAllPassing() public {
+        // test multiple vote rounds on a dispute for one parachain, all passing
 
-        // Two accounts stake a lot each
-        token.mint(address(bob), 1000);
-        token.mint(address(alice), 1000);
+        // stake for parachain
         vm.startPrank(bob);
-        token.approve(address(staking), 1000);
+        token.approve(address(staking), fakeStakeAmount);
         staking.depositParachainStake(
             fakeParaId, // _paraId
             bytes("consumerChainAcct"), // _account
-            1000 // _amount
-        );
-        vm.stopPrank();
-        vm.startPrank(alice);
-        token.approve(address(staking), 1000);
-        staking.depositParachainStake(
-            fakeParaId, // _paraId
-            bytes("consumerChainAcct"), // _account
-            1000 // _amount
+            fakeStakeAmount // _amount
         );
         vm.stopPrank();
 
-        // Multiple disputes are started against each of those reporters on the same parachain
-        // Fund dispute initiator w/ fee amount & approve dispute fee transfer
-        token.mint(address(bob), fakeDisputeFee * 4);
-        vm.prank(bob);
-        token.approve(address(gov), fakeDisputeFee * 4);
-        token.mint(address(alice), fakeDisputeFee * 4);
-        vm.prank(alice);
-        token.approve(address(gov), fakeDisputeFee * 4);
-        // Open disputes
-        vm.startPrank(paraOwner);
-        for (uint256 i = 0; i < 4; i++) {
-            gov.beginParachainDispute(
-                fakeQueryId,
-                fakeTimestamp,
-                fakeValue,
-                alice, // fakeDisputedReporter
-                bob, // fakeDisputeInitiator
-                fakeDisputeFee,
-                fakeSlashAmount
-            );
-        }
-        for (uint256 i = 0; i < 4; i++) {
-            gov.beginParachainDispute(
-                fakeQueryId,
-                fakeTimestamp,
-                fakeValue,
-                bob, // fakeDisputedReporter
-                alice, // fakeDisputeInitiator
-                fakeDisputeFee,
-                fakeSlashAmount
-            );
-        }
-        vm.stopPrank();
+        // disputer already funded
 
-        // todo: Check that the correct amount of tokens are slashed from each reporter and any other relevant state is updated correctly
+        // begin initial dispute
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
 
-        console.log("---------------------------------- END TEST ----------------------------------");
+        // VOTE ROUND 1
+        // reporter votes against the dispute
+        // random reporter votes against the dispute
+        // multisig votes for the dispute
+        // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
+        // dispute passes
+
+        // todo: how does the reporter check that the vote passes?
+
+        // VOTE ROUND 2
+        // reporter opens dispute again, starting another vote round
+        // reporter votes against the dispute
+        // random reporter votes against the dispute
+        // multisig votes for the dispute
+        // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
+        // dispute passes
+
+        // VOTE ROUND 3
+        // reporter opens dispute again, starting another vote round
+        // reporter votes against the dispute
+        // random reporter votes against the dispute
+        // multisig votes for the dispute
+        // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
+        // dispute passes
     }
-
-    // function test12() public {
-    //     // multiple disputes, increase stake amount mid dispute
-    // }
-
-    // function test13() public {
-    //     // multiple disputes, decrease stake amount mid dispute
-    // }
-
-    // function test14() public {
-    //     // multiple disputes, changing governance address mid dispute
-    // }
-
-    // function test15() public {
-    //     // no votes on a dispute
-    // }
-
-    // function test16() public {
-    //     // multiple vote rounds on a dispute, all passing
-    // }
-
-    // function test17() public {
-    //     // multiple vote rounds on a dispute, overturn result
-    // }
-
-    // function test18() public {
-    //     // multiple votes from all stakeholders (tokenholders, reporters, users, teamMultisig) (test the handling of edge cases in voting rounds (e.g., voting ties, uneven votes, partial participation))
-    // }
-
-    // function test19() public {
-    //     // test submitting bad identical values (same value, query id, & submission timestamp) on different parachains, disputes open for all, ensure no cross contamination in gov/staking contracts
-    // }
 }

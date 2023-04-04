@@ -17,17 +17,3 @@
 
 ## Format Code
 - `$ forge fmt`
-
-### todo
-- reuse `deployPrecompile` function across test files
-- do the same as [#7](https://github.com/tellor-io/parity-tellor-contracts/pull/7#issuecomment-1463640355) "for the XcmUtils and then use that to overcome the onlyParachain modifier testing hurdle for register". Replace and remove `fakeRegister` function in registry contract and tests.
-- use `vm.mockCall` instead of the fake `transactThroughSigned` function. or do what Frank suggests: "That would be a call to a solidity precompile at a specific address on moonbeam. Not sure if you are using foundry, but you might be able to set a fake contract which implements the relevant interface from lib/moonbeam/precompiles at the expected address."
-- search for "todo" in code for more
-- see PolkaTellor checklist google sheet
-- 
-
-### todo from Frank
-- make parachain contract extendable to include the ability to set fee amounts for xcm calls when each parachain registers
-- do benchmarking for xcm calls
-- ensure pallet implementation works well w/ contracts side
-- 
