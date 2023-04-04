@@ -135,6 +135,10 @@ contract ParachainGovernance is Parachain {
 
         // Check if able to start new voting round
         if (voteRounds[_disputeId] >= 1) {
+            require(voteInfo[_disputeId][voteRounds[_disputeId]].tallyDate > 0, "Previous round must be tallied");
+            require(
+                voteInfo[_disputeId][voteRounds[_disputeId]].executed == false, "Previous round must not be executed"
+            );
             require(
                 block.timestamp - voteInfo[_disputeId][voteRounds[_disputeId]].tallyDate < 1 days,
                 "New dispute round must be started within a day"
@@ -283,9 +287,8 @@ contract ParachainGovernance is Parachain {
         // Determine appropriate vote duration dispute round
         // Vote time increases as rounds increase but only up to 6 days (withdrawal period)
         require(
-            // uint256 _elapsedVotingTime = block.timestamp - _thisVote.startDate
             block.timestamp - _thisVote.startDate >= 1 days * _thisVote.voteRound
-                || block.timestamp - _thisVote.startDate >= 6 days, // todo: shouldn't it be <= 6 days? nick says correct
+                || block.timestamp - _thisVote.startDate >= 6 days,
             "Time for voting has not elapsed"
         );
         // Get total votes from each separate stakeholder group.  This will allow
