@@ -533,7 +533,7 @@ contract E2ETests is Test {
 
         // VOTE ROUND 2
         // reporter opens dispute again, starting another vote round
-        _startVoteRound2 = block.timestamp;
+        // _startVoteRound2 = block.timestamp;
 
         // reporter votes against the dispute
         // random reporter votes against the dispute
