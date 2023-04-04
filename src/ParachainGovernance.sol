@@ -135,10 +135,8 @@ contract ParachainGovernance is Parachain {
 
         // Check if able to start new voting round
         if (voteRounds[_disputeId] >= 1) {
-            require(voteInfo[_disputeId][voteRounds[_disputeId]].tallyDate > 0, "Previous round must be tallied");
-            require(
-                voteInfo[_disputeId][voteRounds[_disputeId]].executed == false, "Previous round must not be executed"
-            );
+            // This condition also ensures that previous round is tallied, because block.timestamp - 0 != 1 day.
+            // This condition also ensures that previous round is not executed, because if it was, 1 day or more would have passed.
             require(
                 block.timestamp - voteInfo[_disputeId][voteRounds[_disputeId]].tallyDate < 1 days,
                 "New dispute round must be started within a day"
