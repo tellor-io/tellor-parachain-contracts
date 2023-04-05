@@ -32,7 +32,7 @@ contract ParachainStakingTest is Test {
         staking = new ParachainStaking(address(registry), address(token));
 
         vm.prank(paraOwner);
-        registry.fakeRegister(fakeParaId, fakePalletInstance, fakeStakeAmount);
+        registry.fakeRegister(fakeParaId, fakePalletInstance);
 
         // set fake governance address
         staking.init(address(0x2));

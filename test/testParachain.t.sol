@@ -37,7 +37,7 @@ contract ParachainTest is Test {
         parachain = new TestParachain(address(registry));
 
         vm.prank(paraOwner);
-        registry.fakeRegister(fakeParaId, fakePalletInstance, fakeStakeAmount);
+        registry.fakeRegister(fakeParaId, fakePalletInstance);
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
