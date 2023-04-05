@@ -359,7 +359,7 @@ contract ParachainGovernance is Parachain {
         _thisVote.executed = true;
         Dispute storage _thisDispute = disputeInfo[_disputeId];
         if (_thisVote.result == VoteResult.PASSED) {
-            // If vote is in dispute and passed, iterate through each vote round and transfer reporter's slashed stake to initiator
+            // If vote is in dispute and passed, transfer reporter's slashed stake to initiator
             token.transfer(_thisVote.initiator, _thisDispute.slashedAmount); // todo: should be wrapped in require statement?
         } else {
             // If vote is in dispute and fails, or if dispute is invalid, transfer the slashed stake to the reporter
