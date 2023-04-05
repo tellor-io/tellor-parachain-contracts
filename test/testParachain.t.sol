@@ -27,7 +27,6 @@ contract ParachainTest is Test {
     // Parachain registration
     uint32 public fakeParaId = 12;
     uint8 public fakePalletInstance = 8;
-    uint256 public fakeStakeAmount = 20;
 
     StubXcmTransactorV2 private constant xcmTransactor = StubXcmTransactorV2(XCM_TRANSACTOR_V2_ADDRESS);
 
@@ -64,14 +63,12 @@ contract ParachainTest is Test {
         IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance),
-            stakeAmount: fakeStakeAmount
+            palletInstance: abi.encode(fakePalletInstance)
         });
         IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: address(0),
-            palletInstance: abi.encode(fakePalletInstance),
-            stakeAmount: fakeStakeAmount
+            palletInstance: abi.encode(fakePalletInstance)
         });
         uint256 fakeAmount = 100e18;
 
@@ -112,14 +109,12 @@ contract ParachainTest is Test {
         IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance),
-            stakeAmount: fakeStakeAmount
+            palletInstance: abi.encode(fakePalletInstance)
         });
         IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: address(0),
-            palletInstance: abi.encode(fakePalletInstance),
-            stakeAmount: fakeStakeAmount
+            palletInstance: abi.encode(fakePalletInstance)
         });
         
         uint256 fakeAmount = 100e18;
@@ -161,14 +156,12 @@ contract ParachainTest is Test {
         IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance),
-            stakeAmount: fakeStakeAmount
+            palletInstance: abi.encode(fakePalletInstance)
         });
         IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: address(0),
-            palletInstance: abi.encode(fakePalletInstance),
-            stakeAmount: fakeStakeAmount
+            palletInstance: abi.encode(fakePalletInstance)
         });
         
         uint256 fakeAmount = 100e18;
@@ -210,14 +203,12 @@ contract ParachainTest is Test {
         IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance),
-            stakeAmount: fakeStakeAmount
+            palletInstance: abi.encode(fakePalletInstance)
         });
         IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: address(0),
-            palletInstance: abi.encode(fakePalletInstance),
-            stakeAmount: fakeStakeAmount
+            palletInstance: abi.encode(fakePalletInstance)
         });
         
         uint256 fakeAmount = 100e18;
@@ -262,8 +253,7 @@ contract ParachainTest is Test {
         IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance),
-            stakeAmount: fakeStakeAmount
+            palletInstance: abi.encode(fakePalletInstance)
         });
         
         uint256 fakeAmount = 100e18;
@@ -288,8 +278,7 @@ contract ParachainTest is Test {
         IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance),
-            stakeAmount: fakeStakeAmount
+            palletInstance: abi.encode(fakePalletInstance)
         });
         
         uint256 fakeAmount = 100e18;
