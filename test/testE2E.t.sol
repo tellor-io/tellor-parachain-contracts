@@ -633,4 +633,188 @@ contract E2ETests is Test {
         (,, bool _voteExecuted,,) = gov.getVoteInfo(_disputeId);
         assertEq(_voteExecuted, true);
     }
+
+    function testMultipleVoteRoundsOverturnResult() public {
+        // multiple vote rounds on a dispute, overturn result
+        // do the same as testMultipleVotesOnDisputeAllPassing, but fail the vote in the last round
+
+        // stake for parachain
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount // _amount
+        );
+        vm.stopPrank();
+
+        // begin initial dispute
+        uint256 _startVote = block.timestamp;
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+
+        bytes32 _disputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
+
+        // VOTE ROUND 1
+        // reporter votes against the dispute
+        uint256 _bobBalance = token.balanceOf(address(bob));
+        (, uint256 _stakedBal, uint256 _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        uint256 _bobTotalBalance = _bobBalance + _stakedBal + _lockedBal;
+        vm.prank(bob);
+        gov.vote(_disputeId, false, true);
+        // random reporter votes against the dispute
+        uint256 _darylBalance = token.balanceOf(address(daryl));
+        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, daryl);
+        uint256 _darylTotalBalance = _darylBalance + _stakedBal + _lockedBal;
+        vm.prank(daryl);
+        gov.vote(_disputeId, false, true);
+        // multisig votes for the dispute
+        uint256 _balTeamMultiSig = token.balanceOf(address(fakeTeamMultiSig));
+        vm.prank(fakeTeamMultiSig);
+        gov.vote(_disputeId, true, true);
+        // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
+        vm.prank(paraOwner);
+        gov.voteParachain(
+            _disputeId,
+            100, // _totalTipsFor
+            100, // _totalTipsAgainst
+            100, // _totalTipsInvalid
+            100, // _totalReportsFor
+            100, // _totalReportsAgainst
+            100 // _totalReportsInvalid
+        );
+        // tally votes
+        vm.warp(block.timestamp + 1 days);
+        gov.tallyVotes(_disputeId);
+
+        // check vote state
+        (, uint256[16] memory _voteInfo,, ParachainGovernance.VoteResult _voteResult,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteInfo[0], 1); // vote round
+        assertEq(_voteInfo[1], _startVote); // start date
+        assertEq(_voteInfo[2], block.number); // block number
+        assertEq(_voteInfo[3], _startVote + 1 days); // tally date
+        assertEq(_voteInfo[4], _balTeamMultiSig); // tokenholders does support
+        assertEq(_voteInfo[5], _bobTotalBalance + _darylTotalBalance); // tokenholders against
+        assertEq(_voteInfo[6], 0); // tokenholders invalid query
+        assertEq(_voteInfo[7], 100); // users does support
+        assertEq(_voteInfo[8], 100); // users against
+        assertEq(_voteInfo[9], 100); // users invalid query
+        assertEq(_voteInfo[10], 100); // reporters does support
+        assertEq(_voteInfo[11], 100); // reporters against
+        assertEq(_voteInfo[12], 100); // reporters invalid query
+        assertEq(_voteInfo[13], 1); // team multisig does support
+        assertEq(_voteInfo[14], 0); // team multisig against
+        assertEq(_voteInfo[15], 0); // team multisig invalid query
+        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.PASSED)); // vote result
+        console.log("vote #1 result: ", uint8(_voteResult));
+
+        // VOTE ROUND 2
+        // reporter opens dispute again, starting another vote round
+        _startVote = block.timestamp;
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteInfo[0], 2); // vote round
+        // reporter votes against the dispute
+        vm.prank(bob);
+        gov.vote(_disputeId, false, true);
+        // random reporter votes against the dispute
+        vm.prank(daryl);
+        gov.vote(_disputeId, false, true);
+        // multisig votes for the dispute
+        vm.prank(fakeTeamMultiSig);
+        gov.vote(_disputeId, true, true);
+        // parachain casts cumulative vote for users on oracle consumer parachain in favor of dispute
+        vm.prank(paraOwner);
+        gov.voteParachain(
+            _disputeId,
+            100, // _totalTipsFor
+            100, // _totalTipsAgainst
+            100, // _totalTipsInvalid
+            100, // _totalReportsFor
+            100, // _totalReportsAgainst
+            100 // _totalReportsInvalid
+        );
+        // tally votes
+        vm.warp(block.timestamp + 2 days);
+        gov.tallyVotes(_disputeId);
+
+        // check vote state
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteInfo[0], 2); // vote round
+        assertEq(_voteInfo[1], _startVote); // start date
+        assertEq(_voteInfo[2], block.number); // block number
+        assertEq(_voteInfo[3], _startVote + 2 days); // tally date
+        assertEq(_voteInfo[4], _balTeamMultiSig); // tokenholders does support
+        assertEq(_voteInfo[5], _bobTotalBalance + _darylTotalBalance); // tokenholders against
+        assertEq(_voteInfo[6], 0); // tokenholders invalid query
+        assertEq(_voteInfo[7], 100); // users does support
+        assertEq(_voteInfo[10], 100); // reporters does support
+        assertEq(_voteInfo[13], 1); // team multisig does support
+        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.PASSED)); // vote result
+        console.log("vote #2 result: ", uint8(_voteResult));
+
+        // VOTE ROUND 3
+        // reporter opens dispute again, starting another vote round
+        // vote fails
+        _bobBalance = token.balanceOf(address(bob));
+        _startVote = block.timestamp;
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteInfo[0], 3); // vote round
+        // reporter votes against the dispute
+        vm.prank(bob);
+        gov.vote(_disputeId, false, true);
+        // random reporter votes against the dispute
+        vm.prank(daryl);
+        gov.vote(_disputeId, false, true);
+        // multisig votes for the dispute
+        vm.prank(fakeTeamMultiSig);
+        gov.vote(_disputeId, false, true);
+        // cast cumulative vote for users on oracle consumer parachain
+        vm.prank(paraOwner);
+        gov.voteParachain(
+            _disputeId,
+            100, // _totalTipsFor
+            100, // _totalTipsAgainst
+            100, // _totalTipsInvalid
+            100, // _totalReportsFor
+            100, // _totalReportsAgainst
+            100 // _totalReportsInvalid
+        );
+        // tally votes
+        vm.warp(block.timestamp + 3 days);
+        gov.tallyVotes(_disputeId);
+
+        // check vote state
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteInfo[0], 3); // vote round
+        assertEq(_voteInfo[1], _startVote); // start date
+        assertEq(_voteInfo[2], block.number); // block number
+        assertEq(_voteInfo[3], _startVote + 3 days); // tally date
+        assertEq(_voteInfo[4], 0); // tokenholders does support
+        assertEq(_voteInfo[5], _bobTotalBalance + _darylTotalBalance + _balTeamMultiSig); // tokenholders against
+        assertEq(_voteInfo[6], 0); // tokenholders invalid query
+        assertEq(_voteInfo[7], 100); // users does support
+        assertEq(_voteInfo[10], 100); // reporters does support
+        assertEq(_voteInfo[13], 0); // team multisig does support
+        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.FAILED)); // vote result
+        console.log("vote #3 result: ", uint8(_voteResult));
+
+        // exectue vote
+        vm.warp(block.timestamp + 1 days);
+        gov.executeVote(_disputeId);
+        (,, bool _voteExecuted,,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteExecuted, true);
+
+        // check disputed reporter balance
+        assertEq(token.balanceOf(address(fakeDisputedReporter)), _bobBalance + fakeSlashAmount);
+    }
 }
