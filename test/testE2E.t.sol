@@ -58,11 +58,11 @@ contract E2ETests is Test {
 
         // Register parachains
         vm.prank(paraOwner);
-        registry.fakeRegister(fakeParaId, fakePalletInstance, fakeStakeAmount);
+        registry.fakeRegister(fakeParaId, fakePalletInstance);
         vm.prank(paraOwner2);
-        registry.fakeRegister(fakeParaId2, fakePalletInstance2, fakeStakeAmount2);
+        registry.fakeRegister(fakeParaId2, fakePalletInstance2);
         vm.prank(paraOwner3);
-        registry.fakeRegister(fakeParaId3, fakePalletInstance3, fakeStakeAmount3);
+        registry.fakeRegister(fakeParaId3, fakePalletInstance3);
 
         gov.init(address(staking));
         staking.init(address(gov));
@@ -285,9 +285,9 @@ contract E2ETests is Test {
 
         // Register other parachains
         vm.prank(paraOwner2);
-        registry.fakeRegister(fakeParaId2, fakePalletInstance2, fakeStakeAmount2);
+        registry.fakeRegister(fakeParaId2, fakePalletInstance2);
         vm.prank(paraOwner3);
-        registry.fakeRegister(fakeParaId3, fakePalletInstance3, fakeStakeAmount3);
+        registry.fakeRegister(fakeParaId3, fakePalletInstance3);
 
         uint256 balanceStakingContract = token.balanceOf(address(staking));
         uint256 balanceGovContract = token.balanceOf(address(gov));

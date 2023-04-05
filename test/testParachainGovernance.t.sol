@@ -48,7 +48,7 @@ contract ParachainGovernanceTest is Test {
         gov = new ParachainGovernance(address(registry), fakeTeamMultiSig);
 
         vm.prank(paraOwner);
-        registry.fakeRegister(fakeParaId, fakePalletInstance, fakeStakeAmount);
+        registry.fakeRegister(fakeParaId, fakePalletInstance);
         vm.stopPrank();
 
         gov.init(address(staking));
