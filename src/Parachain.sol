@@ -161,6 +161,7 @@ abstract contract Parachain {
         return abi.encodePacked(hex"00", bytes4(_paraId));
     }
 
+    // this isn't used, can we delete?
     function pallet(uint8 _palletInstance) private pure returns (bytes memory) {
         // 0x04 denotes PalletInstance: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
         return abi.encodePacked(hex"04", bytes1(_palletInstance));

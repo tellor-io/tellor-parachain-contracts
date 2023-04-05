@@ -256,13 +256,60 @@ contract ParachainTest is Test {
 
     function testTransactThroughSigned() public {}
 
-    function testParachain() public {}
+    function testParachain() public {
+        // since function is private, indirectly test through reportStakeWithdrawnExternal call
+        // setup
+        IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
+            id: fakeParaId,
+            owner: paraOwner,
+            palletInstance: abi.encode(fakePalletInstance),
+            stakeAmount: fakeStakeAmount
+        });
+        
+        uint256 fakeAmount = 100e18;
 
+        // test registered parachain
+        vm.prank(fakeStakingContract);
+        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
+
+        // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
+        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray = xcmTransactor.getTransactThroughSignedMultilocationArray();
+        StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
+
+        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
+    }
+
+    // pallet() function is private and isn't used, can we delete?
     function testPallet() public {}
 
-    function testX1() public {}
+    function testX1() public {
+        // since function is private, indirectly test through reportStakeWithdrawnExternal call
+        // setup
+        IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
+            id: fakeParaId,
+            owner: paraOwner,
+            palletInstance: abi.encode(fakePalletInstance),
+            stakeAmount: fakeStakeAmount
+        });
+        
+        uint256 fakeAmount = 100e18;
 
-    function testReverse() public {}
+        // test registered parachain
+        vm.prank(fakeStakingContract);
+        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
 
-    function testRegistryAddress() public {}
+        // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
+        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray = xcmTransactor.getTransactThroughSignedMultilocationArray();
+        StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
+
+        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
+    }
+
+    function testReverse() public {
+        // how do we test this?
+    }
+
+    function testRegistryAddress() public {
+        assertEq(parachain.registryAddress(), address(registry));
+    }
 }
