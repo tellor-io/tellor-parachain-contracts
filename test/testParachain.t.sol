@@ -72,8 +72,8 @@ contract ParachainTest is Test {
         });
         uint256 fakeAmount = 100e18;
 
-        // test non-registered parachain - should revert with "Parachain not registered"
-        vm.expectRevert();
+        // test non-registered parachain
+        vm.expectRevert("Parachain not registered");
         vm.prank(fakeStakingContract);
         parachain.reportStakeDepositedExternal(badFakeParachain, fakeStaker, fakeReporter, fakeAmount);
         
@@ -81,7 +81,7 @@ contract ParachainTest is Test {
         vm.prank(fakeStakingContract);
         parachain.reportStakeDepositedExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
 
-        // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
+        // check saved data passed to mock StubXcmTransactorV2 through transactThroughSigned
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray = xcmTransactor.getTransactThroughSignedMultilocationArray();
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
 
@@ -119,8 +119,8 @@ contract ParachainTest is Test {
         
         uint256 fakeAmount = 100e18;
 
-        // test non-registered parachain - should revert with "Parachain not registered"
-        vm.expectRevert();
+        // test non-registered parachain
+        vm.expectRevert("Parachain not registered");
         vm.prank(fakeStakingContract);
         parachain.reportStakeWithdrawRequestedExternal(badFakeParachain, fakeReporter, fakeAmount, fakeStaker);
 
@@ -166,8 +166,8 @@ contract ParachainTest is Test {
         
         uint256 fakeAmount = 100e18;
 
-        // test non-registered parachain - should revert with "Parachain not registered"
-        vm.expectRevert();
+        // test non-registered parachain
+        vm.expectRevert("Parachain not registered");
         vm.prank(fakeStakingContract);
         parachain.reportSlashExternal(badFakeParachain, fakeStaker, paraDisputer, fakeAmount);
 
@@ -213,8 +213,8 @@ contract ParachainTest is Test {
         
         uint256 fakeAmount = 100e18;
 
-        // test non-registered parachain - should revert with "Parachain not registered"
-        vm.expectRevert();
+        // test non-registered parachain
+        vm.expectRevert("Parachain not registered");
         vm.prank(fakeStakingContract);
         parachain.reportStakeWithdrawnExternal(badFakeParachain, fakeStaker, fakeReporter, fakeAmount);
 
@@ -257,8 +257,6 @@ contract ParachainTest is Test {
         });
         
         uint256 fakeAmount = 100e18;
-
-        // test registered parachain
         vm.prank(fakeStakingContract);
         parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
 
@@ -268,9 +266,6 @@ contract ParachainTest is Test {
 
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
     }
-
-    // pallet() function is private and isn't used, can we delete?
-    function testPallet() public {}
 
     function testX1() public {
         // since function is private, indirectly test through reportStakeWithdrawnExternal call
@@ -282,8 +277,6 @@ contract ParachainTest is Test {
         });
         
         uint256 fakeAmount = 100e18;
-
-        // test registered parachain
         vm.prank(fakeStakingContract);
         parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
 
@@ -295,7 +288,22 @@ contract ParachainTest is Test {
     }
 
     function testReverse() public {
-        // how do we test this?
+        uint256 reverse1 = 0x0100000000000000000000000000000000000000000000000000000000000000;
+        uint256 reverse2 = 0x0200000000000000000000000000000000000000000000000000000000000000;
+        uint256 reverse100 = 0x6400000000000000000000000000000000000000000000000000000000000000;
+        uint256 reverse1e18 = 0x000064a7b3b6e00d000000000000000000000000000000000000000000000000;
+
+        assertEq(parachain.reverseExternal(0), 0);
+        assertEq(parachain.reverseExternal(1), reverse1);
+        assertEq(parachain.reverseExternal(2), reverse2);
+        assertEq(parachain.reverseExternal(100), reverse100);
+        assertEq(parachain.reverseExternal(1e18), reverse1e18);
+
+        assertEq(parachain.reverseExternal(parachain.reverseExternal(0)), 0);
+        assertEq(parachain.reverseExternal(parachain.reverseExternal(1)), 1);
+        assertEq(parachain.reverseExternal(parachain.reverseExternal(2)), 2);
+        assertEq(parachain.reverseExternal(parachain.reverseExternal(100)), 100);
+        assertEq(parachain.reverseExternal(parachain.reverseExternal(1e18)), 1e18);
     }
 
     function testRegistryAddress() public {

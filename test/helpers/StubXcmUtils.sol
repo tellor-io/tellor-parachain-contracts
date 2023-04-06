@@ -2,7 +2,10 @@
 pragma solidity >=0.8.3;
 
 import "../../lib/moonbeam/precompiles/XcmUtils.sol";
-import "forge-std/console.sol";
+
+// StubXcmUtils is a mock of the XcmUtils precompile used for testing. It should be deployed in 
+// tests to the real XcmUtils precompile address so that any calls to the precompile will be
+// forwarded to this contract.
 
 contract StubXcmUtils {
     // A multilocation is defined by its number of parents and the encoded junctions (interior)
@@ -11,8 +14,11 @@ contract StubXcmUtils {
         bytes[] interior;
     }
 
+    // For testing, save Multilocation hash => fake pallet Multilocation-derivative address
     mapping(bytes32 => address) public fakeMultilocationToAddressMapping;
     
+    // For testing any function which relies on multilocationToAddress, 
+    // save Multilocation hash => fake account Multilocation-derivative address
     function fakeSetOwnerMultilocationAddress(uint32 paraId, uint8 palletInstance, address owner) public {
         Multilocation memory multilocation = Multilocation(1, x2(paraId, palletInstance));
         bytes32 hash = keccak256(abi.encode(multilocation));
@@ -30,7 +36,6 @@ contract StubXcmUtils {
     {
         bytes32 hash = keccak256(abi.encode(multilocation));
         account = fakeMultilocationToAddressMapping[hash];
-        console.log("multilocationToAddress: %s", account);
     }
 
     /// Get the weight that a message will consume in our chain
