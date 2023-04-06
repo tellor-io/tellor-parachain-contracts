@@ -134,7 +134,7 @@ contract ParachainGovernance is Parachain {
         bytes32 _disputeId = keccak256(abi.encode(parachain.id, _queryId, _timestamp));
 
         // Check if able to start new voting round
-        if (voteRounds[_disputeId] >= 1) {
+        if (voteRounds[_disputeId] > 0) {
             require(
                 block.timestamp - voteInfo[_disputeId][voteRounds[_disputeId]].tallyDate < 1 days,
                 "New dispute round must be started within a day"
