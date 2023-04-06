@@ -817,4 +817,29 @@ contract E2ETests is Test {
         // check disputed reporter balance
         assertEq(token.balanceOf(address(fakeDisputedReporter)), _bobBalance + fakeSlashAmount);
     }
+
+    function testNoVotesForDispute() public {
+        // no votes on a dispute
+
+        // stake for parachain
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount // _amount
+        );
+        vm.stopPrank();
+
+        // begin initial dispute
+        uint256 _startVote = block.timestamp;
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+
+        // todo: what is supposed to be tested here?
+        // if there are no votes, then the slash amount is locked up in the gov contract forever?
+        // and dispute fees locked up on parachain oracle consumer side forever as well?
+    }
 }
