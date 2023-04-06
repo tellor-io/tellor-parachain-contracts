@@ -131,7 +131,9 @@ contract E2ETests is Test {
     }
 
     function testMultipleDisputesDifferentChains() public {
-        // test multiple disputes on different parachains
+        // Test multiple disputes on different parachains
+        // Open disputes for identical values (same value, query id, & submission timestamp) on different parachains.
+        // Ensure no cross contamination in gov/staking contracts.
 
         // deposit stakes for parachain 1
         uint256 _numDisputes = 5;
