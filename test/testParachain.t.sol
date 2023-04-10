@@ -60,29 +60,24 @@ contract ParachainTest is Test {
 
     function testReportStakeDeposited() public {
         // setup
-        IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance)
-        });
-        IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: address(0),
-            palletInstance: abi.encode(fakePalletInstance)
-        });
+        IRegistry.Parachain memory fakeParachain =
+            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance)});
+        IRegistry.Parachain memory badFakeParachain =
+            IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance)});
         uint256 fakeAmount = 100e18;
 
         // test non-registered parachain
         vm.expectRevert("Parachain not registered");
         vm.prank(fakeStakingContract);
         parachain.reportStakeDepositedExternal(badFakeParachain, fakeStaker, fakeReporter, fakeAmount);
-        
+
         // test registered parachain
         vm.prank(fakeStakingContract);
         parachain.reportStakeDepositedExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
 
         // check saved data passed to mock StubXcmTransactorV2 through transactThroughSigned
-        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray = xcmTransactor.getTransactThroughSignedMultilocationArray();
+        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
+            xcmTransactor.getTransactThroughSignedMultilocationArray();
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
 
         assertEq(savedData.dest.parents, 1);
@@ -106,17 +101,11 @@ contract ParachainTest is Test {
 
     function testReportStakeWithdrawRequested() public {
         // setup
-        IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance)
-        });
-        IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: address(0),
-            palletInstance: abi.encode(fakePalletInstance)
-        });
-        
+        IRegistry.Parachain memory fakeParachain =
+            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance)});
+        IRegistry.Parachain memory badFakeParachain =
+            IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance)});
+
         uint256 fakeAmount = 100e18;
 
         // test non-registered parachain
@@ -129,7 +118,8 @@ contract ParachainTest is Test {
         parachain.reportStakeWithdrawRequestedExternal(fakeParachain, fakeReporter, fakeAmount, fakeStaker);
 
         // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
-        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray = xcmTransactor.getTransactThroughSignedMultilocationArray();
+        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
+            xcmTransactor.getTransactThroughSignedMultilocationArray();
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
 
         assertEq(savedData.dest.parents, 1);
@@ -153,17 +143,11 @@ contract ParachainTest is Test {
 
     function testReportSlash() public {
         // setup
-        IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance)
-        });
-        IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: address(0),
-            palletInstance: abi.encode(fakePalletInstance)
-        });
-        
+        IRegistry.Parachain memory fakeParachain =
+            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance)});
+        IRegistry.Parachain memory badFakeParachain =
+            IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance)});
+
         uint256 fakeAmount = 100e18;
 
         // test non-registered parachain
@@ -176,7 +160,8 @@ contract ParachainTest is Test {
         parachain.reportSlashExternal(fakeParachain, fakeStaker, paraDisputer, fakeAmount);
 
         // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
-        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray = xcmTransactor.getTransactThroughSignedMultilocationArray();
+        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
+            xcmTransactor.getTransactThroughSignedMultilocationArray();
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
 
         assertEq(savedData.dest.parents, 1);
@@ -200,17 +185,11 @@ contract ParachainTest is Test {
 
     function testReportStakeWithdrawn() public {
         // setup
-        IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance)
-        });
-        IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: address(0),
-            palletInstance: abi.encode(fakePalletInstance)
-        });
-        
+        IRegistry.Parachain memory fakeParachain =
+            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance)});
+        IRegistry.Parachain memory badFakeParachain =
+            IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance)});
+
         uint256 fakeAmount = 100e18;
 
         // test non-registered parachain
@@ -223,7 +202,8 @@ contract ParachainTest is Test {
         parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
 
         // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
-        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray = xcmTransactor.getTransactThroughSignedMultilocationArray();
+        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
+            xcmTransactor.getTransactThroughSignedMultilocationArray();
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
 
         assertEq(savedData.dest.parents, 1);
@@ -250,18 +230,16 @@ contract ParachainTest is Test {
     function testParachain() public {
         // since function is private, indirectly test through reportStakeWithdrawnExternal call
         // setup
-        IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance)
-        });
-        
+        IRegistry.Parachain memory fakeParachain =
+            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance)});
+
         uint256 fakeAmount = 100e18;
         vm.prank(fakeStakingContract);
         parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
 
         // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
-        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray = xcmTransactor.getTransactThroughSignedMultilocationArray();
+        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
+            xcmTransactor.getTransactThroughSignedMultilocationArray();
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
 
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
@@ -270,18 +248,16 @@ contract ParachainTest is Test {
     function testX1() public {
         // since function is private, indirectly test through reportStakeWithdrawnExternal call
         // setup
-        IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance)
-        });
-        
+        IRegistry.Parachain memory fakeParachain =
+            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance)});
+
         uint256 fakeAmount = 100e18;
         vm.prank(fakeStakingContract);
         parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
 
         // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
-        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray = xcmTransactor.getTransactThroughSignedMultilocationArray();
+        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
+            xcmTransactor.getTransactThroughSignedMultilocationArray();
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
 
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));

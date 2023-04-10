@@ -10,7 +10,7 @@ import "solmate/tokens/ERC20.sol";
 import "./helpers/TestToken.sol";
 
 import "../src/ParachainRegistry.sol";
-import { StubXcmUtils } from "./helpers/StubXcmUtils.sol";
+import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 contract ParachainRegistryTest is Test {
     TestToken public token;
@@ -57,7 +57,7 @@ contract ParachainRegistryTest is Test {
         address paraOwner2 = address(0x3333);
         address nonParaOwner = address(0x4444);
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId2, fakePalletInstance2, paraOwner2);
-        
+
         // test non owner trying to register
         vm.prank(nonParaOwner);
         vm.expectRevert("Not owner");

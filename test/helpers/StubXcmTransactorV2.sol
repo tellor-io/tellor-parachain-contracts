@@ -6,7 +6,7 @@ import "../../lib/moonbeam/precompiles/XcmTransactorV2.sol";
 
 // StubXcmTransactorV2 is a mock of the XcmTransactorV2 precompile used for testing. It should be deployed in
 // tests to the real XcmTransactorV2 precompile address so that any calls to the precompile will be forwarded
-// to this contract. 
+// to this contract.
 
 contract StubXcmTransactorV2 is XcmTransactorV2 {
     event TransactThroughSigned(
@@ -20,7 +20,7 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
 
     // Used for for testing, data passed through transactThroughSignedMultilocation is saved here
     TransactThroughSignedMultilocationCall[] public transactThroughSignedMultilocationArray;
-    
+
     // Struct used for testing transactThroughSignedMultilocation calls
     struct TransactThroughSignedMultilocationCall {
         Multilocation dest;
@@ -76,16 +76,11 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
         uint256 feeAmount,
         uint64 overallWeight
     ) external override {
-        // For testing and verifying correct data passed here, append data to 
+        // For testing and verifying correct data passed here, append data to
         // transactThroughSignedMultilocationArray
         transactThroughSignedMultilocationArray.push(
             TransactThroughSignedMultilocationCall(
-                dest,
-                feeLocation,
-                transactRequiredWeightAtMost,
-                call,
-                feeAmount,
-                overallWeight
+                dest, feeLocation, transactRequiredWeightAtMost, call, feeAmount, overallWeight
             )
         );
     }
@@ -107,7 +102,11 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
     function test() public {}
 
     // add this to be excluded from coverage report. This is a getter for the transactThroughSignedMultilocationArray
-    function getTransactThroughSignedMultilocationArray() public view returns(TransactThroughSignedMultilocationCall[] memory) {
+    function getTransactThroughSignedMultilocationArray()
+        public
+        view
+        returns (TransactThroughSignedMultilocationCall[] memory)
+    {
         return transactThroughSignedMultilocationArray;
     }
 }
