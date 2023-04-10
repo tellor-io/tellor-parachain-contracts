@@ -2,6 +2,10 @@
 cache/
 out/
 
+# This file not found in CI runs for some reason
+!/out/StubXcmUtils.sol/StubXcmUtls.json
+
+
 # Ignores development broadcast logs
 !/broadcast
 /broadcast/*/31337/
