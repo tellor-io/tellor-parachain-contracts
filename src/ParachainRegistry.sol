@@ -39,7 +39,7 @@ contract ParachainRegistry is IRegistry {
     /// @param _paraId uint32 The parachain identifier.
     /// @param _palletInstance uint8 The index of the Tellor pallet within the parachain's runtime.
     function register(uint32 _paraId, uint8 _palletInstance) external {
-        // Ensure sender is multilocation-derivative account of pallet on parachain
+        // Ensure sender is on parachain
         address derivativeAddress =
             xcmUtils.multilocationToAddress(XcmUtils.Multilocation(1, x2(_paraId, _palletInstance)));
         // if (msg.sender != derivativeAddress) revert NotOwner();
