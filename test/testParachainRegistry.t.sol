@@ -30,12 +30,13 @@ contract ParachainRegistryTest is Test {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
 
-        vm.prank(paraOwner);
-        registry.fakeRegister(fakeParaId, fakePalletInstance);
-
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
         deployPrecompile("StubXcmUtils.sol", XCM_UTILS_ADDRESS);
+
+        xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
+        vm.prank(paraOwner);
+        registry.register(fakeParaId, fakePalletInstance);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples

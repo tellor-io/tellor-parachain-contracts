@@ -7,11 +7,11 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "solmate/tokens/ERC20.sol";
 
-import "./helpers/TestToken.sol";
-
 import "../src/ParachainRegistry.sol";
 import "./helpers/TestParachain.sol";
+import "./helpers/TestToken.sol";
 import "./helpers/StubXcmTransactorV2.sol";
+import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 contract ParachainTest is Test {
     TestToken public token;
@@ -29,17 +29,20 @@ contract ParachainTest is Test {
     uint8 public fakePalletInstance = 8;
 
     StubXcmTransactorV2 private constant xcmTransactor = StubXcmTransactorV2(XCM_TRANSACTOR_V2_ADDRESS);
+    StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
         parachain = new TestParachain(address(registry));
 
-        vm.prank(paraOwner);
-        registry.fakeRegister(fakeParaId, fakePalletInstance);
-
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
+        deployPrecompile("StubXcmUtils.sol", XCM_UTILS_ADDRESS);
+
+        xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
+        vm.prank(paraOwner);
+        registry.register(fakeParaId, fakePalletInstance);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples

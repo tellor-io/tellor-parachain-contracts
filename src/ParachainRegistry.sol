@@ -50,14 +50,6 @@ contract ParachainRegistry is IRegistry {
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }
 
-    // Used for testing bc normal register was reverting bc of onlyParachain modifier
-    // TODO: remove this
-    function fakeRegister(uint32 _paraId, uint8 _palletInstance) external {
-        registrations[msg.sender] = Parachain(_paraId, msg.sender, abi.encodePacked(_palletInstance));
-        owners[_paraId] = msg.sender;
-        emit ParachainRegistered(msg.sender, _paraId, msg.sender);
-    }
-
     /// @dev Deregister parachain.
     function deregister() external view {
         // Ensure parachain is registered & sender is parachain owner

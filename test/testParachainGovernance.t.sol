@@ -42,7 +42,6 @@ contract ParachainGovernanceTest is Test {
     uint8 public fakePalletInstance = 8;
     uint256 public fakeStakeAmount = 20;
 
-    XcmTransactorV2 private constant xcmTransactor = XCM_TRANSACTOR_V2_CONTRACT;
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
 
     function setUp() public {
