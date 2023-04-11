@@ -3,7 +3,7 @@ pragma solidity >=0.8.3;
 
 import "../../lib/moonbeam/precompiles/XcmUtils.sol";
 
-// StubXcmUtils is a mock of the XcmUtils precompile used for testing. It should be deployed in 
+// StubXcmUtils is a mock of the XcmUtils precompile used for testing. It should be deployed in
 // tests to the real XcmUtils precompile address so that any calls to the precompile will be
 // forwarded to this contract.
 
@@ -16,8 +16,8 @@ contract StubXcmUtils {
 
     // For testing, save Multilocation hash => fake pallet Multilocation-derivative address
     mapping(bytes32 => address) public fakeMultilocationToAddressMapping;
-    
-    // For testing any function which relies on multilocationToAddress, 
+
+    // For testing any function which relies on multilocationToAddress,
     // save Multilocation hash => fake account Multilocation-derivative address
     function fakeSetOwnerMultilocationAddress(uint32 paraId, uint8 palletInstance, address owner) public {
         Multilocation memory multilocation = Multilocation(1, x2(paraId, palletInstance));
@@ -29,11 +29,7 @@ contract StubXcmUtils {
     /// @custom:selector 343b3e00
     /// @param multilocation The multilocation that we want to know to which account maps to
     /// @return account The account the multilocation maps to in this chain
-    function multilocationToAddress(Multilocation memory multilocation)
-        external
-        view
-        returns (address account) 
-    {
+    function multilocationToAddress(Multilocation memory multilocation) external view returns (address account) {
         bytes32 hash = keccak256(abi.encode(multilocation));
         account = fakeMultilocationToAddressMapping[hash];
     }
@@ -41,22 +37,14 @@ contract StubXcmUtils {
     /// Get the weight that a message will consume in our chain
     /// @custom:selector 25d54154
     /// @param message scale encoded xcm mversioned xcm message
-    function weightMessage(bytes memory message)
-        external
-        view
-        returns (uint64 weight)
-    {
+    function weightMessage(bytes memory message) external view returns (uint64 weight) {
         return uint64(0);
     }
 
     /// Get units per second charged for a given multilocation
     /// @custom:selector 3f0f65db
     /// @param multilocation scale encoded xcm mversioned xcm message
-    function getUnitsPerSecond(Multilocation memory multilocation)
-        external
-        view
-        returns (uint256 unitsPerSecond)
-    {
+    function getUnitsPerSecond(Multilocation memory multilocation) external view returns (uint256 unitsPerSecond) {
         return 0;
     }
 

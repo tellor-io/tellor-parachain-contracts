@@ -7,6 +7,7 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 
 import "./helpers/TestToken.sol";
+import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 import "../src/ParachainRegistry.sol";
 import "../src/Parachain.sol";
@@ -50,25 +51,32 @@ contract E2ETests is Test {
     uint8 public fakePalletInstance3 = 10;
     uint256 public fakeStakeAmount3 = 50;
 
+    StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
+
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
         staking = new ParachainStaking(address(registry), address(token));
         gov = new ParachainGovernance(address(registry), fakeTeamMultiSig);
 
+        // Set fake precompile(s)
+        deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
+        deployPrecompile("StubXcmUtils.sol", XCM_UTILS_ADDRESS);
+
+        xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
+        xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId2, fakePalletInstance2, paraOwner2);
+        xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId3, fakePalletInstance3, paraOwner3);
+
         // Register parachains
         vm.prank(paraOwner);
-        registry.fakeRegister(fakeParaId, fakePalletInstance);
+        registry.register(fakeParaId, fakePalletInstance);
         vm.prank(paraOwner2);
-        registry.fakeRegister(fakeParaId2, fakePalletInstance2);
+        registry.register(fakeParaId2, fakePalletInstance2);
         vm.prank(paraOwner3);
-        registry.fakeRegister(fakeParaId3, fakePalletInstance3);
+        registry.register(fakeParaId3, fakePalletInstance3);
 
         gov.init(address(staking));
         staking.init(address(gov));
-
-        // Set fake precompile(s)
-        deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
 
         // Fund test accounts
         token.mint(bob, fakeStakeAmount * 2);
@@ -131,7 +139,9 @@ contract E2ETests is Test {
     }
 
     function testMultipleDisputesDifferentChains() public {
-        // test multiple disputes on different parachains
+        // Test multiple disputes on different parachains
+        // Open disputes for identical values (same value, query id, & submission timestamp) on different parachains.
+        // Ensure no cross contamination in gov/staking contracts.
 
         // deposit stakes for parachain 1
         uint256 _numDisputes = 5;
@@ -282,12 +292,6 @@ contract E2ETests is Test {
         console.log(
             "simulate bad values places on multiple consumer parachains, stake withdraws requested across each consumer parachain, disputes started across each parachain"
         );
-
-        // Register other parachains
-        vm.prank(paraOwner2);
-        registry.fakeRegister(fakeParaId2, fakePalletInstance2);
-        vm.prank(paraOwner3);
-        registry.fakeRegister(fakeParaId3, fakePalletInstance3);
 
         uint256 balanceStakingContract = token.balanceOf(address(staking));
         uint256 balanceGovContract = token.balanceOf(address(gov));
@@ -816,5 +820,28 @@ contract E2ETests is Test {
 
         // check disputed reporter balance
         assertEq(token.balanceOf(address(fakeDisputedReporter)), _bobBalance + fakeSlashAmount);
+    }
+
+    function testNoVotesForDispute() public {
+        // no votes on a dispute
+
+        // stake for parachain
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount // _amount
+        );
+        vm.stopPrank();
+
+        // begin initial dispute
+        uint256 _startVote = block.timestamp;
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+
+        // todo: If no votes are cast, it should resolve to invalid and everyone should get refunded
     }
 }

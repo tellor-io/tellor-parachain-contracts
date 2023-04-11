@@ -10,7 +10,7 @@ import "solmate/tokens/ERC20.sol";
 import "./helpers/TestToken.sol";
 
 import "../src/ParachainRegistry.sol";
-import { StubXcmUtils } from "./helpers/StubXcmUtils.sol";
+import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 contract ParachainRegistryTest is Test {
     TestToken public token;
@@ -30,12 +30,13 @@ contract ParachainRegistryTest is Test {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
 
-        vm.prank(paraOwner);
-        registry.fakeRegister(fakeParaId, fakePalletInstance);
-
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
         deployPrecompile("StubXcmUtils.sol", XCM_UTILS_ADDRESS);
+
+        xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
+        vm.prank(paraOwner);
+        registry.register(fakeParaId, fakePalletInstance);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples
@@ -57,7 +58,7 @@ contract ParachainRegistryTest is Test {
         address paraOwner2 = address(0x3333);
         address nonParaOwner = address(0x4444);
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId2, fakePalletInstance2, paraOwner2);
-        
+
         // test non owner trying to register
         vm.prank(nonParaOwner);
         vm.expectRevert("Not owner");

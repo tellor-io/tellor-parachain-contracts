@@ -13,6 +13,7 @@
 - run the tests: `$ forge test`
 ### Option 2: Run tests in docker container
 - [install docker](https://docs.docker.com/get-docker/)
+- Allocate at least 8GB of RAM to Docker, 3GB swap space, or you'll get out of memory errors
 - build the docker image defined in `Dockerfile` and watch forge build/run the tests within the container: `$ docker build --no-cache --progress=plain .`
 
 ## Format Code

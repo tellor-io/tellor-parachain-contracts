@@ -8,6 +8,7 @@ import "forge-std/console.sol";
 import "solmate/tokens/ERC20.sol";
 
 import "./helpers/TestToken.sol";
+import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 import "../src/ParachainRegistry.sol";
 import "../src/Parachain.sol";
@@ -41,21 +42,25 @@ contract ParachainGovernanceTest is Test {
     uint8 public fakePalletInstance = 8;
     uint256 public fakeStakeAmount = 20;
 
+    StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
+
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
         staking = new ParachainStaking(address(registry), address(token));
         gov = new ParachainGovernance(address(registry), fakeTeamMultiSig);
 
+        // Set fake precompile(s)
+        deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
+        deployPrecompile("StubXcmUtils.sol", XCM_UTILS_ADDRESS);
+
+        xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
+
         vm.prank(paraOwner);
-        registry.fakeRegister(fakeParaId, fakePalletInstance);
-        vm.stopPrank();
+        registry.register(fakeParaId, fakePalletInstance);
 
         gov.init(address(staking));
         staking.init(address(gov));
-
-        // Set fake precompile(s)
-        deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
 
         // Fund disputer/disputed
         token.mint(bob, 100);

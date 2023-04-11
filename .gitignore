@@ -1,6 +1,12 @@
 # Compiler files
 cache/
-out/
+/out/*
+
+# Don't ignore the 'out/StubXcmUtils.sol/' directory
+!/out/StubXcmUtils.sol/
+
+# Don't ignore the contents of the 'out/StubXcmUtils.sol/' directory
+!/out/StubXcmUtils.sol/*
 
 # Ignores development broadcast logs
 !/broadcast
