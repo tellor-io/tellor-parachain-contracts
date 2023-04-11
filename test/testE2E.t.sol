@@ -842,8 +842,6 @@ contract E2ETests is Test {
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
 
-        // todo: what is supposed to be tested here?
-        // if there are no votes, then the slash amount is locked up in the gov contract forever?
-        // and dispute fees locked up on parachain oracle consumer side forever as well?
+        // todo: If no votes are cast, it should resolve to invalid and everyone should get refunded
     }
 }
