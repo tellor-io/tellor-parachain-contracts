@@ -853,7 +853,7 @@ contract E2ETests is Test {
 
         // check vote state
         (, uint256[16] memory _voteInfo, bool _voteExecuted, ParachainGovernance.VoteResult _voteResult,) =
-            gov.getVoteInfo(_disputeId);
+            gov.getVoteInfo(_disputeId, 1);
         assertEq(_voteInfo[0], 1); // vote round
         assertEq(_voteInfo[1], _startVote); // start date
         assertEq(_voteInfo[2], block.number); // block number
@@ -871,7 +871,7 @@ contract E2ETests is Test {
         vm.warp(block.timestamp + 1 days);
         gov.executeVote(_disputeId);
         // check vote result and executed status
-        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(_disputeId, 1);
         assertEq(_voteExecuted, true);
         assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
 
