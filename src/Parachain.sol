@@ -26,7 +26,7 @@ abstract contract Parachain {
         bytes calldata _reporter,
         uint256 _amount
     ) internal {
-        require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
+        require(_parachain.owner != address(0x0), "Parachain not registered");
 
         // Prepare remote call and send
         uint64 transactRequiredWeightAtMost = 5000000000;
@@ -53,7 +53,7 @@ abstract contract Parachain {
         uint256 _amount,
         address _staker
     ) internal {
-        require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
+        require(_parachain.owner != address(0x0), "Parachain not registered");
 
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
@@ -76,7 +76,7 @@ abstract contract Parachain {
     function reportSlash(IRegistry.Parachain memory _parachain, address _reporter, address _recipient, uint256 _amount)
         internal
     {
-        require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
+        require(_parachain.owner != address(0x0), "Parachain not registered");
 
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
@@ -102,7 +102,7 @@ abstract contract Parachain {
         bytes memory _account,
         uint256 _amount
     ) internal {
-        require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
+        require(_parachain.owner != address(0x0), "Parachain not registered");
 
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
@@ -126,7 +126,7 @@ abstract contract Parachain {
         bytes32 _disputeId,
         IParachainGovernance.VoteResult _outcome
     ) internal {
-        require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
+        require(_parachain.owner != address(0x0), "Parachain not registered");
 
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(

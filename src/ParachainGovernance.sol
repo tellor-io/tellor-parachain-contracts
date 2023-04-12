@@ -97,7 +97,6 @@ contract ParachainGovernance is Parachain {
      * @dev Allows the owner to initialize the ParachainStaking and token interfaces
      * @param _parachainStaking address of ParachainStaking contract
      */
-    // todo: does it need to be "address payable"?
     function init(address _parachainStaking) external {
         require(msg.sender == owner, "not owner");
         require(address(parachainStaking) == address(0), "parachainStaking address already set");
@@ -353,7 +352,6 @@ contract ParachainGovernance is Parachain {
         require(_thisVote.tallyDate > 0, "Vote must be tallied");
         require(!_thisVote.executed, "Vote has already been executed");
         // Ensure vote must be final vote and that time has to be pass (86400 = 24 * 60 * 60 for seconds in a day)
-        // todo: what exactly is this comment saying? ^
         require(voteRounds[_thisVote.identifierHash] == _thisVote.voteRound, "Must be the final vote");
         //The time  has to pass after the vote is tallied
         require(block.timestamp - _thisVote.tallyDate >= 1 days, "1 day has to pass after tally to allow for disputes");
@@ -361,10 +359,10 @@ contract ParachainGovernance is Parachain {
         Dispute storage _thisDispute = disputeInfo[_disputeId];
         if (_thisVote.result == VoteResult.PASSED) {
             // If vote is in dispute and passed, transfer reporter's slashed stake to initiator
-            token.transfer(_thisVote.initiator, _thisDispute.slashedAmount); // todo: should be wrapped in require statement?
+            token.transfer(_thisVote.initiator, _thisDispute.slashedAmount);
         } else {
             // If vote is in dispute and fails, or if dispute is invalid, transfer the slashed stake to the reporter
-            token.transfer(_thisDispute.disputedReporter, _thisDispute.slashedAmount); // todo: should be wrapped in require statement?
+            token.transfer(_thisDispute.disputedReporter, _thisDispute.slashedAmount);
         }
         IRegistry.Parachain memory _parachain = registry.getById(_thisDispute.paraId);
         IParachainGovernance.VoteResult _convertedVoteResult = IParachainGovernance.VoteResult(uint8(_thisVote.result));

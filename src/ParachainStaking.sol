@@ -119,7 +119,6 @@ contract ParachainStaking is Parachain {
         require(parachain.owner != address(0x0), "parachain not registered");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
-        // todo: check if _account already used for another staker?
         _parachainStakeInfo._account = _account;
 
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
@@ -128,7 +127,7 @@ contract ParachainStaking is Parachain {
             if (_lockedBalance >= _amount) {
                 // if staker's locked balance covers full _amount, use that
                 _staker.lockedBalance -= _amount;
-                toWithdraw -= _amount; // todo: need this?
+                toWithdraw -= _amount;
             } else {
                 // otherwise, stake the whole locked balance and transfer the
                 // remaining amount from the staker's address
@@ -160,10 +159,8 @@ contract ParachainStaking is Parachain {
         require(parachain.owner != address(0x0), "parachain not registered");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
-        // todo: check stake info exists
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         require(_staker.stakedBalance >= _amount, "insufficient staked balance");
-        // _staker.startDate = block.timestamp; // todo: need this?
         _staker.lockedBalance += _amount;
         toWithdraw += _amount;
         emit StakeWithdrawRequested(msg.sender, _amount);
