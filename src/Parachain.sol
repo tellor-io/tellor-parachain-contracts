@@ -128,7 +128,6 @@ abstract contract Parachain {
     ) internal {
         require(_parachain.owner != address(0x0), "Parachain not registered"); // todo: consider removal as internal?
 
-        // todo: fix call index, or construct call data based on vote result
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
