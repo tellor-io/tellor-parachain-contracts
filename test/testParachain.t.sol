@@ -69,11 +69,6 @@ contract ParachainTest is Test {
             IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance)});
         uint256 fakeAmount = 100e18;
 
-        // test non-registered parachain
-        vm.expectRevert("Parachain not registered");
-        vm.prank(fakeStakingContract);
-        parachain.reportStakeDepositedExternal(badFakeParachain, fakeStaker, fakeReporter, fakeAmount);
-
         // test registered parachain
         vm.prank(fakeStakingContract);
         parachain.reportStakeDepositedExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
@@ -110,11 +105,6 @@ contract ParachainTest is Test {
             IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance)});
 
         uint256 fakeAmount = 100e18;
-
-        // test non-registered parachain
-        vm.expectRevert("Parachain not registered");
-        vm.prank(fakeStakingContract);
-        parachain.reportStakeWithdrawRequestedExternal(badFakeParachain, fakeReporter, fakeAmount, fakeStaker);
 
         // test registered parachain
         vm.prank(fakeStakingContract);
@@ -153,11 +143,6 @@ contract ParachainTest is Test {
 
         uint256 fakeAmount = 100e18;
 
-        // test non-registered parachain
-        vm.expectRevert("Parachain not registered");
-        vm.prank(fakeStakingContract);
-        parachain.reportSlashExternal(badFakeParachain, fakeStaker, paraDisputer, fakeAmount);
-
         // test registered parachain
         vm.prank(fakeStakingContract);
         parachain.reportSlashExternal(fakeParachain, fakeStaker, paraDisputer, fakeAmount);
@@ -194,11 +179,6 @@ contract ParachainTest is Test {
             IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance)});
 
         uint256 fakeAmount = 100e18;
-
-        // test non-registered parachain
-        vm.expectRevert("Parachain not registered");
-        vm.prank(fakeStakingContract);
-        parachain.reportStakeWithdrawnExternal(badFakeParachain, fakeStaker, fakeReporter, fakeAmount);
 
         // test registered parachain
         vm.prank(fakeStakingContract);

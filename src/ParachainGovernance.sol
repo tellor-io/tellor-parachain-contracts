@@ -359,10 +359,12 @@ contract ParachainGovernance is Parachain {
         Dispute storage _thisDispute = disputeInfo[_disputeId];
         if (_thisVote.result == VoteResult.PASSED) {
             // If vote is in dispute and passed, transfer reporter's slashed stake to initiator
-            token.transfer(_thisVote.initiator, _thisDispute.slashedAmount);
+            require(token.transfer(_thisVote.initiator, _thisDispute.slashedAmount), "Transfer to initiator failed");
         } else {
             // If vote is in dispute and fails, or if dispute is invalid, transfer the slashed stake to the reporter
-            token.transfer(_thisDispute.disputedReporter, _thisDispute.slashedAmount);
+            require(
+                token.transfer(_thisDispute.disputedReporter, _thisDispute.slashedAmount), "Transfer to reporter failed"
+            );
         }
         IRegistry.Parachain memory _parachain = registry.getById(_thisDispute.paraId);
         IParachainGovernance.VoteResult _convertedVoteResult = IParachainGovernance.VoteResult(uint8(_thisVote.result));
