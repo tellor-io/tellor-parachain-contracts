@@ -835,13 +835,48 @@ contract E2ETests is Test {
         );
         vm.stopPrank();
 
+        // get balance reporter before slashing
+        uint256 _bobBalance = token.balanceOf(address(bob));
+
         // begin initial dispute
         uint256 _startVote = block.timestamp;
         vm.prank(paraOwner);
         gov.beginParachainDispute(
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
+        bytes32 _disputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
 
         // todo: If no votes are cast, it should resolve to invalid and everyone should get refunded
+        // VOTE ROUND 1
+        // tally votes
+        vm.warp(block.timestamp + 1 days);
+        gov.tallyVotes(_disputeId);
+
+        // check vote state
+        (, uint256[16] memory _voteInfo, bool _voteExecuted, ParachainGovernance.VoteResult _voteResult,) =
+            gov.getVoteInfo(_disputeId);
+        assertEq(_voteInfo[0], 1); // vote round
+        assertEq(_voteInfo[1], _startVote); // start date
+        assertEq(_voteInfo[2], block.number); // block number
+        assertEq(_voteInfo[3], _startVote + 1 days); // tally date
+        assertEq(_voteInfo[4], 0); // tokenholders does support
+        assertEq(_voteInfo[5], 0); // tokenholders against
+        assertEq(_voteInfo[6], 0); // tokenholders invalid query
+        assertEq(_voteInfo[7], 0); // users does support
+        assertEq(_voteInfo[10], 0); // reporters does support
+        assertEq(_voteInfo[13], 0); // team multisig does support
+        assertEq(_voteExecuted, false); // vote executed status
+        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
+
+        // Execute vote
+        vm.warp(block.timestamp + 1 days);
+        gov.executeVote(_disputeId);
+        // check vote result and executed status
+        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(_disputeId);
+        assertEq(_voteExecuted, true);
+        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
+
+        // check slashed stake returned to reporter
+        assertEq(token.balanceOf(address(bob)), _bobBalance + fakeSlashAmount);
     }
 }
