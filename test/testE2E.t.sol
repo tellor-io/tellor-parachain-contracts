@@ -823,7 +823,7 @@ contract E2ETests is Test {
     }
 
     function testNoVotesForDispute() public {
-        // no votes on a dispute
+        // If no votes are cast, it should resolve to invalid and everyone should get refunded
 
         // stake for parachain
         vm.startPrank(bob);
@@ -846,7 +846,6 @@ contract E2ETests is Test {
         );
         bytes32 _disputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
 
-        // todo: If no votes are cast, it should resolve to invalid and everyone should get refunded
         // VOTE ROUND 1
         // tally votes
         vm.warp(block.timestamp + 1 days);
