@@ -109,6 +109,27 @@ abstract contract Parachain {
         transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
     }
 
+    /// @dev Report vote tallied to registered parachain.
+    /// @param _parachain Para The registered parachain.
+    /// @param _disputeId bytes32 The unique identifier of the dispute.
+    /// @param _outcome VoteResult The outcome of the vote.
+    function reportVoteTallied(
+        IRegistry.Parachain memory _parachain,
+        bytes32 _disputeId,
+        IParachainGovernance.VoteResult _outcome
+    ) internal {
+        uint64 transactRequiredWeightAtMost = 5000000000;
+        bytes memory call = abi.encodePacked(
+            _parachain.palletInstance, // pallet index within runtime
+            hex"0E", // fixed call index within pallet: 14
+            _disputeId, // dispute id
+            uint8(_outcome) // outcome
+        );
+        uint256 feeAmount = 10000000000;
+        uint64 overallWeight = 9000000000;
+        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+    }
+
     /// @dev Report vote executed to a registered parachain.
     /// @param _parachain Para The registered parachain.
     /// @param _disputeId bytes32 The unique identifier of the dispute.

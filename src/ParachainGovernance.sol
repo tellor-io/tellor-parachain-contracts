@@ -338,6 +338,10 @@ contract ParachainGovernance is Parachain {
         }
 
         _thisVote.tallyDate = block.timestamp; // Update time vote was tallied
+        Dispute storage _thisDispute = disputeInfo[_disputeId];
+        reportVoteTallied(
+            registry.getById(_thisDispute.paraId), _disputeId, IParachainGovernance.VoteResult(uint8(_thisVote.result))
+        );
         emit VoteTallied(_disputeId, _thisVote.result, _thisVote.initiator, disputeInfo[_disputeId].disputedReporter);
     }
 
