@@ -879,8 +879,9 @@ contract E2ETests is Test {
         assertEq(token.balanceOf(address(bob)), _bobBalance + fakeSlashAmount);
     }
 
-    function testVotingTies() public {
+    function testVotingTiesAndPartialParticipation() public {
         // Test scenario where the voting results in a tie
+        // Test scenario where not all eligible voters participate in the voting process (multisig doesn't vote)
 
         // stake for parachain
         uint256 _bobStartBalance = token.balanceOf(address(bob));
@@ -902,7 +903,7 @@ contract E2ETests is Test {
 
         bytes32 _disputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
 
-        // VOTE ROUND 1
+        // VOTE ROUND
         // ensure reporter & random token holder have same voting power (both their votes count as tokenholder votes)
         uint256 _bobBalance = token.balanceOf(address(bob));
         (, uint256 _bobStakedBal, uint256 _bobLockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
@@ -951,129 +952,6 @@ contract E2ETests is Test {
         assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
         console.log("vote #1 result: ", uint8(_voteResult));
     }
-
-    // function testPartialVoteParticipation() public {
-    //     // Test scenario where not all eligible voters participate in the voting process
-
-    //     // stake for parachain
-    //     vm.startPrank(bob);
-    //     token.approve(address(staking), fakeStakeAmount);
-    //     staking.depositParachainStake(
-    //         fakeParaId, // _paraId
-    //         bytes("consumerChainAcct"), // _account
-    //         fakeStakeAmount // _amount
-    //     );
-    //     vm.stopPrank();
-
-    //     // begin initial dispute
-    //     uint256 _startVote = block.timestamp;
-    //     vm.prank(paraOwner);
-    //     gov.beginParachainDispute(
-    //         fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
-    //     );
-
-    //     bytes32 _disputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
-
-    //     // VOTE ROUND 1
-    //     // reporter votes against the dispute
-    //     vm.prank(bob);
-    //     gov.vote(_disputeId, false, true);
-    //     // random reporter does not vote in this round
-    //     // multisig votes for the dispute
-    //     vm.prank(fakeTeamMultiSig);
-    //     gov.vote(_disputeId, true, true);
-    //     // cast cumulative vote for users on oracle consumer parachain (some users do not participate)
-    //     vm.prank(paraOwner);
-    //     gov.voteParachain(
-    //         _disputeId,
-    //         80, // _totalTipsFor
-    //         80, // _totalTipsAgainst
-    //         80, // _totalTipsInvalid
-    //         80, // _totalReportsFor
-    //         80, // _totalReportsAgainst
-    //         80 // _totalReportsInvalid
-    //     );
-    //     // tally votes
-    //     vm.warp(block.timestamp + 1 days);
-    //     gov.tallyVotes(_disputeId);
-
-    //     // check vote state
-    //     (, uint256[16] memory _voteInfo,, ParachainGovernance.VoteResult _voteResult,) = gov.getVoteInfo(_disputeId);
-    //     // The exact vote result depends on the logic of the contract. This assertion checks for any valid result.
-    //     assertTrue(
-    //         uint8(_voteResult) >= uint8(ParachainGovernance.VoteResult.PASSED)
-    //             && uint8(_voteResult) <= uint8(ParachainGovernance.VoteResult.TIED)
-    //     );
-    //     console.log("vote #1 result: ", uint8(_voteResult));
-
-    //     // Additional vote rounds can be added if desired to further test partial vote participation scenarios
-    // }
-
-    // function testNoCrossContaminationIdenticleDisputes() public {
-    //     // Test multiple identical disputes on different parachains
-    //     // Open disputes for identical values (same value, query id, & submission timestamp) on different parachains.
-    //     // Ensure no cross contamination in gov/staking contracts.
-
-    //     // Create dispute and perform voting for each parachain
-    //     for (uint256 chain = 0; chain < 3; chain++) {
-    //         uint256 _paraId = fakeParaId + chain;
-
-    //         // Stake for the parachain
-    //         vm.startPrank(bob);
-    //         token.approve(address(staking), fakeStakeAmount);
-    //         staking.depositParachainStake(
-    //             _paraId, // _paraId
-    //             bytes("consumerChainAcct"), // _account
-    //             fakeStakeAmount // _amount
-    //         );
-    //         vm.stopPrank();
-
-    //         // Begin initial dispute
-    //         uint256 _startVote = block.timestamp;
-    //         vm.prank(paraOwner);
-    //         gov.beginParachainDispute(
-    //             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
-    //         );
-    //         bytes32 _disputeId = keccak256(abi.encode(_paraId, fakeQueryId, fakeTimestamp));
-
-    //         // VOTE ROUND 1
-    //         // reporter votes against the dispute
-    //         vm.prank(bob);
-    //         gov.vote(_disputeId, false, true);
-    //         // multisig votes for the dispute
-    //         vm.prank(fakeTeamMultiSig);
-    //         gov.vote(_disputeId, true, true);
-    //         // cast cumulative vote for users on oracle consumer parachain
-    //         vm.prank(paraOwner);
-    //         gov.voteParachain(
-    //             _disputeId,
-    //             80, // _totalTipsFor
-    //             80, // _totalTipsAgainst
-    //             80, // _totalTipsInvalid
-    //             80, // _totalReportsFor
-    //             80, // _totalReportsAgainst
-    //             80  // _totalReportsInvalid
-    //         );
-    //         // tally votes
-    //         vm.warp(block.timestamp + 1 days);
-    //         gov.tallyVotes(_disputeId);
-
-    //         // check vote state
-    //         (, uint256[16] memory _voteInfo,, ParachainGovernance.VoteResult _voteResult,) = gov.getVoteInfo(_disputeId);
-    //         // The exact vote result depends on the logic of the contract. This assertion checks for any valid result.
-    //         assertTrue(uint8(_voteResult) >= uint8(ParachainGovernance.VoteResult.PASSED) && uint8(_voteResult) <= uint8(ParachainGovernance.VoteResult.TIED));
-    //         console.log("chain #%s vote result: ", chain + 1, uint8(_voteResult));
-
-    //         // Execute vote
-    //         vm.warp(block.timestamp + 1 days);
-    //         gov.executeVote(_disputeId);
-    //         // check vote result and executed status
-    //         (, uint256[16] memory _voteInfo, bool _voteExecuted, ParachainGovernance.VoteResult _voteResult,) = gov.getVoteInfo(_disputeId);
-    //         assertEq(_voteExecuted, true);
-    //     }
-
-    //     // Additional checks for no cross-contamination can be added here if needed
-    // }
 
     // multisig votes against the dispute
     // vm.prank(fakeTeamMultiSig);
