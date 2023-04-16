@@ -905,8 +905,7 @@ contract E2ETests is Test {
         // VOTE ROUND 1
         // ensure reporter & random token holder have same voting power (both their votes count as tokenholder votes)
         uint256 _bobBalance = token.balanceOf(address(bob));
-        (, uint256 _bobStakedBal, uint256 _bobLockedBal,,,,,,) =
-            staking.getParachainStakerInfo(fakeParaId, bob);
+        (, uint256 _bobStakedBal, uint256 _bobLockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
         _bobBalance += _bobStakedBal + _bobLockedBal;
         assertEq(_bobBalance, _bobStartBalance - fakeSlashAmount);
         address marge = address(0xbeef);
@@ -919,42 +918,38 @@ contract E2ETests is Test {
         // random token holder votes for the dispute
         vm.prank(marge);
         gov.vote(_disputeId, true, true);
-        // multisig votes against the dispute
-        // vm.prank(fakeTeamMultiSig);
-        // gov.vote(_disputeId, false, true);
-        // cast cumulative vote for users on oracle consumer parachain (resulting in an invalid outcome)
-        // vm.prank(paraOwner);
-        // gov.voteParachain(
-        //     _disputeId,
-        //     200, // _totalTipsFor
-        //     200, // _totalTipsAgainst
-        //     0,   // _totalTipsInvalid
-        //     100, // _totalReportsFor
-        //     100, // _totalReportsAgainst
-        //     0    // _totalReportsInvalid
-        // );
+        // skip multisig vote
+        vm.prank(paraOwner);
+        gov.voteParachain(
+            _disputeId,
+            200, // _totalTipsFor
+            200, // _totalTipsAgainst
+            0, // _totalTipsInvalid
+            100, // _totalReportsFor
+            100, // _totalReportsAgainst
+            0 // _totalReportsInvalid
+        );
         // tally votes
         vm.warp(block.timestamp + 1 days);
         gov.tallyVotes(_disputeId);
 
-        
         // check vote state
         (, uint256[16] memory _voteInfo,, ParachainGovernance.VoteResult _voteResult,) = gov.getVoteInfo(_disputeId);
         assertEq(_voteInfo[4], _margeBalance); // tokenholders does support
-        assertEq(_voteInfo[5], _bobBalance); // tokenholders against (bob's stake is slashed)
-        // assertEq(_voteInfo[6], 0); // tokenholders invalid query
-        // assertEq(_voteInfo[7], 100); // users does support
-        // assertEq(_voteInfo[8], 100); // users against
-        // assertEq(_voteInfo[9], 0); // users invalid query
-        // assertEq(_voteInfo[10], 100); // reports does support
-        // assertEq(_voteInfo[11], 100); // reports against
-        // assertEq(_voteInfo[12], 0); // reports invalid query
-        // assertEq(_voteInfo[13], 1); // team multisig does support
-        // assertEq(_voteInfo[14], 0); // team multisig against
-        // assertEq(_voteInfo[15], 0); // team multisig invalid query
-        
-        // assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
-        // console.log("vote #1 result: ", uint8(_voteResult));
+        assertEq(_voteInfo[5], _bobBalance); // tokenholders against (bob's stake is slashed and doesn't count towards his vote)
+        assertEq(_voteInfo[6], 0); // tokenholders invalid query
+        assertEq(_voteInfo[7], 200); // users does support
+        assertEq(_voteInfo[8], 200); // users against
+        assertEq(_voteInfo[9], 0); // users invalid query
+        assertEq(_voteInfo[10], 100); // reports does support
+        assertEq(_voteInfo[11], 100); // reports against
+        assertEq(_voteInfo[12], 0); // reports invalid query
+        assertEq(_voteInfo[13], 0); // team multisig does support
+        assertEq(_voteInfo[14], 0); // team multisig against
+        assertEq(_voteInfo[15], 0); // team multisig invalid query
+
+        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
+        console.log("vote #1 result: ", uint8(_voteResult));
     }
 
     // function testPartialVoteParticipation() public {
@@ -1080,4 +1075,8 @@ contract E2ETests is Test {
     //     // Additional checks for no cross-contamination can be added here if needed
     // }
 
+    // multisig votes against the dispute
+    // vm.prank(fakeTeamMultiSig);
+    // gov.vote(_disputeId, false, true);
+    // cast cumulative vote for users on oracle consumer parachain (resulting in an invalid outcome)
 }
