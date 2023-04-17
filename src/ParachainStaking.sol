@@ -214,7 +214,7 @@ contract ParachainStaking is Parachain {
         emit StakeWithdrawn(msg.sender);
         emit ParachainStakeWithdrawn(_paraId, msg.sender);
 
-        reportStakeWithdrawn(parachain, msg.sender, _parachainStakeInfo._account, _amount);
+        reportStakeWithdrawn(parachain, msg.sender, _amount);
     }
 
     /**
