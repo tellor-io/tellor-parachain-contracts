@@ -371,4 +371,9 @@ contract E2ETestsB is Test {
         // check slashed stake returned to reporter
         assertEq(token.balanceOf(address(bob)), 100); // balance before + slashed stake
     }
+
+    // todo:
+    // check storage items and balances for different voting rounds for parachain 2
+    // finish checking storage items for voting rounds of parachain 3
+    // check that all the weird cases in that original gov test are covered here
 }
