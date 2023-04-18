@@ -33,13 +33,10 @@ contract TestParachain is Parachain {
         reportSlash(_parachain, _reporter, _recipient, _amount);
     }
 
-    function reportStakeWithdrawnExternal(
-        IRegistry.Parachain memory _parachain,
-        address _reporter,
-        bytes memory _account,
-        uint256 _amount
-    ) external {
-        reportStakeWithdrawn(_parachain, _reporter, _account, _amount);
+    function reportStakeWithdrawnExternal(IRegistry.Parachain memory _parachain, address _reporter, uint256 _amount)
+        external
+    {
+        reportStakeWithdrawn(_parachain, _reporter, _amount);
     }
 
     function reverseExternal(uint256 input) external pure returns (uint256) {

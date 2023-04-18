@@ -182,7 +182,7 @@ contract ParachainTest is Test {
 
         // test registered parachain
         vm.prank(fakeStakingContract);
-        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
+        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeAmount);
 
         // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
@@ -197,11 +197,7 @@ contract ParachainTest is Test {
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
         assertEq(savedData.transactRequiredWeightAtMost, 5000000000);
         bytes memory call = abi.encodePacked(
-            abi.encode(fakePalletInstance),
-            hex"0B",
-            fakeStaker,
-            fakeReporter,
-            bytes32(parachain.reverseExternal(fakeAmount))
+            abi.encode(fakePalletInstance), hex"0B", fakeStaker, bytes32(parachain.reverseExternal(fakeAmount))
         );
         assertEq(savedData.call, call);
         assertEq(savedData.feeAmount, 10000000000);
@@ -218,7 +214,7 @@ contract ParachainTest is Test {
 
         uint256 fakeAmount = 100e18;
         vm.prank(fakeStakingContract);
-        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
+        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeAmount);
 
         // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
@@ -236,7 +232,7 @@ contract ParachainTest is Test {
 
         uint256 fakeAmount = 100e18;
         vm.prank(fakeStakingContract);
-        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeReporter, fakeAmount);
+        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeAmount);
 
         // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =

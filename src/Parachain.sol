@@ -88,21 +88,35 @@ abstract contract Parachain {
     /// @dev Report stake withdraw to a registered parachain.
     /// @param _parachain Para The registered parachain.
     /// @param _reporter address Address of staker on EVM compatible chain w/ Tellor controller contracts.
-    /// @param _account bytes The account identifier on the parachain.
     /// @param _amount uint256 Amount withdrawn.
-    function reportStakeWithdrawn(
-        IRegistry.Parachain memory _parachain,
-        address _reporter,
-        bytes memory _account,
-        uint256 _amount
-    ) internal {
+    function reportStakeWithdrawn(IRegistry.Parachain memory _parachain, address _reporter, uint256 _amount) internal {
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
             hex"0B", // fixed call index within pallet: 11
             _reporter, // account id of reporter on target parachain
-            _account, // account
             bytes32(reverse(_amount)) // amount
+        );
+        uint256 feeAmount = 10000000000;
+        uint64 overallWeight = 9000000000;
+        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+    }
+
+    /// @dev Report vote tallied to registered parachain.
+    /// @param _parachain Para The registered parachain.
+    /// @param _disputeId bytes32 The unique identifier of the dispute.
+    /// @param _outcome VoteResult The outcome of the vote.
+    function reportVoteTallied(
+        IRegistry.Parachain memory _parachain,
+        bytes32 _disputeId,
+        IParachainGovernance.VoteResult _outcome
+    ) internal {
+        uint64 transactRequiredWeightAtMost = 5000000000;
+        bytes memory call = abi.encodePacked(
+            _parachain.palletInstance, // pallet index within runtime
+            hex"0E", // fixed call index within pallet: 14
+            _disputeId, // dispute id
+            uint8(_outcome) // outcome
         );
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;

@@ -152,7 +152,7 @@ contract ParachainGovernanceTest is Test {
         vm.stopPrank();
 
         // Check vote info
-        (, uint256[16] memory voteInfo,,,) = gov.getVoteInfo(realDisputeId);
+        (, uint256[16] memory voteInfo,,,) = gov.getVoteInfo(realDisputeId, 1);
         assertEq(voteInfo[0], 1); // voteRound
         assertEq(voteInfo[1], 1); // startDate
         assertEq(voteInfo[2], 1); // blockNumber
@@ -189,7 +189,7 @@ contract ParachainGovernanceTest is Test {
         gov.voteParachain(realDisputeId, 1, 2, 3, 4, 5, 6);
 
         // Check vote info
-        (, uint256[16] memory voteInfo,,,) = gov.getVoteInfo(realDisputeId);
+        (, uint256[16] memory voteInfo,,,) = gov.getVoteInfo(realDisputeId, 1);
         assertEq(voteInfo[0], 1); // voteRound
         assertEq(voteInfo[1], 1); // startDate
         assertEq(voteInfo[2], 1); // blockNumber
@@ -241,7 +241,7 @@ contract ParachainGovernanceTest is Test {
         vm.stopPrank();
 
         // Check vote info
-        (, uint256[16] memory voteInfo,,,) = gov.getVoteInfo(realDisputeId);
+        (, uint256[16] memory voteInfo,,,) = gov.getVoteInfo(realDisputeId, 1);
         assertEq(voteInfo[3], tallyDate); // tallyDate
         assertEq(voteInfo[4], 72); // tokenholders.doesSupport
     }

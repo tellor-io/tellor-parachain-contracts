@@ -21,6 +21,8 @@ contract ParachainStakingTest is Test {
 
     address public paraOwner = address(0x1111);
     address public paraDisputer = address(0x2222);
+    address public bob = address(0x3333);
+    address public alice = address(0x4444);
 
     // Parachain registration
     uint32 public fakeParaId = 12;
@@ -45,6 +47,10 @@ contract ParachainStakingTest is Test {
 
         vm.prank(paraOwner);
         registry.register(fakeParaId, fakePalletInstance);
+
+        // Fund accounts
+        token.mint(bob, fakeStakeAmount * 10);
+        token.mint(alice, fakeStakeAmount * 10);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples
@@ -67,7 +73,7 @@ contract ParachainStakingTest is Test {
 
     function testDepositParachainStake() public {
         // Try to deposit stake with incorrect parachain
-        vm.startPrank(paraOwner);
+        vm.prank(bob);
         vm.expectRevert("parachain not registered");
         staking.depositParachainStake(
             uint32(1234), // _paraId
@@ -76,19 +82,27 @@ contract ParachainStakingTest is Test {
         );
 
         // Successfully deposit stake
+        uint256 bobBalance = token.balanceOf(bob);
         assertEq(registry.getById(fakeParaId).owner, paraOwner);
-        token.mint(address(paraOwner), 100);
-        token.approve(address(staking), 100);
-        assertEq(token.balanceOf(address(paraOwner)), 100);
+        vm.startPrank(bob);
+        token.approve(address(staking), fakeStakeAmount);
         staking.depositParachainStake(
             fakeParaId, // _paraId
             bytes("consumerChainAcct"), // _account
-            20 // _amount
+            fakeStakeAmount // _amount
         );
-        assertEq(token.balanceOf(address(paraOwner)), 80);
-        assertEq(token.balanceOf(address(staking)), 20);
-
         vm.stopPrank();
+        assertEq(token.balanceOf(address(bob)), bobBalance - fakeStakeAmount);
+        assertEq(token.balanceOf(address(staking)), fakeStakeAmount);
+
+        // Try to deposit stake for an account already linked to another staker
+        vm.prank(alice);
+        vm.expectRevert("account already linked to another staker");
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount // _amount
+        );
     }
 
     function testRequestParachainStakeWithdraw() public {

@@ -515,7 +515,7 @@ contract E2ETests is Test {
         gov.tallyVotes(_disputeId);
 
         // check vote state
-        (, uint256[16] memory _voteInfo,, ParachainGovernance.VoteResult _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, uint256[16] memory _voteInfo,, ParachainGovernance.VoteResult _voteResult,) = gov.getVoteInfo(_disputeId, 1);
         assertEq(_voteInfo[0], 1); // vote round
         assertEq(_voteInfo[1], _startVote); // start date
         assertEq(_voteInfo[2], block.number); // block number
@@ -542,7 +542,7 @@ contract E2ETests is Test {
         gov.beginParachainDispute(
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
-        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId, 2);
         assertEq(_voteInfo[0], 2); // vote round
         // reporter votes against the dispute
         vm.prank(bob);
@@ -569,7 +569,7 @@ contract E2ETests is Test {
         gov.tallyVotes(_disputeId);
 
         // check vote state
-        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId, 2);
         assertEq(_voteInfo[0], 2); // vote round
         assertEq(_voteInfo[1], _startVote); // start date
         assertEq(_voteInfo[2], block.number); // block number
@@ -590,7 +590,7 @@ contract E2ETests is Test {
         gov.beginParachainDispute(
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
-        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId, 3);
         assertEq(_voteInfo[0], 3); // vote round
         // reporter votes against the dispute
         vm.prank(bob);
@@ -617,7 +617,7 @@ contract E2ETests is Test {
         gov.tallyVotes(_disputeId);
 
         // check vote state
-        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId, 3);
         assertEq(_voteInfo[0], 3); // vote round
         assertEq(_voteInfo[1], _startVote); // start date
         assertEq(_voteInfo[2], block.number); // block number
@@ -634,7 +634,7 @@ contract E2ETests is Test {
         // exectue vote
         vm.warp(block.timestamp + 1 days);
         gov.executeVote(_disputeId);
-        (,, bool _voteExecuted,,) = gov.getVoteInfo(_disputeId);
+        (,, bool _voteExecuted,,) = gov.getVoteInfo(_disputeId, 3);
         assertEq(_voteExecuted, true);
     }
 
@@ -694,7 +694,7 @@ contract E2ETests is Test {
         gov.tallyVotes(_disputeId);
 
         // check vote state
-        (, uint256[16] memory _voteInfo,, ParachainGovernance.VoteResult _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, uint256[16] memory _voteInfo,, ParachainGovernance.VoteResult _voteResult,) = gov.getVoteInfo(_disputeId, 1);
         assertEq(_voteInfo[0], 1); // vote round
         assertEq(_voteInfo[1], _startVote); // start date
         assertEq(_voteInfo[2], block.number); // block number
@@ -721,7 +721,7 @@ contract E2ETests is Test {
         gov.beginParachainDispute(
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
-        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId, 2);
         assertEq(_voteInfo[0], 2); // vote round
         // reporter votes against the dispute
         vm.prank(bob);
@@ -748,7 +748,7 @@ contract E2ETests is Test {
         gov.tallyVotes(_disputeId);
 
         // check vote state
-        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId, 2);
         assertEq(_voteInfo[0], 2); // vote round
         assertEq(_voteInfo[1], _startVote); // start date
         assertEq(_voteInfo[2], block.number); // block number
@@ -771,7 +771,7 @@ contract E2ETests is Test {
         gov.beginParachainDispute(
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
-        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId, 3);
         assertEq(_voteInfo[0], 3); // vote round
         // reporter votes against the dispute
         vm.prank(bob);
@@ -798,7 +798,7 @@ contract E2ETests is Test {
         gov.tallyVotes(_disputeId);
 
         // check vote state
-        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, _voteInfo,, _voteResult,) = gov.getVoteInfo(_disputeId, 3);
         assertEq(_voteInfo[0], 3); // vote round
         assertEq(_voteInfo[1], _startVote); // start date
         assertEq(_voteInfo[2], block.number); // block number
@@ -815,7 +815,7 @@ contract E2ETests is Test {
         // exectue vote
         vm.warp(block.timestamp + 1 days);
         gov.executeVote(_disputeId);
-        (,, bool _voteExecuted,,) = gov.getVoteInfo(_disputeId);
+        (,, bool _voteExecuted,,) = gov.getVoteInfo(_disputeId, 3);
         assertEq(_voteExecuted, true);
 
         // check disputed reporter balance
@@ -853,7 +853,7 @@ contract E2ETests is Test {
 
         // check vote state
         (, uint256[16] memory _voteInfo, bool _voteExecuted, ParachainGovernance.VoteResult _voteResult,) =
-            gov.getVoteInfo(_disputeId);
+            gov.getVoteInfo(_disputeId, 1);
         assertEq(_voteInfo[0], 1); // vote round
         assertEq(_voteInfo[1], _startVote); // start date
         assertEq(_voteInfo[2], block.number); // block number
@@ -871,7 +871,7 @@ contract E2ETests is Test {
         vm.warp(block.timestamp + 1 days);
         gov.executeVote(_disputeId);
         // check vote result and executed status
-        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(_disputeId, 1);
         assertEq(_voteExecuted, true);
         assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
 

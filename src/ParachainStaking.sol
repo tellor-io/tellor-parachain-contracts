@@ -40,6 +40,7 @@ contract ParachainStaking is Parachain {
 
     mapping(address => StakeInfo) private stakerDetails; // mapping from a persons address to their staking info
     mapping(uint32 => mapping(address => ParachainStakeInfo)) private parachainStakerDetails;
+    mapping(uint32 => mapping(bytes => address)) private paraAccountToAddress; // mapping from a parachain account to a staker address
 
     // Structs
     struct Report {
@@ -117,9 +118,16 @@ contract ParachainStaking is Parachain {
         // Ensure parachain is registered
         IRegistry.Parachain memory parachain = registry.getById(_paraId);
         require(parachain.owner != address(0x0), "parachain not registered");
+        // Ensure account is not linked to another staker
+        require(
+            paraAccountToAddress[_paraId][_account] == address(0x0)
+                || paraAccountToAddress[_paraId][_account] == msg.sender,
+            "account already linked to another staker"
+        );
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
         _parachainStakeInfo._account = _account;
+        paraAccountToAddress[_paraId][_account] = msg.sender;
 
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         uint256 _lockedBalance = _staker.lockedBalance;
@@ -206,7 +214,7 @@ contract ParachainStaking is Parachain {
         emit StakeWithdrawn(msg.sender);
         emit ParachainStakeWithdrawn(_paraId, msg.sender);
 
-        reportStakeWithdrawn(parachain, msg.sender, _parachainStakeInfo._account, _amount);
+        reportStakeWithdrawn(parachain, msg.sender, _amount);
     }
 
     /**

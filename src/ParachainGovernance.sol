@@ -338,6 +338,10 @@ contract ParachainGovernance is Parachain {
         }
 
         _thisVote.tallyDate = block.timestamp; // Update time vote was tallied
+        Dispute storage _thisDispute = disputeInfo[_disputeId];
+        reportVoteTallied(
+            registry.getById(_thisDispute.paraId), _disputeId, IParachainGovernance.VoteResult(uint8(_thisVote.result))
+        );
         emit VoteTallied(_disputeId, _thisVote.result, _thisVote.initiator, disputeInfo[_disputeId].disputedReporter);
     }
 
@@ -408,18 +412,19 @@ contract ParachainGovernance is Parachain {
     /**
      * @dev Returns info on a vote for a given vote ID
      * @param _disputeId is the ID of a specific vote
+     * @param _voteRound is the round of the vote
      * @return bytes32 identifier hash of the vote
      * @return uint256[17] memory of the pertinent round info (vote rounds, start date, etc.)
      * @return bool memory of both whether or not the vote was executed
      * @return VoteResult result of the vote
      * @return address memory of the vote initiator
      */
-    function getVoteInfo(bytes32 _disputeId)
+    function getVoteInfo(bytes32 _disputeId, uint8 _voteRound)
         external
         view
         returns (bytes32, uint256[16] memory, bool, VoteResult, address)
     {
-        Vote storage _v = voteInfo[_disputeId][voteRounds[_disputeId]];
+        Vote storage _v = voteInfo[_disputeId][_voteRound];
         return (
             _v.identifierHash,
             [
@@ -448,7 +453,7 @@ contract ParachainGovernance is Parachain {
 
     /**
      * @dev Returns an array of voting rounds for a given vote
-     * @param _hash is the identifier hash for a vote
+     * @param _hash is the identifier hash for a vote (disputeId)
      * @return uint8 Number of voting rounds for a given disputeId
      */
     function getVoteRounds(bytes32 _hash) external view returns (uint8) {
