@@ -935,7 +935,8 @@ contract E2ETests is Test {
         gov.tallyVotes(_disputeId);
 
         // check vote state
-        (, uint256[16] memory _voteInfo,, ParachainGovernance.VoteResult _voteResult,) = gov.getVoteInfo(_disputeId);
+        (, uint256[16] memory _voteInfo,, ParachainGovernance.VoteResult _voteResult,) =
+            gov.getVoteInfo(_disputeId, gov.getVoteRounds(_disputeId));
         assertEq(_voteInfo[4], _margeBalance); // tokenholders does support
         assertEq(_voteInfo[5], _bobBalance); // tokenholders against (bob's stake is slashed and doesn't count towards his vote)
         assertEq(_voteInfo[6], 0); // tokenholders invalid query

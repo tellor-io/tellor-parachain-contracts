@@ -201,8 +201,11 @@ contract E2ETestsB is Test {
         vm.warp(block.timestamp + 1 days);
         gov.tallyVotes(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)));
         // check vote state
-        (, uint256[16] memory _voteInfo, bool _voteExecuted, ParachainGovernance.VoteResult _voteResult,) =
-            gov.getVoteInfo(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)));
+        (, uint256[16] memory _voteInfo, bool _voteExecuted, ParachainGovernance.VoteResult _voteResult,) = gov
+            .getVoteInfo(
+            keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)),
+            gov.getVoteRounds(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)))
+        );
         assertEq(_voteInfo[0], 1); // vote round
         assertEq(_voteInfo[4], 100 + 100 - 2 - 3); // tokenholders does support (alice + daryl - bob's stake - alice's stake)
         assertEq(_voteInfo[5], 99); // tokenholders against (bob initial balance - bob's stake)
@@ -284,16 +287,20 @@ contract E2ETestsB is Test {
         vm.warp(block.timestamp + 1 days);
         gov.tallyVotes(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)));
         // check vote state
-        (, _voteInfo, _voteExecuted, _voteResult,) =
-            gov.getVoteInfo(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)));
+        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(
+            keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)),
+            gov.getVoteRounds(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)))
+        );
         assertEq(_voteInfo[0], 1); // vote round
         // assertEq(_voteInfo[4], 100 + 100 + 100 - 3); // tokenholders does support (bob initial + alice initial + multisig - alice's stake)
         // assertEq(_voteInfo[5], 100 - 3); // tokenholders against (daryl initial balance - daryl's stake)
         vm.warp(block.timestamp + 1 days);
         gov.tallyVotes(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)));
         // check vote state
-        (, _voteInfo, _voteExecuted, _voteResult,) =
-            gov.getVoteInfo(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)));
+        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(
+            keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)),
+            gov.getVoteRounds(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)))
+        );
         assertEq(_voteInfo[0], 2); // vote round
         assertEq(_voteInfo[4], 100 + 100 + 100 - 2 - 3); // tokenholders does support (multisig + alice + daryl - bob's stake - alice's stake)
         assertEq(_voteInfo[5], 99); // tokenholders against (bob initial balance - bob's stake)
@@ -330,8 +337,10 @@ contract E2ETestsB is Test {
         gov.tallyVotes(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)));
 
         // check vote state
-        (, _voteInfo, _voteExecuted, _voteResult,) =
-            gov.getVoteInfo(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)));
+        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(
+            keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)),
+            gov.getVoteRounds(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)))
+        );
         assertEq(_voteInfo[0], 3); // vote round
         assertEq(_voteInfo[4], 0); // tokenholders does support
         assertEq(_voteInfo[5], 0); // tokenholders against
@@ -352,8 +361,10 @@ contract E2ETestsB is Test {
         vm.warp(block.timestamp + 1 days);
         gov.executeVote(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)));
         // check vote result and executed status
-        (, _voteInfo, _voteExecuted, _voteResult,) =
-            gov.getVoteInfo(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)));
+        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(
+            keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)),
+            gov.getVoteRounds(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)))
+        );
         assertEq(_voteExecuted, true);
         assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
 
