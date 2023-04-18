@@ -86,10 +86,13 @@ contract E2ETestsB is Test {
     }
 
     function testExecuteVotesOnMultipleParachains() public {
-        // open identical disputes on three different parachains
-        // have multiple voting rounds for each dispute, with varying outcomes
-        // execute votes for each dispute
-        // check that all state is correctly updated & there's no cross-contamination between storage variables
+        // Open identical disputes on different parachains.
+        // Have multiple voting rounds for multiple disputes, with varying outcomes.
+        // Execute votes for multiple disputes.
+        // Check that all state is correctly updated & there's no cross-contamination between storage variables.
+
+        // Skips voting rounds for parachain 2 bc cross-contamination would be evident with only 2 parachains (parachains 1 & 3), a
+        // and checking for that third one would be redundant.
 
         // STAKE FOR PARACHAINS
         // stake for parachain 1
@@ -178,7 +181,6 @@ contract E2ETestsB is Test {
         assertEq(token.balanceOf(address(daryl)), 100 - 3); // daryl's token holdings should not have changed
         assertEq(token.balanceOf(address(gov)), 4); // 1 + 2 + 1 = 4 (gov contract should have received slashed tokens)
 
-        // DAY 1 (votes are cast for parachain 1 & 2 within first day of dispute, no votes cast for parachain 3 within first day)
         // vote round 1 for parachain 1
         vm.prank(bob);
         gov.vote(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)), false, true);
@@ -233,7 +235,6 @@ contract E2ETestsB is Test {
         assertEq(token.balanceOf(address(alice)), 100 - 2); // alice's token holdings should not have changed
         assertEq(token.balanceOf(address(daryl)), 100 - 3); // daryl's token holdings should not have changed
 
-        // DAY 2 (votes cast and tallied for all parachains, vote round 1 for parachain 3, since it was not voted on within first day of dispute)
         // vote round 2 for parachain 1
         // open new vote round
         vm.prank(paraOwner);
@@ -307,7 +308,7 @@ contract E2ETestsB is Test {
         assertEq(_voteInfo[15], 0); // team multisig invalid query
         assertEq(_voteExecuted, false); // vote executed status
         assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
-        // open new vote round for parachain 3
+        // open vote round 2 for parachain 3
         vm.prank(paraOwner3);
         gov.beginParachainDispute(
             fakeQueryId,
@@ -352,7 +353,6 @@ contract E2ETestsB is Test {
         assertEq(token.balanceOf(address(alice)), 100 - 2); // alice's token holdings should not have changed
         assertEq(token.balanceOf(address(daryl)), 100 - 3); // daryl's token holdings should not have changed
 
-        // DAY 3
         // vote round 2 for parachain 3
         vm.prank(daryl);
         gov.vote(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)), false, true); // disputed reporter votes against
@@ -386,9 +386,20 @@ contract E2ETestsB is Test {
         // no one votes except the multisig
         vm.prank(fakeTeamMultiSig);
         gov.vote(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)), true, false); // invalid dispute
-        // tally votes
+        // tally votes for parachain 3 (round 2)
         vm.warp(block.timestamp + 2 days); // 2 days must have passed since the last vote round for parachain 3
         gov.tallyVotes(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)));
+        // open vote round 3 for parachain 3
+        vm.prank(paraOwner3);
+        gov.beginParachainDispute(
+            fakeQueryId,
+            fakeTimestamp,
+            fakeValue,
+            daryl, // _disputedReporter
+            alice, // _disputeInitiator
+            1 // _slashAmount (less than what daryl has staked)
+        );
+        // tally votes for parachain 1 (round 3)
         vm.warp(block.timestamp + 1 days); // 3 days must have passed since last vote round, since this is round 3 for parachain 1
         gov.tallyVotes(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)));
 
@@ -416,7 +427,7 @@ contract E2ETestsB is Test {
         // check vote state for parachain 3, vote round 2
         (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(
             keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)),
-            gov.getVoteRounds(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)))
+            gov.getVoteRounds(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp))) - 1 // -1 bc round 3 is the latest
         );
         assertEq(_voteInfo[0], 2); // vote round
         assertEq(_voteInfo[4], 100 + 100 - 1 - 2); // tokenholders does support (bob + alice - bob stake slashed - alice stake slashed)
@@ -445,7 +456,7 @@ contract E2ETestsB is Test {
         assertEq(token.balanceOf(address(alice)), 100 - 2); // alice's token holdings should not have changed
         assertEq(token.balanceOf(address(daryl)), 100 - 3); // daryl's token holdings should not have changed
 
-        // Execute vote
+        // Execute vote for parachain 1
         vm.warp(block.timestamp + 1 days);
         gov.executeVote(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)));
         // check vote result and executed status
@@ -458,12 +469,74 @@ contract E2ETestsB is Test {
 
         // check slashed stake returned to reporter
         assertEq(token.balanceOf(address(bob)), 100); // balance before + slashed stake
+
+        // submit votes for parachain 3 (round 3)
+        vm.prank(daryl);
+        gov.vote(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)), false, true); // disputed reporter votes against
+        vm.prank(alice);
+        gov.vote(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)), true, true); // dispute initiator votes for
+        vm.prank(bob);
+        gov.vote(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)), true, true); // random tokenholder votes for
+        vm.prank(fakeTeamMultiSig);
+        gov.vote(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)), false, true); // team multisig votes against
+        vm.prank(paraOwner3);
+        gov.voteParachain(
+            keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)), // _disputeId
+            22, // _totalTipsFor
+            0, // _totalTipsAgainst
+            0, // _totalTipsInvalid
+            33, // _totalReportsFor
+            0, // _totalReportsAgainst
+            0 // _totalReportsInvalid
+        );
+        // tally votes for parachain 3 (round 3)
+        vm.warp(block.timestamp + 1 days); // 3 days elapsed since vote round opened
+        gov.tallyVotes(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)));
+        // check vote state for parachain 3, vote round 3
+        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(
+            keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)),
+            gov.getVoteRounds(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)))
+        );
+        assertEq(_voteInfo[0], 3); // vote round 3
+        assertEq(_voteInfo[4], 100 + 100 - 2); // tokenholders for: (bob initial + alice initial - alice stake slashed)
+        assertEq(_voteInfo[5], 100 + 100 - 1); // tokenholders against: (multisig initial + daryl initial - daryl slash amount))
+        assertEq(_voteInfo[6], 0); // tokenholders invalid query
+        assertEq(_voteInfo[7], 22); // users for
+        assertEq(_voteInfo[8], 0); // users against
+        assertEq(_voteInfo[9], 0); // users invalid query
+        assertEq(_voteInfo[10], 33); // reporters for
+        assertEq(_voteInfo[11], 0); // reporters against
+        assertEq(_voteInfo[12], 0); // reporters invalid query
+        assertEq(_voteInfo[13], 0); // team multisig for
+        assertEq(_voteInfo[14], 1); // team multisig against
+        assertEq(_voteInfo[15], 0); // team multisig invalid query
+        assertEq(_voteExecuted, false); // vote executed status
+        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.PASSED));
+
+        // check balances
+        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(0, _stakedBal + _lockedBal); // 1 - 3 = 0 (bob's stake was slashed)
+        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId2, alice);
+        assertEq(0, _stakedBal + _lockedBal); // 2 - 2 = 0 (alice's stake was slashed)
+        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, daryl);
+        assertEq(2, _stakedBal + _lockedBal); // 3 - 1 = 2 (daryl's stake was slashed)
+        assertEq(token.balanceOf(address(bob)), 100); // bob's stake was returned
+        assertEq(token.balanceOf(address(alice)), 100 - 2); // alice's token holdings should not have changed
+        assertEq(token.balanceOf(address(daryl)), 100 - 3); // daryl's token holdings should not have changed
+
+        // Execute vote for parachain 3
+        vm.warp(block.timestamp + 1 days);
+        gov.executeVote(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)));
+        // check vote result and executed status
+        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(
+            keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)),
+            gov.getVoteRounds(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)))
+        );
+        assertEq(_voteExecuted, true);
+        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.PASSED)); // vote result
+
+        // check slashed stake returned to reporter
+        assertEq(token.balanceOf(address(daryl)), 100 - 3); // initial balance - stake amount
+        assertEq(token.balanceOf(address(alice)), 100 - 2 + 1); // initial balance - her stake amount + daryl's slashed amount
     }
-
-    // todo:
-    // check that all the weird cases in that original gov test are covered here
-
-    // parachain 1: 3/3 vote rounds & execute vote & state checks & balance checks
-    // parachain 2: 0/3 vote rounds
-    // parachain 3: 2/3 vote rounds
 }
