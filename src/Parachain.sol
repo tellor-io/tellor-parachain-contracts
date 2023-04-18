@@ -30,7 +30,7 @@ abstract contract Parachain {
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
-            hex"09", // fixed call index within pallet: 9
+            hex"0C", // fixed call index within pallet: 12
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)), // amount
             bytes20(_staker) // staker
@@ -54,7 +54,7 @@ abstract contract Parachain {
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
-            hex"0A", // fixed call index within pallet: 10
+            hex"0D", // fixed call index within pallet: 13
             _account,
             bytes32(reverse(_amount)),
             bytes20(_staker) // staker
@@ -70,12 +70,12 @@ abstract contract Parachain {
     /// @param _recipient address The address of the recipient of the slashed stake.
     /// @param _amount uint256 Amount slashed.
     function reportSlash(IRegistry.Parachain memory _parachain, address _reporter, address _recipient, uint256 _amount)
-        internal
+    internal
     {
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
-            hex"0C", // fixed call index within pallet: 12
+            hex"0F", // fixed call index within pallet: 15
             _reporter, // account id of reporter on target parachain
             _recipient, // recipient
             bytes32(reverse(_amount)) // amount
@@ -93,7 +93,7 @@ abstract contract Parachain {
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
-            hex"0B", // fixed call index within pallet: 11
+            hex"0E", // fixed call index within pallet: 14
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)) // amount
         );
@@ -114,7 +114,7 @@ abstract contract Parachain {
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
-            hex"0E", // fixed call index within pallet: 14
+            hex"10", // fixed call index within pallet: 16
             _disputeId, // dispute id
             uint8(_outcome) // outcome
         );
@@ -135,7 +135,7 @@ abstract contract Parachain {
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
-            hex"0D", // fixed call index within pallet: 13
+            hex"11", // fixed call index within pallet: 17
             _disputeId, // dispute id
             uint8(_outcome) // outcome
         );
@@ -176,19 +176,19 @@ abstract contract Parachain {
 
         // swap bytes
         v = ((v & 0xFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00) >> 8)
-            | ((v & 0x00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF) << 8);
+        | ((v & 0x00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF) << 8);
 
         // swap 2-byte long pairs
         v = ((v & 0xFFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000) >> 16)
-            | ((v & 0x0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF) << 16);
+        | ((v & 0x0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF) << 16);
 
         // swap 4-byte long pairs
         v = ((v & 0xFFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000) >> 32)
-            | ((v & 0x00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF) << 32);
+        | ((v & 0x00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF) << 32);
 
         // swap 8-byte long pairs
         v = ((v & 0xFFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF0000000000000000) >> 64)
-            | ((v & 0x0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF) << 64);
+        | ((v & 0x0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF) << 64);
 
         // swap 16-byte long pairs
         v = (v >> 128) | (v << 128);
