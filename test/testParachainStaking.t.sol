@@ -69,6 +69,18 @@ contract ParachainStakingTest is Test {
         assertEq(address(staking.token()), address(token));
         assertEq(address(staking.registryAddress()), address(registry));
         assertEq(address(staking.governance()), address(0x2));
+
+        // Try to create new w/o passing in token address
+        vm.prank(bob);
+        vm.expectRevert("must set token address");
+        ParachainStaking _ps = new ParachainStaking(address(registry), address(0x0));
+    }
+
+    function testInit() public {
+        // Try to init as a non-owner
+        vm.prank(bob);
+        vm.expectRevert("only owner can set governance address");
+        staking.init(address(0x3));
     }
 
     function testDepositParachainStake() public {
