@@ -370,9 +370,7 @@ contract ParachainGovernance is Parachain {
                 token.transfer(_thisDispute.disputedReporter, _thisDispute.slashedAmount), "Transfer to reporter failed"
             );
         }
-        IRegistry.Parachain memory _parachain = registry.getById(_thisDispute.paraId);
-        IParachainGovernance.VoteResult _convertedVoteResult = IParachainGovernance.VoteResult(uint8(_thisVote.result));
-        reportVoteExecuted(_parachain, _disputeId, _convertedVoteResult);
+        reportVoteExecuted(registry.getById(_thisDispute.paraId), _disputeId);
         emit VoteExecuted(_disputeId, _thisVote.result);
     }
 

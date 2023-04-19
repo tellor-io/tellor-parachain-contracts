@@ -70,7 +70,7 @@ abstract contract Parachain {
     /// @param _recipient address The address of the recipient of the slashed stake.
     /// @param _amount uint256 Amount slashed.
     function reportSlash(IRegistry.Parachain memory _parachain, address _reporter, address _recipient, uint256 _amount)
-    internal
+        internal
     {
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
@@ -126,18 +126,12 @@ abstract contract Parachain {
     /// @dev Report vote executed to a registered parachain.
     /// @param _parachain Para The registered parachain.
     /// @param _disputeId bytes32 The unique identifier of the dispute.
-    /// @param _outcome VoteResult The outcome of the vote.
-    function reportVoteExecuted(
-        IRegistry.Parachain memory _parachain,
-        bytes32 _disputeId,
-        IParachainGovernance.VoteResult _outcome
-    ) internal {
+    function reportVoteExecuted(IRegistry.Parachain memory _parachain, bytes32 _disputeId) internal {
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
-            hex"11", // fixed call index within pallet: 17
-            _disputeId, // dispute id
-            uint8(_outcome) // outcome
+            hex"0D", // fixed call index within pallet: 13
+            _disputeId // dispute id
         );
         uint256 feeAmount = 10000000000;
         uint64 overallWeight = 9000000000;
@@ -176,19 +170,19 @@ abstract contract Parachain {
 
         // swap bytes
         v = ((v & 0xFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00) >> 8)
-        | ((v & 0x00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF) << 8);
+            | ((v & 0x00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF) << 8);
 
         // swap 2-byte long pairs
         v = ((v & 0xFFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000) >> 16)
-        | ((v & 0x0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF) << 16);
+            | ((v & 0x0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF) << 16);
 
         // swap 4-byte long pairs
         v = ((v & 0xFFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000) >> 32)
-        | ((v & 0x00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF) << 32);
+            | ((v & 0x00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF) << 32);
 
         // swap 8-byte long pairs
         v = ((v & 0xFFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF0000000000000000) >> 64)
-        | ((v & 0x0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF) << 64);
+            | ((v & 0x0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF) << 64);
 
         // swap 16-byte long pairs
         v = (v >> 128) | (v << 128);
