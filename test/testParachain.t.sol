@@ -87,7 +87,7 @@ contract ParachainTest is Test {
         assertEq(savedData.transactRequiredWeightAtMost, 5000000000);
         bytes memory call = abi.encodePacked(
             abi.encode(fakePalletInstance),
-            hex"09",
+            hex"0C",
             fakeReporter,
             bytes32(parachain.reverseExternal(fakeAmount)),
             bytes20(fakeStaker)
@@ -124,7 +124,7 @@ contract ParachainTest is Test {
         assertEq(savedData.transactRequiredWeightAtMost, 5000000000);
         bytes memory call = abi.encodePacked(
             abi.encode(fakePalletInstance),
-            hex"0A",
+            hex"0D",
             fakeReporter,
             bytes32(parachain.reverseExternal(fakeAmount)),
             bytes20(fakeStaker)
@@ -161,7 +161,7 @@ contract ParachainTest is Test {
         assertEq(savedData.transactRequiredWeightAtMost, 5000000000);
         bytes memory call = abi.encodePacked(
             abi.encode(fakePalletInstance),
-            hex"0C",
+            hex"0F",
             fakeStaker,
             paraDisputer,
             bytes32(parachain.reverseExternal(fakeAmount))
@@ -197,7 +197,7 @@ contract ParachainTest is Test {
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
         assertEq(savedData.transactRequiredWeightAtMost, 5000000000);
         bytes memory call = abi.encodePacked(
-            abi.encode(fakePalletInstance), hex"0B", fakeStaker, bytes32(parachain.reverseExternal(fakeAmount))
+            abi.encode(fakePalletInstance), hex"0E", fakeStaker, bytes32(parachain.reverseExternal(fakeAmount))
         );
         assertEq(savedData.call, call);
         assertEq(savedData.feeAmount, 10000000000);
