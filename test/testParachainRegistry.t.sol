@@ -10,6 +10,7 @@ import "solmate/tokens/ERC20.sol";
 import "./helpers/TestToken.sol";
 
 import "../src/ParachainRegistry.sol";
+import "../src/Parachain.sol";
 import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 contract ParachainRegistryTest is Test {
@@ -22,13 +23,30 @@ contract ParachainRegistryTest is Test {
     // Parachain registration
     uint32 public fakeParaId = 12;
     uint8 public fakePalletInstance = 8;
+    uint32 public fakeWeightToFee = 5000;
+    uint8 public fakeDecimals = 10;
 
     XcmTransactorV2 private constant xcmTransactor = XCM_TRANSACTOR_V2_CONTRACT;
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
 
+    // setting feeLocation as native token of destination chain
+    XcmTransactorV2.Multilocation public fakeFeeLocation;
+
+    function parachain(uint32 _paraId) private pure returns (bytes memory) {
+        // 0x00 denotes Parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
+        return abi.encodePacked(hex"00", bytes4(_paraId));
+    }
+
+    function x1(uint32 _paraId) public pure returns (bytes[] memory) {
+        bytes[] memory interior = new bytes[](1);
+        interior[0] = parachain(_paraId);
+        return interior;
+    }
+
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
+        fakeFeeLocation = XcmTransactorV2.Multilocation(1, x1(3));
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
@@ -36,7 +54,7 @@ contract ParachainRegistryTest is Test {
 
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
         vm.prank(paraOwner);
-        registry.register(fakeParaId, fakePalletInstance);
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples
@@ -62,23 +80,30 @@ contract ParachainRegistryTest is Test {
         // test non owner trying to register
         vm.prank(nonParaOwner);
         vm.expectRevert("Not owner");
-        registry.register(fakeParaId2, fakePalletInstance2);
+        registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
 
         // successful register
         vm.prank(paraOwner2);
-        registry.register(fakeParaId2, fakePalletInstance2);
+        registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
 
         // check storage
         ParachainRegistry.Parachain memory parachain = registry.getByAddress(paraOwner2);
         assertEq(parachain.id, fakeParaId2);
         assertEq(parachain.owner, paraOwner2);
         assertEq(parachain.palletInstance, abi.encodePacked(fakePalletInstance2));
+        assertEq(parachain.weightToFee, fakeWeightToFee);
+        assertEq(parachain.decimals, fakeDecimals);
+        assertEq(parachain.feeLocation.parents, fakeFeeLocation.parents);
+        assertEq(parachain.feeLocation.interior[0], fakeFeeLocation.interior[0]);
 
         // indirectly check that paraOwner was saved to 'owners' mapping
         parachain = registry.getById(fakeParaId2);
         assertEq(parachain.id, fakeParaId2);
         assertEq(parachain.owner, paraOwner2);
         assertEq(parachain.palletInstance, abi.encodePacked(fakePalletInstance2));
+        assertEq(parachain.weightToFee, fakeWeightToFee);
+        assertEq(parachain.decimals, fakeDecimals);
+        assertEq(parachain.feeLocation.interior[0], fakeFeeLocation.interior[0]);
     }
 
     function testDeregister() public {}

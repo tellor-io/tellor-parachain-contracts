@@ -18,6 +18,7 @@ contract ParachainStakingTest is Test {
     TestToken public token;
     ParachainRegistry public registry;
     ParachainStaking public staking;
+    Parachain public parachainContract;
 
     address public paraOwner = address(0x1111);
     address public paraDisputer = address(0x2222);
@@ -28,14 +29,19 @@ contract ParachainStakingTest is Test {
     uint32 public fakeParaId = 12;
     uint8 public fakePalletInstance = 8;
     uint256 public fakeStakeAmount = 20;
+    uint32 public fakeWeightToFee = 5000;
+    uint8 public fakeDecimals = 10;
 
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
+
+    // setting feeLocation as native token of destination chain
+    XcmTransactorV2.Multilocation public fakeFeeLocation = XcmTransactorV2.Multilocation(0, parachainContract.x1(3));
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
         staking = new ParachainStaking(address(registry), address(token));
-
+        fakeFeeLocation = XcmTransactorV2.Multilocation(0, staking.x1(3));
         // set fake governance address
         staking.init(address(0x2));
 
@@ -46,7 +52,7 @@ contract ParachainStakingTest is Test {
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
 
         vm.prank(paraOwner);
-        registry.register(fakeParaId, fakePalletInstance);
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
 
         // Fund accounts
         token.mint(bob, fakeStakeAmount * 10);

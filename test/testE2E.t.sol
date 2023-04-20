@@ -13,12 +13,15 @@ import "../src/ParachainRegistry.sol";
 import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";
 import "../src/ParachainGovernance.sol";
+import "./testParachain.t.sol";
 
 contract E2ETests is Test {
     TestToken public token;
     ParachainRegistry public registry;
     ParachainStaking public staking;
     ParachainGovernance public gov;
+    ParachainTest public parachainTest;
+    Parachain public parachainContract;
 
     address public paraOwner = address(0x1111);
     address public paraOwner2 = address(0x1112);
@@ -37,6 +40,8 @@ contract E2ETests is Test {
     address fakeDisputedReporter = bob;
     address fakeDisputeInitiator = alice;
     uint256 fakeSlashAmount = 50;
+    uint32 public fakeWeightToFee = 5000;
+    uint8 public fakeDecimals = 10;
 
     // Parachain registration
     uint32 public fakeParaId = 12;
@@ -52,6 +57,9 @@ contract E2ETests is Test {
     uint256 public fakeStakeAmount3 = 50;
 
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
+
+    // setting feeLocation as native token of destination chain
+    XcmTransactorV2.Multilocation public fakeFeeLocation = XcmTransactorV2.Multilocation(0, parachainContract.x1(3));
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
@@ -69,11 +77,11 @@ contract E2ETests is Test {
 
         // Register parachains
         vm.prank(paraOwner);
-        registry.register(fakeParaId, fakePalletInstance);
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
         vm.prank(paraOwner2);
-        registry.register(fakeParaId2, fakePalletInstance2);
+        registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
         vm.prank(paraOwner3);
-        registry.register(fakeParaId3, fakePalletInstance3);
+        registry.register(fakeParaId3, fakePalletInstance3, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
 
         gov.init(address(staking));
         staking.init(address(gov));

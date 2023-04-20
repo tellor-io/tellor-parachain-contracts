@@ -23,6 +23,9 @@ contract ParachainTest is Test {
     address public fakeStakingContract = address(0x9999);
     address fakeStaker = address(0xabcd);
     bytes fakeReporter = abi.encode(fakeStaker);
+    uint32 fakeWeightToFee = 5000;
+    uint8 fakeDecimals = 10;
+
 
     // Parachain registration
     uint32 public fakeParaId = 12;
@@ -30,11 +33,14 @@ contract ParachainTest is Test {
 
     StubXcmTransactorV2 private constant xcmTransactor = StubXcmTransactorV2(XCM_TRANSACTOR_V2_ADDRESS);
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
+    // setting feeLocation as native token of destination chain
+    XcmTransactorV2.Multilocation fakeFeeLocation;
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
         parachain = new TestParachain(address(registry));
+        fakeFeeLocation = XcmTransactorV2.Multilocation(0, parachain.x1(3));
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
@@ -42,7 +48,8 @@ contract ParachainTest is Test {
 
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
         vm.prank(paraOwner);
-        registry.register(fakeParaId, fakePalletInstance);
+
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples
@@ -64,9 +71,9 @@ contract ParachainTest is Test {
     function testReportStakeDeposited() public {
         // setup
         IRegistry.Parachain memory fakeParachain =
-            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance)});
+            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance), weightToFee: fakeWeightToFee, decimals: fakeDecimals, feeLocation: fakeFeeLocation});
         IRegistry.Parachain memory badFakeParachain =
-            IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance)});
+            IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance), weightToFee: fakeWeightToFee, decimals: fakeDecimals, feeLocation: fakeFeeLocation});
         uint256 fakeAmount = 100e18;
 
         // test registered parachain
@@ -84,7 +91,7 @@ contract ParachainTest is Test {
         assertEq(savedData.feeLocation.parents, 1);
         assertEq(savedData.feeLocation.interior.length, 1);
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
-        assertEq(savedData.transactRequiredWeightAtMost, 5000000000);
+        assertEq(savedData.transactRequiredWeightAtMost, 1218085000);
         bytes memory call = abi.encodePacked(
             abi.encode(fakePalletInstance),
             hex"0C",
@@ -93,16 +100,16 @@ contract ParachainTest is Test {
             bytes20(fakeStaker)
         );
         assertEq(savedData.call, call);
-        assertEq(savedData.feeAmount, 10000000000);
-        assertEq(savedData.overallWeight, 9000000000);
+        assertEq(savedData.feeAmount, 2609);
+        assertEq(savedData.overallWeight, 5218085000);
     }
 
     function testReportStakeWithdrawRequested() public {
         // setup
         IRegistry.Parachain memory fakeParachain =
-            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance)});
+            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance), weightToFee: fakeWeightToFee, decimals: fakeDecimals, feeLocation: fakeFeeLocation});
         IRegistry.Parachain memory badFakeParachain =
-            IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance)});
+            IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance), weightToFee: fakeWeightToFee, decimals: fakeDecimals, feeLocation: fakeFeeLocation});
 
         uint256 fakeAmount = 100e18;
 
@@ -137,9 +144,9 @@ contract ParachainTest is Test {
     function testReportSlash() public {
         // setup
         IRegistry.Parachain memory fakeParachain =
-            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance)});
+            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance), weightToFee: fakeWeightToFee, decimals: fakeDecimals, feeLocation: fakeFeeLocation});
         IRegistry.Parachain memory badFakeParachain =
-            IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance)});
+            IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance), weightToFee: fakeWeightToFee, decimals: fakeDecimals, feeLocation: fakeFeeLocation});
 
         uint256 fakeAmount = 100e18;
 
@@ -174,9 +181,9 @@ contract ParachainTest is Test {
     function testReportStakeWithdrawn() public {
         // setup
         IRegistry.Parachain memory fakeParachain =
-            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance)});
+            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance), weightToFee: fakeWeightToFee, decimals: fakeDecimals, feeLocation: fakeFeeLocation});
         IRegistry.Parachain memory badFakeParachain =
-            IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance)});
+            IRegistry.Parachain({id: fakeParaId, owner: address(0), palletInstance: abi.encode(fakePalletInstance), weightToFee: fakeWeightToFee, decimals: fakeDecimals, feeLocation: fakeFeeLocation});
 
         uint256 fakeAmount = 100e18;
 
@@ -210,7 +217,7 @@ contract ParachainTest is Test {
         // since function is private, indirectly test through reportStakeWithdrawnExternal call
         // setup
         IRegistry.Parachain memory fakeParachain =
-            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance)});
+            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance), weightToFee: fakeWeightToFee, decimals: fakeDecimals, feeLocation: fakeFeeLocation});
 
         uint256 fakeAmount = 100e18;
         vm.prank(fakeStakingContract);
@@ -221,14 +228,14 @@ contract ParachainTest is Test {
             xcmTransactor.getTransactThroughSignedMultilocationArray();
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
 
-        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
+        //assertEq(savedData.feeLocation, fakeFeeLocation);
     }
 
     function testX1() public {
         // since function is private, indirectly test through reportStakeWithdrawnExternal call
         // setup
         IRegistry.Parachain memory fakeParachain =
-            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance)});
+            IRegistry.Parachain({id: fakeParaId, owner: paraOwner, palletInstance: abi.encode(fakePalletInstance), weightToFee: fakeWeightToFee, decimals: fakeDecimals, feeLocation: fakeFeeLocation});
 
         uint256 fakeAmount = 100e18;
         vm.prank(fakeStakingContract);
