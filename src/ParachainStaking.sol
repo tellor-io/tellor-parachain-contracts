@@ -214,7 +214,11 @@ contract ParachainStaking is Parachain {
         emit StakeWithdrawn(msg.sender);
         emit ParachainStakeWithdrawn(_paraId, msg.sender);
 
-        reportStakeWithdrawn(parachain, msg.sender, _amount);
+        reportStakeWithdrawn(
+            parachain,
+            _parachainStakeInfo._account, // staker's linked account on oracle consumer parachain
+            _amount
+        );
     }
 
     /**
@@ -259,7 +263,11 @@ contract ParachainStaking is Parachain {
         require(token.transfer(_recipient, _slashAmount), "transfer failed");
         emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
 
-        reportSlash(parachain, _reporter, _recipient, _slashAmount);
+        reportSlash(
+            parachain,
+            _parachainStakeInfo._account, // reporter's account on oracle consumer parachain
+            _slashAmount
+        );
         return _slashAmount;
     }
 
