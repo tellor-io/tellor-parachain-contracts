@@ -64,23 +64,16 @@ abstract contract Parachain {
         transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
     }
 
-    /// @dev Report slash to a registered parachain.
+    /// @dev Report slash to a registered parachain. Recipient will always be the governance contract.
     /// @param _parachain Para The registered parachain.
     /// @param _reporter address The corresponding address of the reporter on the parachain.
-    /// @param _recipient address The address of the recipient of the slashed stake.
     /// @param _amount uint256 Amount slashed.
-    function reportSlash(
-        IRegistry.Parachain memory _parachain,
-        bytes memory _reporter,
-        address _recipient,
-        uint256 _amount
-    ) internal {
+    function reportSlash(IRegistry.Parachain memory _parachain, bytes memory _reporter, uint256 _amount) internal {
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
             hex"0F", // fixed call index within pallet: 15
             _reporter, // account id of reporter on target parachain
-            _recipient, // recipient
             bytes32(reverse(_amount)) // amount
         );
         uint256 feeAmount = 10000000000;

@@ -262,7 +262,6 @@ contract ParachainStaking is Parachain {
         reportSlash(
             parachain,
             _parachainStakeInfo._account, // reporter's account on oracle consumer parachain
-            _recipient,
             _slashAmount
         );
         return _slashAmount;
