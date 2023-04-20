@@ -69,7 +69,7 @@ abstract contract Parachain {
     /// @param _reporter address The corresponding address of the reporter on the parachain.
     /// @param _recipient address The address of the recipient of the slashed stake.
     /// @param _amount uint256 Amount slashed.
-    function reportSlash(IRegistry.Parachain memory _parachain, address _reporter, address _recipient, uint256 _amount)
+    function reportSlash(IRegistry.Parachain memory _parachain, bytes memory _reporter, address _recipient, uint256 _amount)
         internal
     {
         uint64 transactRequiredWeightAtMost = 5000000000;
@@ -89,7 +89,7 @@ abstract contract Parachain {
     /// @param _parachain Para The registered parachain.
     /// @param _reporter address Address of staker on EVM compatible chain w/ Tellor controller contracts.
     /// @param _amount uint256 Amount withdrawn.
-    function reportStakeWithdrawn(IRegistry.Parachain memory _parachain, address _reporter, uint256 _amount) internal {
+    function reportStakeWithdrawn(IRegistry.Parachain memory _parachain, bytes memory _reporter, uint256 _amount) internal {
         uint64 transactRequiredWeightAtMost = 5000000000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime

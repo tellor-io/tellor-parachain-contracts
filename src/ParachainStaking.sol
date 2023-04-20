@@ -214,7 +214,7 @@ contract ParachainStaking is Parachain {
         emit StakeWithdrawn(msg.sender);
         emit ParachainStakeWithdrawn(_paraId, msg.sender);
 
-        reportStakeWithdrawn(parachain, msg.sender, _amount);
+        reportStakeWithdrawn(parachain, abi.encodePacked(msg.sender), _amount);
     }
 
     /**
@@ -225,7 +225,7 @@ contract ParachainStaking is Parachain {
      * @param _recipient is the address receiving the reporter's stake
      * @return _slashAmount uint256 amount of token slashed and sent to recipient address
      */
-    function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient)
+    function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, bytes memory _reporter, address _recipient)
         external
         returns (uint256)
     {
