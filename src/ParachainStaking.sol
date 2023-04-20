@@ -225,7 +225,7 @@ contract ParachainStaking is Parachain {
      * @param _recipient is the address receiving the reporter's stake
      * @return _slashAmount uint256 amount of token slashed and sent to recipient address
      */
-    function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, bytes memory _reporter, address _recipient)
+    function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient)
         external
         returns (uint256)
     {
@@ -259,7 +259,12 @@ contract ParachainStaking is Parachain {
         require(token.transfer(_recipient, _slashAmount), "transfer failed");
         emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
 
-        reportSlash(parachain, _reporter, _recipient, _slashAmount);
+        reportSlash(
+            parachain,
+            _parachainStakeInfo._account, // reporter's account on oracle consumer parachain
+            _recipient,
+            _slashAmount
+        );
         return _slashAmount;
     }
 

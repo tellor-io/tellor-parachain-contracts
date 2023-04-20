@@ -22,7 +22,7 @@ contract ParachainTest is Test {
     address public paraDisputer = address(0x2222);
     address public fakeStakingContract = address(0x9999);
     address fakeStaker = address(0xabcd);
-    bytes fakeReporter = abi.encode(fakeStaker);
+    bytes fakeReporter = abi.encode(fakeStaker); // fake reporter account on oracle consumer parachain
 
     // Parachain registration
     uint32 public fakeParaId = 12;
@@ -145,7 +145,7 @@ contract ParachainTest is Test {
 
         // test registered parachain
         vm.prank(fakeStakingContract);
-        parachain.reportSlashExternal(fakeParachain, fakeStaker, paraDisputer, fakeAmount);
+        parachain.reportSlashExternal(fakeParachain, fakeReporter, paraDisputer, fakeAmount);
 
         // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
@@ -162,7 +162,7 @@ contract ParachainTest is Test {
         bytes memory call = abi.encodePacked(
             abi.encode(fakePalletInstance),
             hex"0F",
-            fakeStaker,
+            fakeReporter,
             paraDisputer,
             bytes32(parachain.reverseExternal(fakeAmount))
         );
@@ -182,7 +182,7 @@ contract ParachainTest is Test {
 
         // test registered parachain
         vm.prank(fakeStakingContract);
-        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeAmount);
+        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeReporter, fakeAmount);
 
         // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
@@ -197,7 +197,7 @@ contract ParachainTest is Test {
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
         assertEq(savedData.transactRequiredWeightAtMost, 5000000000);
         bytes memory call = abi.encodePacked(
-            abi.encode(fakePalletInstance), hex"0E", fakeStaker, bytes32(parachain.reverseExternal(fakeAmount))
+            abi.encode(fakePalletInstance), hex"0E", fakeReporter, bytes32(parachain.reverseExternal(fakeAmount))
         );
         assertEq(savedData.call, call);
         assertEq(savedData.feeAmount, 10000000000);
@@ -214,7 +214,7 @@ contract ParachainTest is Test {
 
         uint256 fakeAmount = 100e18;
         vm.prank(fakeStakingContract);
-        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeAmount);
+        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeReporter, fakeAmount);
 
         // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
@@ -232,7 +232,7 @@ contract ParachainTest is Test {
 
         uint256 fakeAmount = 100e18;
         vm.prank(fakeStakingContract);
-        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeStaker, fakeAmount);
+        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeReporter, fakeAmount);
 
         // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
