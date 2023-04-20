@@ -214,7 +214,11 @@ contract ParachainStaking is Parachain {
         emit StakeWithdrawn(msg.sender);
         emit ParachainStakeWithdrawn(_paraId, msg.sender);
 
-        reportStakeWithdrawn(parachain, abi.encodePacked(msg.sender), _amount);
+        reportStakeWithdrawn(
+            parachain,
+            _parachainStakeInfo._account, // staker's linked account on oracle consumer parachain
+            _amount
+        );
     }
 
     /**

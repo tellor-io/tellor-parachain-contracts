@@ -27,7 +27,7 @@ contract TestParachain is Parachain {
     function reportSlashExternal(IRegistry.Parachain memory _parachain, bytes memory _reporter, uint256 _amount)
         external
     {
-        reportSlash(_parachain, abi.encodePacked(_reporter), _amount);
+        reportSlash(_parachain, _reporter, _amount);
     }
 
     function reportStakeWithdrawnExternal(
