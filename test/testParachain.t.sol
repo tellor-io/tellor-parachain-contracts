@@ -22,10 +22,9 @@ contract ParachainTest is Test {
     address public paraDisputer = address(0x2222);
     address public fakeStakingContract = address(0x9999);
     address fakeStaker = address(0xabcd);
-    bytes fakeReporter = abi.encode(fakeStaker);
+    bytes fakeReporter = abi.encode(fakeStaker); // fake reporter account on oracle consumer parachain
     uint32 fakeWeightToFee = 5000;
     uint8 fakeDecimals = 10;
-
 
     // Parachain registration
     uint32 public fakeParaId = 12;

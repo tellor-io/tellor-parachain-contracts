@@ -94,7 +94,6 @@ abstract contract Parachain {
     /// @param _amount uint256 Amount withdrawn.
     function reportStakeWithdrawn(IRegistry.Parachain memory _parachain, address _reporter, uint256 _amount) internal {
         uint64 transactRequiredWeightAtMost = 261856000;
-
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
             hex"0E", // fixed call index within pallet: 14
