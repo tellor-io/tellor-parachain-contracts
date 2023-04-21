@@ -67,20 +67,16 @@ abstract contract Parachain {
         transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation);
     }
 
-    /// @dev Report slash to a registered parachain.
+    /// @dev Report slash to a registered parachain. Recipient will always be the governance contract.
     /// @param _parachain Para The registered parachain.
     /// @param _reporter address The corresponding address of the reporter on the parachain.
-    /// @param _recipient address The address of the recipient of the slashed stake.
     /// @param _amount uint256 Amount slashed.
-    function reportSlash(IRegistry.Parachain memory _parachain, address _reporter, address _recipient, uint256 _amount)
-        internal
-    {
+    function reportSlash(IRegistry.Parachain memory _parachain, bytes memory _reporter, uint256 _amount) internal {
         uint64 transactRequiredWeightAtMost = 1051143000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
             hex"0F", // fixed call index within pallet: 15
             _reporter, // account id of reporter on target parachain
-            _recipient, // recipient
             bytes32(reverse(_amount)) // amount
         );
         uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * 4);
@@ -92,7 +88,9 @@ abstract contract Parachain {
     /// @param _parachain Para The registered parachain.
     /// @param _reporter address Address of staker on EVM compatible chain w/ Tellor controller contracts.
     /// @param _amount uint256 Amount withdrawn.
-    function reportStakeWithdrawn(IRegistry.Parachain memory _parachain, address _reporter, uint256 _amount) internal {
+    function reportStakeWithdrawn(IRegistry.Parachain memory _parachain, bytes memory _reporter, uint256 _amount)
+        internal
+    {
         uint64 transactRequiredWeightAtMost = 261856000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
