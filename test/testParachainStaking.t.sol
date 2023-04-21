@@ -36,13 +36,14 @@ contract ParachainStakingTest is Test {
 
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
 
-    // setting feeLocation as native token of destination chain
     XcmTransactorV2.Multilocation public fakeFeeLocation;
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
         staking = new ParachainStaking(address(registry), address(token));
+        parachain = new TestParachain(address(registry));
+        // setting feeLocation as native token of destination chain
         fakeFeeLocation = XcmTransactorV2.Multilocation(0, parachain.x1External(3));
         // set fake governance address
         staking.init(address(0x2));

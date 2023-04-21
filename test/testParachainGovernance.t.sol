@@ -54,6 +54,7 @@ contract ParachainGovernanceTest is Test {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
         staking = new ParachainStaking(address(registry), address(token));
+        parachain = new TestParachain(address(registry));
         gov = new ParachainGovernance(address(registry), fakeTeamMultiSig);
         // setting feeLocation as native token of destination chain
         fakeFeeLocation = XcmTransactorV2.Multilocation(0, parachain.x1External(3));

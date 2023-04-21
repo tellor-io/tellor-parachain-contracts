@@ -147,10 +147,10 @@ contract ParachainTest is Test {
         assertEq(savedData.dest.parents, 1);
         assertEq(savedData.dest.interior.length, 1);
         assertEq(savedData.dest.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
-        assertEq(savedData.feeLocation.parents, 1);
+        assertEq(savedData.feeLocation.parents, 0);
         assertEq(savedData.feeLocation.interior.length, 1);
-        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
-        assertEq(savedData.transactRequiredWeightAtMost, 5000000000);
+        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(uint32(3))));
+        assertEq(savedData.transactRequiredWeightAtMost, 1155113000);
         bytes memory call = abi.encodePacked(
             abi.encode(fakePalletInstance),
             hex"0D",
@@ -159,8 +159,8 @@ contract ParachainTest is Test {
             bytes20(fakeStaker)
         );
         assertEq(savedData.call, call);
-        assertEq(savedData.feeAmount, 10000000000);
-        assertEq(savedData.overallWeight, 9000000000);
+        assertEq(savedData.feeAmount, 25);
+        assertEq(savedData.overallWeight, 5155113000);
     }
 
     function testReportSlash() public {
@@ -196,10 +196,10 @@ contract ParachainTest is Test {
         assertEq(savedData.dest.parents, 1);
         assertEq(savedData.dest.interior.length, 1);
         assertEq(savedData.dest.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
-        assertEq(savedData.feeLocation.parents, 1);
+        assertEq(savedData.feeLocation.parents, 0);
         assertEq(savedData.feeLocation.interior.length, 1);
-        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
-        assertEq(savedData.transactRequiredWeightAtMost, 5000000000);
+        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(uint32(3))));
+        assertEq(savedData.transactRequiredWeightAtMost, 1051143000);
         bytes memory call = abi.encodePacked(
             abi.encode(fakePalletInstance), hex"0F", fakeReporter, bytes32(parachain.reverseExternal(fakeAmount))
         );
