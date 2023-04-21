@@ -23,13 +23,12 @@ contract ParachainRegistryTest is Test {
     // Parachain registration
     uint32 public fakeParaId = 12;
     uint8 public fakePalletInstance = 8;
-    uint32 public fakeWeightToFee = 5000;
-    uint8 public fakeDecimals = 10;
+    uint256 public fakeWeightToFee = 5000;
+    uint8 public fakeDecimals = 12;
 
     XcmTransactorV2 private constant xcmTransactor = XCM_TRANSACTOR_V2_CONTRACT;
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
 
-    // setting feeLocation as native token of destination chain
     XcmTransactorV2.Multilocation public fakeFeeLocation;
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
@@ -46,6 +45,7 @@ contract ParachainRegistryTest is Test {
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
+        // setting feeLocation as native token of destination chain
         fakeFeeLocation = XcmTransactorV2.Multilocation(1, x1(3));
 
         // Set fake precompile(s)

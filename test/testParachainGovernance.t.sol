@@ -8,6 +8,7 @@ import "forge-std/console.sol";
 import "solmate/tokens/ERC20.sol";
 
 import "./helpers/TestToken.sol";
+import "./helpers/TestParachain.sol";
 import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 import "../src/ParachainRegistry.sol";
@@ -20,6 +21,7 @@ contract ParachainGovernanceTest is Test {
     ParachainRegistry public registry;
     ParachainStaking public staking;
     ParachainGovernance public gov;
+    TestParachain public parachain;
 
     address public paraOwner = address(0x1111);
     address public paraDisputer = address(0x2222);
@@ -36,8 +38,8 @@ contract ParachainGovernanceTest is Test {
     address fakeDisputedReporter = bob;
     address fakeDisputeInitiator = alice;
     uint256 fakeSlashAmount = 50;
-    uint32 public fakeWeightToFee = 5000;
-    uint8 public fakeDecimals = 10;
+    uint256 public fakeWeightToFee = 5000;
+    uint8 public fakeDecimals = 12;
 
     // Parachain registration
     uint32 public fakeParaId = 12;
@@ -46,7 +48,6 @@ contract ParachainGovernanceTest is Test {
 
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
 
-    // setting feeLocation as native token of destination chain
     XcmTransactorV2.Multilocation public fakeFeeLocation;
 
     function setUp() public {
@@ -54,7 +55,8 @@ contract ParachainGovernanceTest is Test {
         registry = new ParachainRegistry();
         staking = new ParachainStaking(address(registry), address(token));
         gov = new ParachainGovernance(address(registry), fakeTeamMultiSig);
-        fakeFeeLocation = XcmTransactorV2.Multilocation(0, gov.x1(3));
+        // setting feeLocation as native token of destination chain
+        fakeFeeLocation = XcmTransactorV2.Multilocation(0, parachain.x1External(3));
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);

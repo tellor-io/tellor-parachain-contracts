@@ -41,4 +41,16 @@ contract TestParachain is Parachain {
     function reverseExternal(uint256 input) external pure returns (uint256) {
         return reverse(input);
     }
+
+    function x1External(uint32 _paraId) external pure returns (bytes[] memory) {
+        return x1(_paraId);
+    }
+
+    function convertWeightToFeeExternal(uint256 overallWeight, uint256 weightToFee, uint256 decimals)
+        external
+        pure
+        returns (uint256)
+    {
+        return convertWeightToFee(overallWeight, weightToFee, decimals);
+    }
 }

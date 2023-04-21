@@ -41,14 +41,24 @@ contract ParachainRegistry is IRegistry {
     /// @dev Register parachain, along with index of Tellor pallet within corresponding runtime.
     /// @param _paraId uint32 The parachain identifier.
     /// @param _palletInstance uint8 The index of the Tellor pallet within the parachain's runtime.
-    function register(uint32 _paraId, uint8 _palletInstance, uint32 weightToFee, uint8 decimals, XcmTransactorV2.Multilocation memory feeLocation) external {
+    /// @param weightToFee uint256 The rate used to convert weight to fee
+    /// @param decimals uint8 The number of decimals used in consumer chain
+    /// @param feeLocation XcmTransactorV2.Multilocation The location of the currency type of consumer chain.
+    function register(
+        uint32 _paraId,
+        uint8 _palletInstance,
+        uint256 weightToFee,
+        uint8 decimals,
+        XcmTransactorV2.Multilocation memory feeLocation
+    ) external {
         // Ensure sender is on parachain
         address derivativeAddress =
             xcmUtils.multilocationToAddress(XcmUtils.Multilocation(1, x2(_paraId, _palletInstance)));
         // if (msg.sender != derivativeAddress) revert NotOwner();
         require(msg.sender == derivativeAddress, "Not owner");
         // todo: consider effects of changing pallet instance with re-registration
-        registrations[msg.sender] = Parachain(_paraId, msg.sender, abi.encodePacked(_palletInstance), weightToFee, decimals, feeLocation);
+        registrations[msg.sender] =
+            Parachain(_paraId, msg.sender, abi.encodePacked(_palletInstance), weightToFee, decimals, feeLocation);
         owners[_paraId] = msg.sender;
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }
