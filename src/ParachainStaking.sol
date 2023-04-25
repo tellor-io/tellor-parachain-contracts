@@ -349,4 +349,12 @@ contract ParachainStaking is Parachain {
     function getTotalStakers() external view returns (uint256) {
         return totalStakers;
     }
+
+    /**
+     * @dev Returns the address of the contract owner.
+     * @return address owner
+     */
+    function getOwner() external view returns (address) {
+        return owner;
+    }
 }
