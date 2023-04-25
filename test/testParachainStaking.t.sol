@@ -23,6 +23,7 @@ contract ParachainStakingTest is Test {
     address public paraDisputer = address(0x2222);
     address public bob = address(0x3333);
     address public alice = address(0x4444);
+    address public daryl = address(0x5555);
 
     // Parachain registration
     uint32 public fakeParaId = 12;
@@ -98,6 +99,16 @@ contract ParachainStakingTest is Test {
     }
 
     function testDepositParachainStake() public {
+        // Try when gov address not set
+        ParachainStaking _staking = new ParachainStaking(address(registry), address(token));
+        vm.prank(bob);
+        vm.expectRevert("governance address not set");
+        _staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            fakeStakeAmount // _amount
+        );
+
         // Try to deposit stake with incorrect parachain
         vm.prank(bob);
         vm.expectRevert("parachain not registered");
@@ -129,6 +140,87 @@ contract ParachainStakingTest is Test {
             bytes("consumerChainAcct"), // _account
             fakeStakeAmount // _amount
         );
+
+        // Test depositing with insufficient tokens
+        (, uint256 _darylStakedBal, uint256 _darylLockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, daryl);
+        console.log("daryl locked balance: ", _darylLockedBal);
+        vm.startPrank(daryl);
+        vm.expectRevert("insufficient balance");
+        staking.depositParachainStake(fakeParaId, bytes("consumerChainAcct2"), 100);
+        vm.stopPrank();
+
+        // Deposit more stake
+        token.mint(address(bob), 100);
+        bobBalance = token.balanceOf(bob);
+        vm.startPrank(bob);
+        token.approve(address(staking), 100);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            100 // _amount
+        );
+        vm.stopPrank();
+        (, uint256 _bobStaked, uint256 _bobLocked,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(_bobStaked, fakeStakeAmount + 100);
+        assertEq(_bobLocked, 0);
+        assertEq(token.balanceOf(address(staking)), fakeStakeAmount + 100);
+        assertEq(token.balanceOf(address(bob)), bobBalance - 100);
+
+        // Deposit more stake when staker has existing locked balance, and amount is more than locked balance
+        vm.startPrank(bob);
+        (, uint256 _bobStakedBefore, uint256 _bobLockedBefore,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(_bobStakedBefore, fakeStakeAmount + 100);
+        assertEq(_bobLockedBefore, 0);
+        staking.requestParachainStakeWithdraw(
+            fakeParaId, // _paraId
+            20 // _amount
+        );
+        (, uint256 _bobStakedAfter, uint256 _bobLockedAfter,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(_bobStakedAfter, _bobStakedBefore);
+        assertEq(_bobLockedAfter, 20);
+        bobBalance = token.balanceOf(bob);
+        uint256 stakingBalance = token.balanceOf(address(staking));
+        assertEq(bobBalance, 180);
+        console.log("bob balance: ", bobBalance);
+        token.approve(address(staking), 80);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            30 // _amount
+        );
+        vm.stopPrank();
+        (, uint256 _bobStakedAfter2, uint256 _bobLockedAfter2,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(_bobStakedAfter2, _bobStakedAfter + 30);
+        assertEq(_bobLockedAfter2, 0);
+        assertEq(token.balanceOf(address(staking)), stakingBalance + 10);
+        assertEq(token.balanceOf(address(bob)), bobBalance - 10);
+
+        // Deposit more stake when staker has existing locked balance, and amount is less than locked balance
+        vm.startPrank(bob);
+        (, _bobStaked, _bobLocked,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(_bobLocked, 0);
+        staking.requestParachainStakeWithdraw(
+            fakeParaId, // _paraId
+            20 // _amount
+        );
+        (, _bobStakedAfter, _bobLockedAfter,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(_bobStakedAfter, _bobStaked);
+        assertEq(_bobLockedAfter, 20);
+        bobBalance = token.balanceOf(bob);
+        stakingBalance = token.balanceOf(address(staking));
+        console.log("bob balance: ", bobBalance);
+        (, _bobStaked, _bobLocked,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            10 // _amount
+        );
+        vm.stopPrank();
+        (, _bobStakedAfter, _bobLockedAfter,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(token.balanceOf(address(bob)), bobBalance);
+        assertEq(_bobStaked + 10, _bobStakedAfter);
+        assertEq(_bobLockedAfter, 10);
+        assertEq(token.balanceOf(address(staking)), stakingBalance);
     }
 
     function testRequestParachainStakeWithdraw() public {
