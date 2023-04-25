@@ -338,22 +338,6 @@ contract ParachainStaking is Parachain {
     }
 
     /**
-     * @dev Returns total amount of token staked for reporting
-     * @return uint256 total amount of token staked
-     */
-    function getTotalStakeAmount() external view returns (uint256) {
-        return totalStakeAmount;
-    }
-
-    /**
-     * @dev Returns total number of current stakers. Reporters with stakedBalance less than stakeAmount are excluded from this total
-     * @return uint256 total stakers
-     */
-    function getTotalStakers() external view returns (uint256) {
-        return totalStakers;
-    }
-
-    /**
      * @dev Returns the address of the contract owner.
      * @return address owner
      */
