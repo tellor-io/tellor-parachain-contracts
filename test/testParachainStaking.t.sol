@@ -263,6 +263,14 @@ contract ParachainStakingTest is Test {
         // functions called by the parachain owner are called via xcm from the consumer
         // chain's pallet; however, for testing they're the same.
 
+        // Try to confirm stake withdrawal from incorrect sender
+        vm.prank(bob);
+        vm.expectRevert("not owner");
+        staking.confirmParachainStakeWithdrawRequest(
+            bob, // _staker
+            100 // _amount
+        );
+
         // Deposit stake
         vm.startPrank(paraOwner);
         token.mint(address(paraOwner), 100);
@@ -295,6 +303,10 @@ contract ParachainStakingTest is Test {
     }
 
     function testWithdrawParachainStake() public {
+        // Ensure can't withdraw stake from unregistered parachain
+        vm.expectRevert("parachain not registered");
+        staking.withdrawParachainStake(uint32(1234));
+
         // Deposit stake
         vm.startPrank(paraOwner);
         token.mint(address(paraOwner), 100);
@@ -305,11 +317,26 @@ contract ParachainStakingTest is Test {
             20 // _amount
         );
 
+        // Try withdraw stake before lock period expires
+        vm.expectRevert("lock period not expired");
+        staking.withdrawParachainStake(fakeParaId);
+
+        // Wait for lock period to expire (7 days after staker start date)
+        vm.warp(block.timestamp + 7 days + 1 seconds);
+
+        // No balance to withdraw
+        vm.expectRevert("no locked balance to withdraw");
+        staking.withdrawParachainStake(fakeParaId);
+
         // Request stake withdrawal
         staking.requestParachainStakeWithdraw(
             fakeParaId, // _paraId
             20 // _amount
         );
+
+        // Try to withdraw before oracle consumer parachain confirms
+        vm.expectRevert("withdraw stake request not confirmed");
+        staking.withdrawParachainStake(fakeParaId);
 
         // Confirm stake withdrawal request
         staking.confirmParachainStakeWithdrawRequest(
@@ -319,21 +346,47 @@ contract ParachainStakingTest is Test {
         assertEq(token.balanceOf(address(staking)), 20);
         assertEq(token.balanceOf(address(paraOwner)), 80);
 
-        // Try withdraw stake before lock period expires
-        vm.expectRevert("lock period not expired");
-        staking.withdrawParachainStake(fakeParaId);
-
-        // Wait for lock period to expire (7 days after staker start date)
-        vm.warp(block.timestamp + 7 days + 1 seconds);
         // Withdraw stake
         staking.withdrawParachainStake(fakeParaId);
         assertEq(token.balanceOf(address(staking)), 0);
         assertEq(token.balanceOf(address(paraOwner)), 100);
 
         vm.stopPrank();
+
+        // todo: how to test transfer fail?
     }
 
     function testSlashParachainReporter() public {
+        // Incorrect sender
+        vm.prank(bob);
+        vm.expectRevert("only governance can slash reporter");
+        staking.slashParachainReporter(
+            10, // _slashAmount
+            fakeParaId, // _paraId
+            paraOwner, // _reporter
+            paraDisputer // _recipient
+        );
+
+        // Unregistered parachain
+        vm.prank(staking.governance());
+        vm.expectRevert("parachain not registered");
+        staking.slashParachainReporter(
+            10, // _slashAmount
+            uint32(1234), // _paraId
+            paraOwner, // _reporter
+            paraDisputer // _recipient
+        );
+
+        // Attempt to slash when zero staked/locked
+        vm.prank(staking.governance());
+        vm.expectRevert("zero staker balance");
+        staking.slashParachainReporter(
+            10, // _slashAmount
+            fakeParaId, // _paraId
+            address(0x1234), // _reporter
+            paraDisputer // _recipient
+        );
+
         // Deposit stake
         vm.startPrank(paraOwner);
         token.mint(address(paraOwner), 100);
@@ -358,5 +411,60 @@ contract ParachainStakingTest is Test {
         assertEq(token.balanceOf(address(staking)), 10);
         assertEq(token.balanceOf(address(paraDisputer)), 10);
         vm.stopPrank();
+    }
+
+    function testGetParachainStakerInfo() public {
+        // Not a staker
+        vm.prank(address(0xbeef));
+        (uint256 startDate, uint256 stakedBalance, uint256 lockedBalance,,,,,,) =
+            staking.getParachainStakerInfo(fakeParaId, paraOwner);
+        assertEq(startDate, 0);
+        assertEq(stakedBalance, 0);
+        assertEq(lockedBalance, 0);
+
+        // Staker
+        vm.startPrank(bob);
+        token.mint(address(bob), 100);
+        token.approve(address(staking), 100);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            20 // _amount
+        );
+        (startDate, stakedBalance, lockedBalance,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        assertEq(startDate, block.timestamp);
+        assertEq(stakedBalance, 20);
+        assertEq(lockedBalance, 0);
+        vm.stopPrank();
+    }
+
+    function testGetParachainStakerDetails() public {
+        // Not a staker
+        vm.prank(address(0xbeef));
+        (bytes memory account, uint256 lockedBalanceConfirmed) =
+            staking.getParachainStakerDetails(fakeParaId, paraOwner);
+        assertEq(account, bytes(""));
+        assertEq(lockedBalanceConfirmed, 0);
+
+        // Staker
+        vm.startPrank(bob);
+        token.mint(address(bob), 100);
+        token.approve(address(staking), 100);
+        staking.depositParachainStake(
+            fakeParaId, // _paraId
+            bytes("consumerChainAcct"), // _account
+            20 // _amount
+        );
+        (account, lockedBalanceConfirmed) = staking.getParachainStakerDetails(fakeParaId, bob);
+        assertEq(account, bytes("consumerChainAcct"));
+        assertEq(lockedBalanceConfirmed, 0);
+    }
+
+    function testGetGovernanceAddress() public {
+        assertEq(staking.getGovernanceAddress(), address(0x2));
+    }
+
+    function testGetTokenAddress() public {
+        assertEq(staking.getTokenAddress(), address(token));
     }
 }
