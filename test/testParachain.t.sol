@@ -24,7 +24,7 @@ contract ParachainTest is Test {
     address fakeStaker = address(0xabcd);
     bytes fakeReporter = abi.encode(fakeStaker); // fake reporter account on oracle consumer parachain
     uint256 fakeWeightToFee = 5000;
-    uint8 fakeDecimals = 12;
+    uint32 fakeFeeLocationPallet = uint32(3);
 
     // Parachain registration
     uint32 public fakeParaId = 12;
@@ -47,7 +47,7 @@ contract ParachainTest is Test {
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
         vm.prank(paraOwner);
 
-        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples
@@ -73,7 +73,6 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            decimals: fakeDecimals,
             feeLocation: fakeFeeLocation
         });
         IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
@@ -81,7 +80,6 @@ contract ParachainTest is Test {
             owner: address(0),
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            decimals: fakeDecimals,
             feeLocation: fakeFeeLocation
         });
         uint256 fakeAmount = 100e18;
@@ -98,9 +96,9 @@ contract ParachainTest is Test {
         assertEq(savedData.dest.parents, 1);
         assertEq(savedData.dest.interior.length, 1);
         assertEq(savedData.dest.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
-        assertEq(savedData.feeLocation.parents, 1);
+        assertEq(savedData.feeLocation.parents, 0);
         assertEq(savedData.feeLocation.interior.length, 1);
-        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
+        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
         assertEq(savedData.transactRequiredWeightAtMost, 1218085000);
         bytes memory call = abi.encodePacked(
             abi.encode(fakePalletInstance),
@@ -110,7 +108,7 @@ contract ParachainTest is Test {
             bytes20(fakeStaker)
         );
         assertEq(savedData.call, call);
-        assertEq(savedData.feeAmount, 2609);
+        assertEq(savedData.feeAmount, 26090425000000);
         assertEq(savedData.overallWeight, 5218085000);
     }
 
@@ -121,7 +119,6 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            decimals: fakeDecimals,
             feeLocation: fakeFeeLocation
         });
         IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
@@ -129,7 +126,6 @@ contract ParachainTest is Test {
             owner: address(0),
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            decimals: fakeDecimals,
             feeLocation: fakeFeeLocation
         });
 
@@ -149,7 +145,7 @@ contract ParachainTest is Test {
         assertEq(savedData.dest.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
         assertEq(savedData.feeLocation.parents, 0);
         assertEq(savedData.feeLocation.interior.length, 1);
-        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(uint32(3))));
+        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
         assertEq(savedData.transactRequiredWeightAtMost, 1155113000);
         bytes memory call = abi.encodePacked(
             abi.encode(fakePalletInstance),
@@ -159,7 +155,7 @@ contract ParachainTest is Test {
             bytes20(fakeStaker)
         );
         assertEq(savedData.call, call);
-        assertEq(savedData.feeAmount, 25);
+        assertEq(savedData.feeAmount, 25775565000000);
         assertEq(savedData.overallWeight, 5155113000);
     }
 
@@ -170,7 +166,6 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            decimals: fakeDecimals,
             feeLocation: fakeFeeLocation
         });
         IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
@@ -178,7 +173,6 @@ contract ParachainTest is Test {
             owner: address(0),
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            decimals: fakeDecimals,
             feeLocation: fakeFeeLocation
         });
 
@@ -198,14 +192,14 @@ contract ParachainTest is Test {
         assertEq(savedData.dest.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
         assertEq(savedData.feeLocation.parents, 0);
         assertEq(savedData.feeLocation.interior.length, 1);
-        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(uint32(3))));
+        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
         assertEq(savedData.transactRequiredWeightAtMost, 1051143000);
         bytes memory call = abi.encodePacked(
             abi.encode(fakePalletInstance), hex"0F", fakeReporter, bytes32(parachain.reverseExternal(fakeAmount))
         );
         assertEq(savedData.call, call);
-        assertEq(savedData.feeAmount, 10000000000);
-        assertEq(savedData.overallWeight, 9000000000);
+        assertEq(savedData.feeAmount, 25255715000000);
+        assertEq(savedData.overallWeight, 5051143000);
     }
 
     function testReportStakeWithdrawn() public {
@@ -215,7 +209,6 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            decimals: fakeDecimals,
             feeLocation: fakeFeeLocation
         });
         IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
@@ -223,7 +216,6 @@ contract ParachainTest is Test {
             owner: address(0),
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            decimals: fakeDecimals,
             feeLocation: fakeFeeLocation
         });
 
@@ -241,16 +233,16 @@ contract ParachainTest is Test {
         assertEq(savedData.dest.parents, 1);
         assertEq(savedData.dest.interior.length, 1);
         assertEq(savedData.dest.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
-        assertEq(savedData.feeLocation.parents, 1);
+        assertEq(savedData.feeLocation.parents, 0);
         assertEq(savedData.feeLocation.interior.length, 1);
-        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
-        assertEq(savedData.transactRequiredWeightAtMost, 5000000000);
+        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
+        assertEq(savedData.transactRequiredWeightAtMost, 261856000);
         bytes memory call = abi.encodePacked(
             abi.encode(fakePalletInstance), hex"0E", fakeReporter, bytes32(parachain.reverseExternal(fakeAmount))
         );
         assertEq(savedData.call, call);
-        assertEq(savedData.feeAmount, 10000000000);
-        assertEq(savedData.overallWeight, 9000000000);
+        assertEq(savedData.feeAmount, 21309280000000);
+        assertEq(savedData.overallWeight, 4261856000);
     }
 
     function testTransactThroughSigned() public {}
@@ -263,7 +255,6 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            decimals: fakeDecimals,
             feeLocation: fakeFeeLocation
         });
 
@@ -287,7 +278,6 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            decimals: fakeDecimals,
             feeLocation: fakeFeeLocation
         });
 
@@ -300,7 +290,7 @@ contract ParachainTest is Test {
             xcmTransactor.getTransactThroughSignedMultilocationArray();
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
 
-        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
+        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
     }
 
     function testReverse() public {
@@ -329,8 +319,7 @@ contract ParachainTest is Test {
     function testConvertWeightToFee() public {
         uint256 overallWeight = 500000000;
         uint256 weightToFee = 100000;
-        uint8 decimals = 12;
 
-        assertEq(parachain.convertWeightToFeeExternal(overallWeight, weightToFee, decimals), 50);
+        assertEq(parachain.convertWeightToFeeExternal(overallWeight, weightToFee), 50000000000000);
     }
 }

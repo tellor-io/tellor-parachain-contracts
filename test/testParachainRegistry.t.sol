@@ -24,7 +24,6 @@ contract ParachainRegistryTest is Test {
     uint32 public fakeParaId = 12;
     uint8 public fakePalletInstance = 8;
     uint256 public fakeWeightToFee = 5000;
-    uint8 public fakeDecimals = 12;
 
     XcmTransactorV2 private constant xcmTransactor = XCM_TRANSACTOR_V2_CONTRACT;
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
@@ -54,7 +53,7 @@ contract ParachainRegistryTest is Test {
 
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
         vm.prank(paraOwner);
-        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples
@@ -80,11 +79,11 @@ contract ParachainRegistryTest is Test {
         // test non owner trying to register
         vm.prank(nonParaOwner);
         vm.expectRevert("Not owner");
-        registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
+        registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeFeeLocation);
 
         // successful register
         vm.prank(paraOwner2);
-        registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
+        registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeFeeLocation);
 
         // check storage
         ParachainRegistry.Parachain memory parachain = registry.getByAddress(paraOwner2);
@@ -92,7 +91,6 @@ contract ParachainRegistryTest is Test {
         assertEq(parachain.owner, paraOwner2);
         assertEq(parachain.palletInstance, abi.encodePacked(fakePalletInstance2));
         assertEq(parachain.weightToFee, fakeWeightToFee);
-        assertEq(parachain.decimals, fakeDecimals);
         assertEq(parachain.feeLocation.parents, fakeFeeLocation.parents);
         assertEq(parachain.feeLocation.interior[0], fakeFeeLocation.interior[0]);
 
@@ -102,7 +100,6 @@ contract ParachainRegistryTest is Test {
         assertEq(parachain.owner, paraOwner2);
         assertEq(parachain.palletInstance, abi.encodePacked(fakePalletInstance2));
         assertEq(parachain.weightToFee, fakeWeightToFee);
-        assertEq(parachain.decimals, fakeDecimals);
         assertEq(parachain.feeLocation.interior[0], fakeFeeLocation.interior[0]);
     }
 

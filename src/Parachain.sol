@@ -44,7 +44,7 @@ abstract contract Parachain {
             bytes20(_staker) // staker
         );
         uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
-        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee, _parachain.decimals);
+        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
         transactThroughSigned(
             _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
         );
@@ -71,7 +71,7 @@ abstract contract Parachain {
             bytes20(_staker) // staker
         );
         uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
-        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee, _parachain.decimals);
+        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
         transactThroughSigned(
             _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
         );
@@ -91,7 +91,7 @@ abstract contract Parachain {
             bytes32(reverse(_amount)) // amount
         );
         uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
-        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee, _parachain.decimals);
+        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
         transactThroughSigned(
             _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
         );
@@ -113,7 +113,7 @@ abstract contract Parachain {
             bytes32(reverse(_amount)) // amount
         );
         uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
-        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee, _parachain.decimals);
+        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
         transactThroughSigned(
             _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
         );
@@ -137,7 +137,7 @@ abstract contract Parachain {
             uint8(_outcome) // outcome
         );
         uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
-        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee, _parachain.decimals);
+        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
         transactThroughSigned(
             _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
         );
@@ -155,7 +155,7 @@ abstract contract Parachain {
             _disputeId // dispute id
         );
         uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
-        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee, _parachain.decimals);
+        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
         transactThroughSigned(
             _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
         );
@@ -218,16 +218,13 @@ abstract contract Parachain {
 
     /// @dev Converts provided weight to fee for XCM execution.
     /// @param overallWeight uint256 Combined weight of consumer chain's dispatchable function(wrapped in transact) and XCM instructions.
-    /// @param weightToFee uint256 Weight to fee conversion rate
-    /// @param decimals uint256 The number of decimals used by consumer parachain
-    function convertWeightToFee(uint256 overallWeight, uint256 weightToFee, uint256 decimals)
+    /// @param weightToFee uint256 Fee per weight (constant multiplier)
+    function convertWeightToFee(uint256 overallWeight, uint256 weightToFee)
         internal
         pure
         returns (uint256)
     {
-        // overall xcm fee cost
-        uint256 xcmCost = overallWeight * weightToFee;
-        // xcm fee after decimal conversion
-        return xcmCost / (10 ** decimals);
+        // overall xcm fee cost based on constantMultiplier
+        return overallWeight * weightToFee;
     }
 }

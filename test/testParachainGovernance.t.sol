@@ -39,7 +39,6 @@ contract ParachainGovernanceTest is Test {
     address fakeDisputeInitiator = alice;
     uint256 fakeSlashAmount = 50;
     uint256 public fakeWeightToFee = 5000;
-    uint8 public fakeDecimals = 12;
 
     // Parachain registration
     uint32 public fakeParaId = 12;
@@ -66,7 +65,7 @@ contract ParachainGovernanceTest is Test {
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
 
         vm.prank(paraOwner);
-        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeDecimals, fakeFeeLocation);
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation);
 
         gov.init(address(staking));
         staking.init(address(gov));

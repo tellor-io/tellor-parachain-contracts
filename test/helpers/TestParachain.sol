@@ -46,11 +46,11 @@ contract TestParachain is Parachain {
         return x1(_paraId);
     }
 
-    function convertWeightToFeeExternal(uint256 overallWeight, uint256 weightToFee, uint256 decimals)
+    function convertWeightToFeeExternal(uint256 overallWeight, uint256 weightToFee)
         external
         pure
         returns (uint256)
     {
-        return convertWeightToFee(overallWeight, weightToFee, decimals);
+        return convertWeightToFee(overallWeight, weightToFee);
     }
 }
