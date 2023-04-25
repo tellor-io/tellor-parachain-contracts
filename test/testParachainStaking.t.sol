@@ -34,6 +34,7 @@ contract ParachainStakingTest is Test {
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
+        vm.startPrank(paraOwner);
         staking = new ParachainStaking(address(registry), address(token));
 
         // set fake governance address
@@ -45,8 +46,9 @@ contract ParachainStakingTest is Test {
 
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
 
-        vm.prank(paraOwner);
+        // vm.prank(paraOwner);
         registry.register(fakeParaId, fakePalletInstance);
+        vm.stopPrank();
 
         // Fund accounts
         token.mint(bob, fakeStakeAmount * 10);
@@ -81,6 +83,18 @@ contract ParachainStakingTest is Test {
         vm.prank(bob);
         vm.expectRevert("only owner can set governance address");
         staking.init(address(0x3));
+
+        // Call init after already initialized
+        console.log("owner: ", staking.getOwner());
+        console.log("paraOwner: ", paraOwner);
+        vm.prank(paraOwner);
+        vm.expectRevert("governance address already set");
+        staking.init(address(0x4));
+
+        // Attempt passing in zero address
+        ParachainStaking _staking = new ParachainStaking(address(registry), address(token));
+        vm.expectRevert("governance address can't be zero address");
+        _staking.init(address(0x0));
     }
 
     function testDepositParachainStake() public {
