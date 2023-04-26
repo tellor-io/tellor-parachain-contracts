@@ -124,6 +124,9 @@ contract ParachainStaking is Parachain {
                 || paraAccountToAddress[_paraId][_account] == msg.sender,
             "account already linked to another staker"
         );
+        // Ensure staker has enough tokens before editing state
+        (,, uint256 _currentLocked,,,,,,) = getParachainStakerInfo(_paraId, msg.sender);
+        require(_amount <= token.balanceOf(msg.sender) + _currentLocked, "insufficient balance");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
         _parachainStakeInfo._account = _account;
@@ -292,7 +295,7 @@ contract ParachainStaking is Parachain {
      * @return bool whether staker is counted in totalStakers
      */
     function getParachainStakerInfo(uint32 _paraId, address _stakerAddress)
-        external
+        public
         view
         returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool)
     {
@@ -343,18 +346,10 @@ contract ParachainStaking is Parachain {
     }
 
     /**
-     * @dev Returns total amount of token staked for reporting
-     * @return uint256 total amount of token staked
+     * @dev Returns the address of the contract owner.
+     * @return address owner
      */
-    function getTotalStakeAmount() external view returns (uint256) {
-        return totalStakeAmount;
-    }
-
-    /**
-     * @dev Returns total number of current stakers. Reporters with stakedBalance less than stakeAmount are excluded from this total
-     * @return uint256 total stakers
-     */
-    function getTotalStakers() external view returns (uint256) {
-        return totalStakers;
+    function getOwner() external view returns (address) {
+        return owner;
     }
 }

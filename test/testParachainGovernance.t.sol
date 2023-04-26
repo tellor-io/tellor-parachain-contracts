@@ -83,6 +83,31 @@ contract ParachainGovernanceTest is Test {
         assertEq(address(gov.owner()), address(this));
         assertEq(address(gov.parachainStaking()), address(staking));
         assertEq(address(gov.token()), address(token));
+        assertEq(address(gov.registryAddress()), address(registry));
+        assertEq(address(gov.teamMultisig()), fakeTeamMultiSig);
+    }
+
+    function testInit() public {
+        // Check that only the owner can call init
+        vm.prank(bob);
+        vm.expectRevert("not owner");
+        gov.init(address(staking));
+
+        // Check that init can only be called once
+        vm.expectRevert("parachainStaking address already set");
+        gov.init(address(staking));
+
+        // Ensure can't pass in zero address
+        ParachainGovernance gov2 = new ParachainGovernance(address(registry), fakeTeamMultiSig);
+        vm.expectRevert("parachainStaking address can't be zero address");
+        gov2.init(address(0));
+
+        // Ensure staking and token addresses updated
+        assertEq(address(gov2.parachainStaking()), address(0));
+        assertEq(address(gov2.token()), address(0));
+        gov2.init(address(staking));
+        assertEq(address(gov2.parachainStaking()), address(staking));
+        assertEq(address(gov2.token()), address(token));
     }
 
     function testBeginParachainDispute() public {
@@ -106,16 +131,53 @@ contract ParachainGovernanceTest is Test {
         assertEq(stakedBalanceBefore, 100);
 
         // Successfully begin dispute
-        vm.startPrank(paraOwner);
+        vm.prank(paraOwner);
         gov.beginParachainDispute(
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
-        vm.stopPrank();
         // Check reporter was slashed
         (, uint256 _stakedBalance,,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
         assertEq(_stakedBalance, 50);
         assertEq(token.balanceOf(address(staking)), 50);
         assertEq(token.balanceOf(address(gov)), fakeSlashAmount);
+
+        // Block disputes on old values
+        vm.warp(block.timestamp + 3 days);
+        uint256 oldTimestamp = block.timestamp - 12 hours;
+        vm.prank(paraOwner);
+        vm.expectRevert("Dispute must be started within reporting lock time");
+        gov.beginParachainDispute(
+            fakeQueryId, oldTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+
+        // Prevent new vote rounds if previous round has not been tallied
+        vm.prank(paraOwner);
+        vm.expectRevert("New vote round window has elapsed");
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+
+        // Ensure new vote rounds must be started within 2 days of the previous round
+        vm.prank(bob);
+        bytes32 _disputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
+        gov.vote(_disputeId, false, false);
+        gov.tallyVotes(_disputeId);
+        // start new round
+        vm.warp(block.timestamp + 3 days);
+        vm.prank(paraOwner);
+        vm.expectRevert("New vote round window has elapsed");
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+
+        // Prevent new vote rounds if previous round has been executed
+        gov.executeVote(_disputeId);
+        vm.warp(block.timestamp - 3 days);
+        vm.prank(paraOwner);
+        vm.expectRevert("Previous round must not be executed");
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
     }
 
     function testVote() public {
@@ -169,6 +231,14 @@ contract ParachainGovernanceTest is Test {
         assertEq(voteInfo[13], 0); // teamMultisig.doesSupport
         assertEq(voteInfo[14], 0); // teamMultisig.against
         assertEq(voteInfo[15], 0); // teamMultisig.invalidQuery
+
+        // tally vote
+        vm.warp(block.timestamp + 1 days);
+        gov.tallyVotes(realDisputeId);
+
+        // Ensure can't vote after tally
+        vm.expectRevert("Vote has already been tallied");
+        gov.vote(realDisputeId, true, true);
     }
 
     function testVoteParachain() public {
@@ -179,13 +249,24 @@ contract ParachainGovernanceTest is Test {
         vm.stopPrank();
 
         // Create dispute
-        vm.startPrank(paraOwner);
+        vm.prank(paraOwner);
         gov.beginParachainDispute(
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
 
+        // Prevent incorrect origin
+        vm.prank(bob);
+        vm.expectRevert("not owner");
+        gov.voteParachain(fakeDisputeId, 1, 2, 3, 4, 5, 6);
+
+        // Prevent incorrect disputeId
+        vm.prank(paraOwner);
+        vm.expectRevert("invalid dispute identifier");
+        gov.voteParachain(fakeDisputeId, 1, 2, 3, 4, 5, 6);
+
         // Vote successfully
         bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
+        vm.prank(paraOwner);
         gov.voteParachain(realDisputeId, 1, 2, 3, 4, 5, 6);
 
         // Check vote info
@@ -206,6 +287,15 @@ contract ParachainGovernanceTest is Test {
         assertEq(voteInfo[13], 0); // teamMultisig.doesSupport
         assertEq(voteInfo[14], 0); // teamMultisig.against
         assertEq(voteInfo[15], 0); // teamMultisig.invalidQuery
+
+        // tally vote
+        vm.warp(block.timestamp + 1 days);
+        gov.tallyVotes(realDisputeId);
+
+        // Ensure can't vote after tally
+        vm.prank(paraOwner);
+        vm.expectRevert("Vote has already been tallied");
+        gov.voteParachain(realDisputeId, 1, 2, 3, 4, 5, 6);
     }
 
     function testTallyVotes() public {
@@ -229,6 +319,11 @@ contract ParachainGovernanceTest is Test {
         gov.vote(realDisputeId, true, true);
         vm.stopPrank();
 
+        // Try to tally votes for non-existent vote
+        vm.prank(bob);
+        vm.expectRevert("Vote does not exist");
+        gov.tallyVotes(fakeDisputeId);
+
         // Try to tally votes before voting time over
         vm.startPrank(paraOwner);
         vm.expectRevert("Time for voting has not elapsed");
@@ -244,9 +339,19 @@ contract ParachainGovernanceTest is Test {
         (, uint256[16] memory voteInfo,,,) = gov.getVoteInfo(realDisputeId, 1);
         assertEq(voteInfo[3], tallyDate); // tallyDate
         assertEq(voteInfo[4], 72); // tokenholders.doesSupport
+
+        // Ensure can't tally for unique vote more than once
+        vm.prank(bob);
+        vm.expectRevert("Vote has already been tallied");
+        gov.tallyVotes(realDisputeId);
     }
 
     function testExecuteVote() public {
+        // Ensure can't execute non-existent vote
+        vm.prank(bob);
+        vm.expectRevert("Vote does not exist");
+        gov.executeVote(fakeDisputeId);
+
         // Reporter deposits stake
         vm.startPrank(bob);
         token.approve(address(staking), 100);
@@ -274,6 +379,13 @@ contract ParachainGovernanceTest is Test {
         gov.vote(realDisputeId, false, true);
         vm.stopPrank();
 
+        // Ensure vote not executed before vote tallied
+        vm.prank(bob);
+        vm.expectRevert("Vote must be tallied");
+        gov.executeVote(realDisputeId);
+
+        // todo: unsure how to test "Must be the final vote"
+
         // Tally votes
         uint256 tallyDate = block.timestamp + 7 days;
         vm.warp(tallyDate);
@@ -288,8 +400,84 @@ contract ParachainGovernanceTest is Test {
         gov.executeVote(realDisputeId);
         vm.stopPrank();
 
-        // Ensure vote executed was emitted
+        // Ensure can't execute twice for same vote
+        vm.prank(bob);
+        vm.expectRevert("Vote has already been executed");
+        gov.executeVote(realDisputeId);
 
-        // Try to execute vote again
+        // todo: how test fee transfer failures?
+    }
+
+    function testDidVote() public {
+        // Stake
+        vm.startPrank(bob);
+        token.mint(bob, 100);
+        token.approve(address(staking), 100);
+        staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
+        vm.stopPrank();
+
+        // Create dispute
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+
+        // Vote
+        vm.startPrank(alice);
+        bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
+        gov.vote(realDisputeId, true, true);
+        vm.stopPrank();
+
+        // Check didVote
+        assertEq(gov.didVote(realDisputeId, alice), true);
+        assertEq(gov.didVote(realDisputeId, bob), false);
+    }
+
+    function testGetDisputesByReporter() public {
+        // Stake
+        vm.startPrank(bob);
+        token.mint(bob, 100);
+        token.approve(address(staking), 100);
+        staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
+        vm.stopPrank();
+
+        // Open dispute
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+
+        // Check disputes
+        bytes32 realDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
+        bytes32[] memory disputes = gov.getDisputesByReporter(bob);
+        assertEq(disputes.length, 1);
+        assertEq(disputes[0], realDisputeId);
+
+        // Check no disputes for undisputed reporter
+        bytes32[] memory disputes2 = gov.getDisputesByReporter(alice);
+        assertEq(disputes2.length, 0);
+    }
+
+    function testGetDisputeInfo() public {
+        // Stake
+        vm.startPrank(bob);
+        token.mint(bob, 100);
+        token.approve(address(staking), 100);
+        staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
+        vm.stopPrank();
+
+        // Open dispute
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+
+        // Check dispute info
+        bytes32 realDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
+        (bytes32 _qid, uint256 _ts, bytes memory _val, address _reporter) = gov.getDisputeInfo(realDisputeId);
+        assertEq(_qid, fakeQueryId);
+        assertEq(_ts, fakeTimestamp);
+        assertEq(_val, fakeValue);
+        assertEq(_reporter, fakeDisputedReporter);
     }
 }
