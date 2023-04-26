@@ -11,7 +11,7 @@ abstract contract Parachain {
 
     XcmTransactorV2 private constant xcmTransactor = XCM_TRANSACTOR_V2_CONTRACT;
 
-    // The amount of weight an XCM operation takes. This is a safe overestimate
+    // The amount of weight an XCM operation takes. This is a safe overestimate. Based on https://docs.moonbeam.network/builders/interoperability/xcm/fees/
     uint64 private constant xcmInstructionFee = 1000000000;
     // Number of XCM instruction to be used (DescendOrigin, WithdrawAssets, BuyExecution, Transact)
     uint64 private constant xcmInstructionCount = 4;
