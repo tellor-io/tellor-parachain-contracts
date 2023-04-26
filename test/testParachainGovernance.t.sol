@@ -99,6 +99,13 @@ contract ParachainGovernanceTest is Test {
         ParachainGovernance gov2 = new ParachainGovernance(address(registry), fakeTeamMultiSig);
         vm.expectRevert("parachainStaking address can't be zero address");
         gov2.init(address(0));
+
+        // Ensure staking and token addresses updated
+        assertEq(address(gov2.parachainStaking()), address(0));
+        assertEq(address(gov2.token()), address(0));
+        gov2.init(address(staking));
+        assertEq(address(gov2.parachainStaking()), address(staking));
+        assertEq(address(gov2.token()), address(token));
     }
 
     function testBeginParachainDispute() public {
