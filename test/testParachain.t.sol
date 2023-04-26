@@ -38,6 +38,7 @@ contract ParachainTest is Test {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
         parachain = new TestParachain(address(registry));
+        // setting feeLocation as native token of destination chain
         fakeFeeLocation = XcmTransactorV2.Multilocation(0, parachain.x1External(3));
 
         // Set fake precompile(s)

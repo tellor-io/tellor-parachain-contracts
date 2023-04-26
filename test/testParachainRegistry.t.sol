@@ -12,10 +12,12 @@ import "./helpers/TestToken.sol";
 import "../src/ParachainRegistry.sol";
 import "../src/Parachain.sol";
 import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
+import "./helpers/TestParachain.sol";
 
 contract ParachainRegistryTest is Test {
     TestToken public token;
     ParachainRegistry public registry;
+    TestParachain public parachain;
 
     address public paraOwner = address(0x1111);
     address public paraDisputer = address(0x2222);
@@ -30,22 +32,12 @@ contract ParachainRegistryTest is Test {
 
     XcmTransactorV2.Multilocation public fakeFeeLocation;
 
-    function parachain(uint32 _paraId) private pure returns (bytes memory) {
-        // 0x00 denotes Parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
-        return abi.encodePacked(hex"00", bytes4(_paraId));
-    }
-
-    function x1(uint32 _paraId) public pure returns (bytes[] memory) {
-        bytes[] memory interior = new bytes[](1);
-        interior[0] = parachain(_paraId);
-        return interior;
-    }
-
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
+        parachain = new TestParachain(address(registry));
         // setting feeLocation as native token of destination chain
-        fakeFeeLocation = XcmTransactorV2.Multilocation(1, x1(3));
+        fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3));
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);

@@ -13,12 +13,14 @@ import "../src/ParachainRegistry.sol";
 import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";
 import "../src/ParachainGovernance.sol";
+import "./helpers/TestParachain.sol";
 
 contract E2ETestsB is Test {
     TestToken public token;
     ParachainRegistry public registry;
     ParachainStaking public staking;
     ParachainGovernance public gov;
+    TestParachain public parachain;
 
     address public paraOwner = address(0x1111);
     address public paraOwner2 = address(0x1112);
@@ -32,6 +34,7 @@ contract E2ETestsB is Test {
     bytes32 fakeQueryId = keccak256(abi.encode("SpotPrice", abi.encode("btc", "usd")));
     uint256 fakeTimestamp = block.timestamp;
     bytes fakeValue = abi.encode(100_000 * 10 ** 8);
+    uint256 fakeWeightToFee = 5000;
     // bytes32 fakeDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
 
     // Parachain registration
@@ -40,12 +43,16 @@ contract E2ETestsB is Test {
     uint32 public fakeParaId3 = 14;
 
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
+    XcmTransactorV2.Multilocation fakeFeeLocation;
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
         staking = new ParachainStaking(address(registry), address(token));
         gov = new ParachainGovernance(address(registry), fakeTeamMultiSig);
+        parachain = new TestParachain(address(registry));
+        // setting feeLocation as native token of destination chain
+        fakeFeeLocation = XcmTransactorV2.Multilocation(0, parachain.x1External(3));
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
@@ -57,11 +64,11 @@ contract E2ETestsB is Test {
 
         // Register parachains
         vm.prank(paraOwner);
-        registry.register(fakeParaId, 8);
+        registry.register(fakeParaId, 8, fakeWeightToFee, fakeFeeLocation);
         vm.prank(paraOwner2);
-        registry.register(fakeParaId2, 9);
+        registry.register(fakeParaId2, 9, fakeWeightToFee, fakeFeeLocation);
         vm.prank(paraOwner3);
-        registry.register(fakeParaId3, 10);
+        registry.register(fakeParaId3, 10, fakeWeightToFee, fakeFeeLocation);
 
         gov.init(address(staking));
         staking.init(address(gov));
