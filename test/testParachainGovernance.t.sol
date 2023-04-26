@@ -83,6 +83,8 @@ contract ParachainGovernanceTest is Test {
         assertEq(address(gov.owner()), address(this));
         assertEq(address(gov.parachainStaking()), address(staking));
         assertEq(address(gov.token()), address(token));
+        assertEq(address(gov.registryAddress()), address(registry));
+        assertEq(address(gov.teamMultisig()), fakeTeamMultiSig);
     }
 
     function testInit() public {

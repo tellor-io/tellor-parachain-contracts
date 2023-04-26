@@ -72,6 +72,7 @@ contract ParachainStakingTest is Test {
         assertEq(address(staking.token()), address(token));
         assertEq(address(staking.registryAddress()), address(registry));
         assertEq(address(staking.governance()), address(0x2));
+        assertEq(staking.owner(), address(paraOwner));
 
         // Try to create new w/o passing in token address
         vm.prank(bob);
