@@ -96,6 +96,11 @@ contract ParachainStakingTest is Test {
         ParachainStaking _staking = new ParachainStaking(address(registry), address(token));
         vm.expectRevert("governance address can't be zero address");
         _staking.init(address(0x0));
+
+        // Ensure governance address is set
+        assertEq(address(_staking.governance()), address(0));
+        _staking.init(address(0x5)); // fake address
+        assertEq(address(_staking.governance()), address(0x5));
     }
 
     function testDepositParachainStake() public {
@@ -352,8 +357,6 @@ contract ParachainStakingTest is Test {
         assertEq(token.balanceOf(address(paraOwner)), 100);
 
         vm.stopPrank();
-
-        // todo: how to test transfer fail?
     }
 
     function testSlashParachainReporter() public {
