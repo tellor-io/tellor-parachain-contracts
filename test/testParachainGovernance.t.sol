@@ -143,7 +143,7 @@ contract ParachainGovernanceTest is Test {
 
         // Prevent new vote rounds if previous round has not been tallied
         vm.prank(paraOwner);
-        vm.expectRevert("New dispute round must be started within a day");
+        vm.expectRevert("New vote round window has elapsed");
         gov.beginParachainDispute(
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
@@ -156,7 +156,7 @@ contract ParachainGovernanceTest is Test {
         // start new round
         vm.warp(block.timestamp + 3 days);
         vm.prank(paraOwner);
-        vm.expectRevert("New dispute round must be started within a day");
+        vm.expectRevert("New vote round window has elapsed");
         gov.beginParachainDispute(
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
@@ -383,12 +383,7 @@ contract ParachainGovernanceTest is Test {
         gov.tallyVotes(realDisputeId);
         vm.stopPrank();
 
-        // Try to execute vote before wait period has elapsed
-        vm.prank(bob);
-        vm.expectRevert("1 day has to pass after tally to allow for disputes");
-        gov.executeVote(realDisputeId);
-
-        // Three days must pass before executing vote
+        // Three days pass before executing vote
         vm.warp(tallyDate + 3 days);
 
         // Execute vote
