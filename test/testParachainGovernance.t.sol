@@ -477,47 +477,6 @@ contract ParachainGovernanceTest is Test {
     }
 
     function testGetVoteInfo() public {
-        //     /**
-        //  * @dev Returns info on a vote for a given vote ID
-        //  * @param _disputeId is the ID of a specific vote
-        //  * @param _voteRound is the round of the vote
-        //  * @return bytes32 identifier hash of the vote
-        //  * @return uint256[17] memory of the pertinent round info (vote rounds, start date, etc.)
-        //  * @return bool memory of both whether or not the vote was executed
-        //  * @return VoteResult result of the vote
-        //  * @return address memory of the vote initiator
-        //  */
-        // function getVoteInfo(bytes32 _disputeId, uint8 _voteRound)
-        //     external
-        //     view
-        //     returns (bytes32, uint256[16] memory, bool, VoteResult, address)
-        // {
-        //     Vote storage _v = voteInfo[_disputeId][_voteRound];
-        //     return (
-        //         _v.identifierHash,
-        //         [
-        //             _v.voteRound,
-        //             _v.startDate,
-        //             _v.blockNumber,
-        //             _v.tallyDate,
-        //             _v.tokenholders.doesSupport,
-        //             _v.tokenholders.against,
-        //             _v.tokenholders.invalidQuery,
-        //             _v.users.doesSupport,
-        //             _v.users.against,
-        //             _v.users.invalidQuery,
-        //             _v.reporters.doesSupport,
-        //             _v.reporters.against,
-        //             _v.reporters.invalidQuery,
-        //             _v.teamMultisig.doesSupport,
-        //             _v.teamMultisig.against,
-        //             _v.teamMultisig.invalidQuery
-        //         ],
-        //         _v.executed,
-        //         _v.result,
-        //         _v.initiator
-        //     );
-        // }
         // Stake
         vm.startPrank(bob);
         token.mint(bob, 100);
@@ -578,5 +537,27 @@ contract ParachainGovernanceTest is Test {
         assertEq(_voteInfo2[0], 0); // voteRound
         assertEq(_voteInfo2[1], 0); // startDate
         assertEq(_voteInfo2[2], 0); // blockNumber
+    }
+
+    function testGetVoteRounds() public {
+        // Check vote rounds for non-existent vote
+        assertEq(gov.getVoteRounds(keccak256(abi.encode("blah"))), 0);
+
+        // Stake
+        vm.startPrank(bob);
+        token.mint(bob, 100);
+        token.approve(address(staking), 100);
+        staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
+        vm.stopPrank();
+
+        // Open dispute
+        vm.prank(paraOwner);
+        gov.beginParachainDispute(
+            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
+        );
+
+        // Check vote rounds
+        bytes32 realDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
+        assertEq(gov.getVoteRounds(realDisputeId), 1);
     }
 }
