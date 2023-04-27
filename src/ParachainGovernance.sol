@@ -190,7 +190,7 @@ contract ParachainGovernance is Parachain {
         // Update voting status and increment total queries for support, invalid, or against based on vote
         _thisVote.voted[msg.sender] = true;
         uint256 _tokenBalance = token.balanceOf(msg.sender);
-        (, uint256 _stakedBalance, uint256 _lockedBalance,,,,,,) =
+        (, uint256 _stakedBalance, uint256 _lockedBalance) =
             parachainStaking.getParachainStakerInfo(_thisDispute.paraId, msg.sender);
         _tokenBalance += _stakedBalance + _lockedBalance;
 
@@ -213,7 +213,7 @@ contract ParachainGovernance is Parachain {
         }
         emit Voted(
             _thisDispute.paraId, _thisDispute.queryId, _thisDispute.timestamp, _supports, msg.sender, _validDispute
-        );
+            );
     }
 
     /**
@@ -264,7 +264,7 @@ contract ParachainGovernance is Parachain {
             _totalReportsFor,
             _totalReportsAgainst,
             _totalReportsInvalid
-        );
+            );
     }
 
     /**
