@@ -398,7 +398,6 @@ contract ParachainGovernanceTest is Test {
         uint256 tallyDate = block.timestamp + 7 days;
         vm.warp(tallyDate);
         gov.tallyVotes(realDisputeId);
-        vm.stopPrank();
 
         // Three days pass before executing vote
         vm.warp(tallyDate + 3 days);
