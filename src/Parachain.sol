@@ -11,6 +11,11 @@ abstract contract Parachain {
 
     XcmTransactorV2 private constant xcmTransactor = XCM_TRANSACTOR_V2_CONTRACT;
 
+    // The amount of weight an XCM operation takes. This is a safe overestimate. Based on https://docs.moonbeam.network/builders/interoperability/xcm/fees/
+    uint64 private constant xcmInstructionFee = 1000000000;
+    //  Number of XCM instruction to be used (DescendOrigin, WithdrawAssets, BuyExecution, Transact) due to using transactThroughSigned.
+    uint64 private constant xcmInstructionCount = 4;
+
     constructor(address _registry) {
         registry = IRegistry(_registry);
     }
@@ -27,7 +32,10 @@ abstract contract Parachain {
         uint256 _amount
     ) internal {
         // Prepare remote call and send
-        uint64 transactRequiredWeightAtMost = 5000000000;
+
+        // The benchmarked weight of report_stake_deposited dispatchable function on the corresponding pallet
+        uint64 transactRequiredWeightAtMost = 1218085000;
+
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
             hex"0C", // fixed call index within pallet: 12
@@ -35,9 +43,11 @@ abstract contract Parachain {
             bytes32(reverse(_amount)), // amount
             bytes20(_staker) // staker
         );
-        uint256 feeAmount = 10000000000;
-        uint64 overallWeight = 9000000000;
-        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+        uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
+        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
+        transactThroughSigned(
+            _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
+        );
     }
 
     /// @dev Report stake withdraw request to a registered parachain.
@@ -51,7 +61,8 @@ abstract contract Parachain {
         uint256 _amount,
         address _staker
     ) internal {
-        uint64 transactRequiredWeightAtMost = 5000000000;
+        // The benchmarked weight of report_staking_withdraw_request dispatchable function on the corresponding pallet
+        uint64 transactRequiredWeightAtMost = 1155113000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
             hex"0D", // fixed call index within pallet: 13
@@ -59,9 +70,11 @@ abstract contract Parachain {
             bytes32(reverse(_amount)),
             bytes20(_staker) // staker
         );
-        uint256 feeAmount = 10000000000;
-        uint64 overallWeight = 9000000000;
-        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+        uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
+        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
+        transactThroughSigned(
+            _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
+        );
     }
 
     /// @dev Report slash to a registered parachain. Recipient will always be the governance contract.
@@ -69,16 +82,19 @@ abstract contract Parachain {
     /// @param _reporter address The corresponding address of the reporter on the parachain.
     /// @param _amount uint256 Amount slashed.
     function reportSlash(IRegistry.Parachain memory _parachain, bytes memory _reporter, uint256 _amount) internal {
-        uint64 transactRequiredWeightAtMost = 5000000000;
+        // The benchmarked weight of report_slash dispatchable function on the corresponding pallet
+        uint64 transactRequiredWeightAtMost = 1051143000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
             hex"0F", // fixed call index within pallet: 15
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)) // amount
         );
-        uint256 feeAmount = 10000000000;
-        uint64 overallWeight = 9000000000;
-        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+        uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
+        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
+        transactThroughSigned(
+            _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
+        );
     }
 
     /// @dev Report stake withdraw to a registered parachain.
@@ -88,16 +104,19 @@ abstract contract Parachain {
     function reportStakeWithdrawn(IRegistry.Parachain memory _parachain, bytes memory _reporter, uint256 _amount)
         internal
     {
-        uint64 transactRequiredWeightAtMost = 5000000000;
+        // The benchmarked weight of report_stake_withdrawn dispatchable function on the corresponding pallet
+        uint64 transactRequiredWeightAtMost = 261856000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
             hex"0E", // fixed call index within pallet: 14
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)) // amount
         );
-        uint256 feeAmount = 10000000000;
-        uint64 overallWeight = 9000000000;
-        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+        uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
+        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
+        transactThroughSigned(
+            _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
+        );
     }
 
     /// @dev Report vote tallied to registered parachain.
@@ -109,31 +128,37 @@ abstract contract Parachain {
         bytes32 _disputeId,
         IParachainGovernance.VoteResult _outcome
     ) internal {
-        uint64 transactRequiredWeightAtMost = 5000000000;
+        // The benchmarked weight of report_vote_tallied dispatchable function on the corresponding pallet
+        uint64 transactRequiredWeightAtMost = 198884000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
             hex"10", // fixed call index within pallet: 16
             _disputeId, // dispute id
             uint8(_outcome) // outcome
         );
-        uint256 feeAmount = 10000000000;
-        uint64 overallWeight = 9000000000;
-        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+        uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
+        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
+        transactThroughSigned(
+            _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
+        );
     }
 
     /// @dev Report vote executed to a registered parachain.
     /// @param _parachain Para The registered parachain.
     /// @param _disputeId bytes32 The unique identifier of the dispute.
     function reportVoteExecuted(IRegistry.Parachain memory _parachain, bytes32 _disputeId) internal {
-        uint64 transactRequiredWeightAtMost = 5000000000;
+        // The benchmarked weight of report_vote_executed dispatchable function on the corresponding pallet
+        uint64 transactRequiredWeightAtMost = 323353000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
             hex"0D", // fixed call index within pallet: 13
             _disputeId // dispute id
         );
-        uint256 feeAmount = 10000000000;
-        uint64 overallWeight = 9000000000;
-        transactThroughSigned(_parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight);
+        uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
+        uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
+        transactThroughSigned(
+            _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
+        );
     }
 
     function transactThroughSigned(
@@ -141,13 +166,14 @@ abstract contract Parachain {
         uint64 _transactRequiredWeightAtMost,
         bytes memory _call,
         uint256 _feeAmount,
-        uint64 _overallWeight
+        uint64 _overallWeight,
+        XcmTransactorV2.Multilocation memory _feeLocation
     ) private {
         // Create multi-location based on supplied paraId
         XcmTransactorV2.Multilocation memory location = XcmTransactorV2.Multilocation(1, x1(_paraId));
         // Send remote transact
         xcmTransactor.transactThroughSignedMultilocation(
-            location, location, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight
+            location, _feeLocation, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight
         );
     }
 
@@ -156,7 +182,7 @@ abstract contract Parachain {
         return abi.encodePacked(hex"00", bytes4(_paraId));
     }
 
-    function x1(uint32 _paraId) private pure returns (bytes[] memory) {
+    function x1(uint32 _paraId) internal pure returns (bytes[] memory) {
         bytes[] memory interior = new bytes[](1);
         interior[0] = parachain(_paraId);
         return interior;
@@ -188,5 +214,17 @@ abstract contract Parachain {
 
     function registryAddress() public view returns (address) {
         return address(registry);
+    }
+
+    /// @dev Converts provided weight to fee for XCM execution.
+    /// @param overallWeight uint256 Combined weight of consumer chain's dispatchable function (wrapped in transact) and XCM instructions.
+    /// @param weightToFee uint256 Fee per weight (constant multiplier)
+    function convertWeightToFee(uint256 overallWeight, uint256 weightToFee)
+        internal
+        pure
+        returns (uint256)
+    {
+        // overall xcm fee cost based on constantMultiplier
+        return overallWeight * weightToFee;
     }
 }

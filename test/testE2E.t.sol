@@ -13,12 +13,15 @@ import "../src/ParachainRegistry.sol";
 import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";
 import "../src/ParachainGovernance.sol";
+import "./testParachain.t.sol";
+import "./helpers/TestParachain.sol";
 
 contract E2ETests is Test {
     TestToken public token;
     ParachainRegistry public registry;
     ParachainStaking public staking;
     ParachainGovernance public gov;
+    TestParachain public parachain;
 
     address public paraOwner = address(0x1111);
     address public paraOwner2 = address(0x1112);
@@ -37,6 +40,7 @@ contract E2ETests is Test {
     address fakeDisputedReporter = bob;
     address fakeDisputeInitiator = alice;
     uint256 fakeSlashAmount = 50;
+    uint256 public fakeWeightToFee = 5000;
 
     // Parachain registration
     uint32 public fakeParaId = 12;
@@ -53,11 +57,16 @@ contract E2ETests is Test {
 
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
 
+    XcmTransactorV2.Multilocation public fakeFeeLocation;
+
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
         staking = new ParachainStaking(address(registry), address(token));
         gov = new ParachainGovernance(address(registry), fakeTeamMultiSig);
+        parachain = new TestParachain(address(registry));
+        // setting feeLocation as native token of destination chain
+        fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3000));
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
@@ -69,11 +78,11 @@ contract E2ETests is Test {
 
         // Register parachains
         vm.prank(paraOwner);
-        registry.register(fakeParaId, fakePalletInstance);
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation);
         vm.prank(paraOwner2);
-        registry.register(fakeParaId2, fakePalletInstance2);
+        registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeFeeLocation);
         vm.prank(paraOwner3);
-        registry.register(fakeParaId3, fakePalletInstance3);
+        registry.register(fakeParaId3, fakePalletInstance3, fakeWeightToFee, fakeFeeLocation);
 
         gov.init(address(staking));
         staking.init(address(gov));

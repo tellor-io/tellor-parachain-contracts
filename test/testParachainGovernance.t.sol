@@ -8,6 +8,7 @@ import "forge-std/console.sol";
 import "solmate/tokens/ERC20.sol";
 
 import "./helpers/TestToken.sol";
+import "./helpers/TestParachain.sol";
 import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 import "../src/ParachainRegistry.sol";
@@ -20,6 +21,7 @@ contract ParachainGovernanceTest is Test {
     ParachainRegistry public registry;
     ParachainStaking public staking;
     ParachainGovernance public gov;
+    TestParachain public parachain;
 
     address public paraOwner = address(0x1111);
     address public paraDisputer = address(0x2222);
@@ -36,6 +38,7 @@ contract ParachainGovernanceTest is Test {
     address fakeDisputedReporter = bob;
     address fakeDisputeInitiator = alice;
     uint256 fakeSlashAmount = 50;
+    uint256 public fakeWeightToFee = 5000;
 
     // Parachain registration
     uint32 public fakeParaId = 12;
@@ -44,11 +47,16 @@ contract ParachainGovernanceTest is Test {
 
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
 
+    XcmTransactorV2.Multilocation public fakeFeeLocation;
+
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
         staking = new ParachainStaking(address(registry), address(token));
+        parachain = new TestParachain(address(registry));
         gov = new ParachainGovernance(address(registry), fakeTeamMultiSig);
+        // setting feeLocation as native token of destination chain
+        fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3000));
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
@@ -57,7 +65,7 @@ contract ParachainGovernanceTest is Test {
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
 
         vm.prank(paraOwner);
-        registry.register(fakeParaId, fakePalletInstance);
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation);
 
         gov.init(address(staking));
         staking.init(address(gov));
@@ -390,7 +398,6 @@ contract ParachainGovernanceTest is Test {
         uint256 tallyDate = block.timestamp + 7 days;
         vm.warp(tallyDate);
         gov.tallyVotes(realDisputeId);
-        vm.stopPrank();
 
         // Three days pass before executing vote
         vm.warp(tallyDate + 3 days);

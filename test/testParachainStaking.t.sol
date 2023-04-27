@@ -8,6 +8,7 @@ import "forge-std/console.sol";
 import "solmate/tokens/ERC20.sol";
 
 import "./helpers/TestToken.sol";
+import "./helpers/TestParachain.sol";
 import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 import "../src/ParachainRegistry.sol";
@@ -18,6 +19,8 @@ contract ParachainStakingTest is Test {
     TestToken public token;
     ParachainRegistry public registry;
     ParachainStaking public staking;
+    Parachain public parachainContract;
+    TestParachain public parachain;
 
     address public paraOwner = address(0x1111);
     address public paraDisputer = address(0x2222);
@@ -29,15 +32,20 @@ contract ParachainStakingTest is Test {
     uint32 public fakeParaId = 12;
     uint8 public fakePalletInstance = 8;
     uint256 public fakeStakeAmount = 20;
+    uint256 public fakeWeightToFee = 5000;
 
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
+
+    XcmTransactorV2.Multilocation public fakeFeeLocation;
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
         registry = new ParachainRegistry();
         vm.startPrank(paraOwner);
         staking = new ParachainStaking(address(registry), address(token));
-
+        parachain = new TestParachain(address(registry));
+        // setting feeLocation as native token of destination chain
+        fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3000));
         // set fake governance address
         staking.init(address(0x2));
 
@@ -47,8 +55,7 @@ contract ParachainStakingTest is Test {
 
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
 
-        // vm.prank(paraOwner);
-        registry.register(fakeParaId, fakePalletInstance);
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation);
         vm.stopPrank();
 
         // Fund accounts
