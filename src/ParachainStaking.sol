@@ -17,7 +17,7 @@ interface IParachainStaking {
     function getParachainStakerInfo(uint32 _paraId, address _staker)
         external
         view
-        returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool);
+        returns (uint256, uint256, uint256);
     function getParachainStakerDetails(uint32 _paraId, address _staker) external view returns (bytes memory, uint256);
 }
 
@@ -56,13 +56,6 @@ contract ParachainStaking is Parachain {
         uint256 startDate; // stake or withdrawal request start date
         uint256 stakedBalance; // staked token balance
         uint256 lockedBalance; // amount locked for withdrawal
-        uint256 rewardDebt; // used for staking reward calculation
-        uint256 reporterLastTimestamp; // timestamp of reporter's last reported value
-        uint256 reportsSubmitted; // total number of reports submitted by reporter
-        uint256 startVoteCount; // total number of governance votes when stake deposited
-        uint256 startVoteTally; // staker vote tally when stake deposited
-        bool staked; // used to keep track of total stakers
-        mapping(bytes32 => uint256) reportsSubmittedByQueryId; // mapping of queryId to number of reports submitted by reporter
     }
 
     struct ParachainStakeInfo {
@@ -125,7 +118,7 @@ contract ParachainStaking is Parachain {
             "account already linked to another staker"
         );
         // Ensure staker has enough tokens before editing state
-        (,, uint256 _currentLocked,,,,,,) = getParachainStakerInfo(_paraId, msg.sender);
+        (,, uint256 _currentLocked) = getParachainStakerInfo(_paraId, msg.sender);
         require(_amount <= token.balanceOf(msg.sender) + _currentLocked, "insufficient balance");
 
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
@@ -284,33 +277,17 @@ contract ParachainStaking is Parachain {
      * @dev Returns all information about a staker
      * @param _paraId is the parachain ID of the oracle consumer parachain
      * @param _stakerAddress address of staker inquiring about
-     * @return uint startDate of staking
-     * @return uint current amount staked
-     * @return uint current amount locked for withdrawal
-     * @return uint reward debt used to calculate staking rewards
-     * @return uint reporter's last reported timestamp
-     * @return uint total number of reports submitted by reporter
-     * @return uint governance vote count when first staked
-     * @return uint number of votes cast by staker when first staked
-     * @return bool whether staker is counted in totalStakers
+     * @return uint256 startDate of staking
+     * @return uint256 current amount staked
+     * @return uint256 current amount locked for withdrawal
      */
     function getParachainStakerInfo(uint32 _paraId, address _stakerAddress)
         public
         view
-        returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool)
+        returns (uint256, uint256, uint256)
     {
         StakeInfo storage _staker = parachainStakerDetails[_paraId][_stakerAddress]._stakeInfo;
-        return (
-            _staker.startDate,
-            _staker.stakedBalance,
-            _staker.lockedBalance,
-            _staker.rewardDebt,
-            _staker.reporterLastTimestamp,
-            _staker.reportsSubmitted,
-            _staker.startVoteCount,
-            _staker.startVoteTally,
-            _staker.staked
-        );
+        return (_staker.startDate, _staker.stakedBalance, _staker.lockedBalance);
     }
 
     /**
