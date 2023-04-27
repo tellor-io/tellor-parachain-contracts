@@ -219,11 +219,7 @@ abstract contract Parachain {
     /// @dev Converts provided weight to fee for XCM execution.
     /// @param overallWeight uint256 Combined weight of consumer chain's dispatchable function (wrapped in transact) and XCM instructions.
     /// @param weightToFee uint256 Fee per weight (constant multiplier)
-    function convertWeightToFee(uint256 overallWeight, uint256 weightToFee)
-        internal
-        pure
-        returns (uint256)
-    {
+    function convertWeightToFee(uint256 overallWeight, uint256 weightToFee) internal pure returns (uint256) {
         // overall xcm fee cost based on constantMultiplier
         return overallWeight * weightToFee;
     }

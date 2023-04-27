@@ -244,7 +244,6 @@ contract ParachainStaking is Parachain {
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         uint256 _stakedBalance = _staker.stakedBalance;
         uint256 _lockedBalance = _staker.lockedBalance;
-        require(_stakedBalance + _lockedBalance > 0, "zero staker balance");
         if (_lockedBalance >= _slashAmount) {
             // if locked balance is at least _slashAmount, slash from locked balance
             _staker.lockedBalance -= _slashAmount;

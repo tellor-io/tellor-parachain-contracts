@@ -388,15 +388,15 @@ contract ParachainStakingTest is Test {
             paraDisputer // _recipient
         );
 
-        // Attempt to slash when zero staked/locked
+        // Slash when zero staked/locked
         vm.prank(staking.governance());
-        vm.expectRevert("zero staker balance");
-        staking.slashParachainReporter(
+        uint256 _slashAmount = staking.slashParachainReporter(
             10, // _slashAmount
             fakeParaId, // _paraId
             address(0x1234), // _reporter
             paraDisputer // _recipient
         );
+        assertEq(_slashAmount, 0);
 
         // Deposit stake
         vm.startPrank(paraOwner);
