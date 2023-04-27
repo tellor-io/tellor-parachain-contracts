@@ -262,14 +262,16 @@ contract ParachainStaking is Parachain {
             _staker.stakedBalance = 0;
             _staker.lockedBalance = 0;
         }
-        require(token.transfer(_recipient, _slashAmount), "transfer failed");
-        emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
+        if (_slashAmount > 0) {
+            require(token.transfer(_recipient, _slashAmount), "transfer failed");
+            emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
 
-        reportSlash(
-            parachain,
-            _parachainStakeInfo._account, // reporter's account on oracle consumer parachain
-            _slashAmount
-        );
+            reportSlash(
+                parachain,
+                _parachainStakeInfo._account, // reporter's account on oracle consumer parachain
+                _slashAmount
+            );
+        }
         return _slashAmount;
     }
 
