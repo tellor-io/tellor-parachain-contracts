@@ -641,7 +641,7 @@ contract E2ETests is Test {
         console.log("vote #3 result: ", uint8(_voteResult));
 
         // exectue vote
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 3 days);
         gov.executeVote(_disputeId);
         (,, bool _voteExecuted,,) = gov.getVoteInfo(_disputeId, 3);
         assertEq(_voteExecuted, true);
@@ -822,7 +822,7 @@ contract E2ETests is Test {
         console.log("vote #3 result: ", uint8(_voteResult));
 
         // exectue vote
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 3 days);
         gov.executeVote(_disputeId);
         (,, bool _voteExecuted,,) = gov.getVoteInfo(_disputeId, 3);
         assertEq(_voteExecuted, true);
@@ -877,7 +877,7 @@ contract E2ETests is Test {
         assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
 
         // Execute vote
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 3 days);
         gov.executeVote(_disputeId);
         // check vote result and executed status
         (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(_disputeId, 1);

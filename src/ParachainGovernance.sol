@@ -135,8 +135,8 @@ contract ParachainGovernance is Parachain {
         // Check if able to start new voting round
         if (voteRounds[_disputeId] > 0) {
             require(
-                block.timestamp - voteInfo[_disputeId][voteRounds[_disputeId]].tallyDate < 1 days,
-                "New dispute round must be started within a day"
+                block.timestamp - voteInfo[_disputeId][voteRounds[_disputeId]].tallyDate < 2 days,
+                "New vote round window has elapsed"
             ); // Also ensures that previous round is tallied, because block.timestamp - 0 != 1 day.
             require(
                 voteInfo[_disputeId][voteRounds[_disputeId]].executed == false, "Previous round must not be executed"
@@ -358,7 +358,7 @@ contract ParachainGovernance is Parachain {
         // Ensure vote must be final vote and that time has to be pass (86400 = 24 * 60 * 60 for seconds in a day)
         require(voteRounds[_thisVote.identifierHash] == _thisVote.voteRound, "Must be the final vote");
         //The time  has to pass after the vote is tallied
-        require(block.timestamp - _thisVote.tallyDate >= 1 days, "1 day has to pass after tally to allow for disputes");
+        require(block.timestamp - _thisVote.tallyDate >= 3 days, "Wait time before execution has not elapsed");
         _thisVote.executed = true;
         Dispute storage _thisDispute = disputeInfo[_disputeId];
         if (_thisVote.result == VoteResult.PASSED) {

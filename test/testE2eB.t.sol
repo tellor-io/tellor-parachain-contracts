@@ -463,20 +463,6 @@ contract E2ETestsB is Test {
         assertEq(token.balanceOf(address(alice)), 100 - 2); // alice's token holdings should not have changed
         assertEq(token.balanceOf(address(daryl)), 100 - 3); // daryl's token holdings should not have changed
 
-        // Execute vote for parachain 1
-        vm.warp(block.timestamp + 1 days);
-        gov.executeVote(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)));
-        // check vote result and executed status
-        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(
-            keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)),
-            gov.getVoteRounds(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)))
-        );
-        assertEq(_voteExecuted, true);
-        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
-
-        // check slashed stake returned to reporter
-        assertEq(token.balanceOf(address(bob)), 100); // balance before + slashed stake
-
         // submit votes for parachain 3 (round 3)
         vm.prank(daryl);
         gov.vote(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)), false, true); // disputed reporter votes against
@@ -497,7 +483,7 @@ contract E2ETestsB is Test {
             0 // _totalReportsInvalid
         );
         // tally votes for parachain 3 (round 3)
-        vm.warp(block.timestamp + 1 days); // 3 days elapsed since vote round opened
+        vm.warp(block.timestamp + 2 days); // 3 days elapsed since vote round opened
         gov.tallyVotes(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)));
         // check vote state for parachain 3, vote round 3
         (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(
@@ -505,7 +491,7 @@ contract E2ETestsB is Test {
             gov.getVoteRounds(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)))
         );
         assertEq(_voteInfo[0], 3); // vote round 3
-        assertEq(_voteInfo[4], 100 + 100 - 2); // tokenholders for: (bob initial + alice initial - alice stake slashed)
+        assertEq(_voteInfo[4], 100 + 100 - 1 - 2); // tokenholders for: (bob initial + alice initial - bob stake slashed - alice stake slashed)
         assertEq(_voteInfo[5], 100 + 100 - 1); // tokenholders against: (multisig initial + daryl initial - daryl slash amount))
         assertEq(_voteInfo[6], 0); // tokenholders invalid query
         assertEq(_voteInfo[7], 22); // users for
@@ -527,12 +513,26 @@ contract E2ETestsB is Test {
         assertEq(0, _stakedBal + _lockedBal); // 2 - 2 = 0 (alice's stake was slashed)
         (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, daryl);
         assertEq(2, _stakedBal + _lockedBal); // 3 - 1 = 2 (daryl's stake was slashed)
-        assertEq(token.balanceOf(address(bob)), 100); // bob's stake was returned
+        assertEq(token.balanceOf(address(bob)), 100 - 1); // bob's token holdings should not have changed
         assertEq(token.balanceOf(address(alice)), 100 - 2); // alice's token holdings should not have changed
         assertEq(token.balanceOf(address(daryl)), 100 - 3); // daryl's token holdings should not have changed
 
-        // Execute vote for parachain 3
+        // Execute vote for parachain 1
         vm.warp(block.timestamp + 1 days);
+        gov.executeVote(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)));
+        // check vote result and executed status
+        (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(
+            keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)),
+            gov.getVoteRounds(keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp)))
+        );
+        assertEq(_voteExecuted, true);
+        assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
+
+        // check slashed stake returned to reporter
+        assertEq(token.balanceOf(address(bob)), 100); // balance before + slashed stake
+
+        // Execute vote for parachain 3
+        vm.warp(block.timestamp + 2 days);
         gov.executeVote(keccak256(abi.encode(fakeParaId3, fakeQueryId, fakeTimestamp)));
         // check vote result and executed status
         (, _voteInfo, _voteExecuted, _voteResult,) = gov.getVoteInfo(
