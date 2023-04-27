@@ -131,11 +131,11 @@ contract E2ETestsB is Test {
         vm.stopPrank();
 
         // Check balances
-        (, uint256 _stakedBal, uint256 _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        (, uint256 _stakedBal, uint256 _lockedBal) = staking.getParachainStakerInfo(fakeParaId, bob);
         assertEq(1, _stakedBal + _lockedBal);
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId2, alice);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId2, alice);
         assertEq(2, _stakedBal + _lockedBal);
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, daryl);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId3, daryl);
         assertEq(3, _stakedBal + _lockedBal);
         assertEq(token.balanceOf(address(bob)), 100 - 1);
         assertEq(token.balanceOf(address(alice)), 100 - 2);
@@ -177,11 +177,11 @@ contract E2ETestsB is Test {
         vm.stopPrank();
 
         // Check balances
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId, bob);
         assertEq(0, _stakedBal + _lockedBal); // 1 - 3 = 0 (bob's stake was slashed)
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId2, alice);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId2, alice);
         assertEq(0, _stakedBal + _lockedBal); // 2 - 2 = 0 (alice's stake was slashed)
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, daryl);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId3, daryl);
         assertEq(2, _stakedBal + _lockedBal); // 3 - 1 = 2 (daryl's stake was slashed)
         assertEq(token.balanceOf(address(bob)), 100 - 1); // bob's token holdings should not have changed
         assertEq(token.balanceOf(address(alice)), 100 - 2); // alice's token holdings should not have changed
@@ -232,11 +232,11 @@ contract E2ETestsB is Test {
         assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.INVALID)); // vote result
 
         // check balances
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId, bob);
         assertEq(0, _stakedBal + _lockedBal); // 1 - 3 = 0 (bob's stake was slashed)
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId2, alice);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId2, alice);
         assertEq(0, _stakedBal + _lockedBal); // 2 - 2 = 0 (alice's stake was slashed)
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, daryl);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId3, daryl);
         assertEq(2, _stakedBal + _lockedBal); // 3 - 1 = 2 (daryl's stake was slashed)
         assertEq(token.balanceOf(address(bob)), 100 - 1); // bob's token holdings should not have changed
         assertEq(token.balanceOf(address(alice)), 100 - 2); // alice's token holdings should not have changed
@@ -350,11 +350,11 @@ contract E2ETestsB is Test {
         assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.PASSED)); // vote result
 
         // check balances
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId, bob);
         assertEq(0, _stakedBal + _lockedBal); // 1 - 3 = 0 (bob's stake was slashed)
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId2, alice);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId2, alice);
         assertEq(0, _stakedBal + _lockedBal); // 2 - 2 = 0 (alice's stake was slashed)
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, daryl);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId3, daryl);
         assertEq(2, _stakedBal + _lockedBal); // 3 - 1 = 2 (daryl's stake was slashed)
         assertEq(token.balanceOf(address(bob)), 100 - 1); // bob's token holdings should not have changed
         assertEq(token.balanceOf(address(alice)), 100 - 2); // alice's token holdings should not have changed
@@ -453,11 +453,11 @@ contract E2ETestsB is Test {
         assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.FAILED)); // vote result
 
         // check balances
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId, bob);
         assertEq(0, _stakedBal + _lockedBal); // 1 - 3 = 0 (bob's stake was slashed)
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId2, alice);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId2, alice);
         assertEq(0, _stakedBal + _lockedBal); // 2 - 2 = 0 (alice's stake was slashed)
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, daryl);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId3, daryl);
         assertEq(2, _stakedBal + _lockedBal); // 3 - 1 = 2 (daryl's stake was slashed)
         assertEq(token.balanceOf(address(bob)), 100 - 1); // bob's token holdings should not have changed
         assertEq(token.balanceOf(address(alice)), 100 - 2); // alice's token holdings should not have changed
@@ -507,11 +507,11 @@ contract E2ETestsB is Test {
         assertEq(uint8(_voteResult), uint8(ParachainGovernance.VoteResult.PASSED));
 
         // check balances
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId, bob);
         assertEq(0, _stakedBal + _lockedBal); // 1 - 3 = 0 (bob's stake was slashed)
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId2, alice);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId2, alice);
         assertEq(0, _stakedBal + _lockedBal); // 2 - 2 = 0 (alice's stake was slashed)
-        (, _stakedBal, _lockedBal,,,,,,) = staking.getParachainStakerInfo(fakeParaId3, daryl);
+        (, _stakedBal, _lockedBal) = staking.getParachainStakerInfo(fakeParaId3, daryl);
         assertEq(2, _stakedBal + _lockedBal); // 3 - 1 = 2 (daryl's stake was slashed)
         assertEq(token.balanceOf(address(bob)), 100 - 1); // bob's token holdings should not have changed
         assertEq(token.balanceOf(address(alice)), 100 - 2); // alice's token holdings should not have changed

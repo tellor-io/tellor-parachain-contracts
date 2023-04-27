@@ -135,7 +135,7 @@ contract ParachainGovernanceTest is Test {
         assertEq(token.balanceOf(address(staking)), 100);
         assertEq(token.balanceOf(address(gov)), 0);
         assertEq(token.balanceOf(bob), 0);
-        (, uint256 stakedBalanceBefore,,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        (, uint256 stakedBalanceBefore,) = staking.getParachainStakerInfo(fakeParaId, bob);
         assertEq(stakedBalanceBefore, 100);
 
         // Successfully begin dispute
@@ -144,7 +144,7 @@ contract ParachainGovernanceTest is Test {
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
         );
         // Check reporter was slashed
-        (, uint256 _stakedBalance,,,,,,,) = staking.getParachainStakerInfo(fakeParaId, bob);
+        (, uint256 _stakedBalance,) = staking.getParachainStakerInfo(fakeParaId, bob);
         assertEq(_stakedBalance, 50);
         assertEq(token.balanceOf(address(staking)), 50);
         assertEq(token.balanceOf(address(gov)), fakeSlashAmount);
