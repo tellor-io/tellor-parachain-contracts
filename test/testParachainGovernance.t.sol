@@ -203,7 +203,7 @@ contract ParachainGovernanceTest is Test {
         // Vote successfully
         token.mint(bob, 22);
         vm.startPrank(bob);
-        bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
+        bytes32 realDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
         gov.vote(realDisputeId, true, true);
         bool voted = gov.didVote(realDisputeId, bob);
         assert(voted);
@@ -265,7 +265,7 @@ contract ParachainGovernanceTest is Test {
         gov.voteParachain(fakeDisputeId, 1, 2, 3, 4, 5, 6);
 
         // Vote successfully
-        bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
+        bytes32 realDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
         vm.prank(paraOwner);
         gov.voteParachain(realDisputeId, 1, 2, 3, 4, 5, 6);
 
@@ -315,7 +315,7 @@ contract ParachainGovernanceTest is Test {
         // Vote successfully
         token.mint(bob, 22);
         vm.startPrank(bob);
-        bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
+        bytes32 realDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
         gov.vote(realDisputeId, true, true);
         vm.stopPrank();
 
@@ -370,7 +370,7 @@ contract ParachainGovernanceTest is Test {
         // Vote successfully
         token.mint(alice, 22);
         vm.startPrank(alice);
-        bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
+        bytes32 realDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
         gov.vote(realDisputeId, true, true);
         vm.stopPrank();
 
@@ -419,38 +419,13 @@ contract ParachainGovernanceTest is Test {
 
         // Vote
         vm.startPrank(alice);
-        bytes32 realDisputeId = gov.getDisputesByReporter(bob)[0];
+        bytes32 realDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
         gov.vote(realDisputeId, true, true);
         vm.stopPrank();
 
         // Check didVote
         assertEq(gov.didVote(realDisputeId, alice), true);
         assertEq(gov.didVote(realDisputeId, bob), false);
-    }
-
-    function testGetDisputesByReporter() public {
-        // Stake
-        vm.startPrank(bob);
-        token.mint(bob, 100);
-        token.approve(address(staking), 100);
-        staking.depositParachainStake(fakeParaId, bobsFakeAccount, 100);
-        vm.stopPrank();
-
-        // Open dispute
-        vm.prank(paraOwner);
-        gov.beginParachainDispute(
-            fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
-        );
-
-        // Check disputes
-        bytes32 realDisputeId = keccak256(abi.encode(fakeParaId, fakeQueryId, fakeTimestamp));
-        bytes32[] memory disputes = gov.getDisputesByReporter(bob);
-        assertEq(disputes.length, 1);
-        assertEq(disputes[0], realDisputeId);
-
-        // Check no disputes for undisputed reporter
-        bytes32[] memory disputes2 = gov.getDisputesByReporter(alice);
-        assertEq(disputes2.length, 0);
     }
 
     function testGetDisputeInfo() public {

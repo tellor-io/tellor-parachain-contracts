@@ -23,7 +23,6 @@ contract ParachainGovernance is Parachain {
     mapping(bytes32 => Dispute) private disputeInfo; // mapping of dispute IDs to the details of the dispute
     mapping(bytes32 => mapping(uint8 => Vote)) private voteInfo; // mapping of dispute IDs to vote round number to vote details
     mapping(bytes32 => uint8) private voteRounds; // mapping of dispute IDs to the number of vote rounds
-    mapping(address => bytes32[]) private disputeIdsByReporter; // mapping of reporter addresses to an array of dispute IDs
 
     enum VoteResult {
         FAILED,
@@ -163,8 +162,6 @@ contract ParachainGovernance is Parachain {
             _thisDispute.timestamp = _timestamp;
             _thisDispute.disputedReporter = _disputedReporter;
             _thisDispute.slashedAmount = disputeInfo[_disputeId].slashedAmount;
-
-            disputeIdsByReporter[_disputedReporter].push(_disputeId);
 
             // slash a single stakeAmount from reporter
             _thisDispute.slashedAmount = parachainStaking.slashParachainReporter(
@@ -386,10 +383,6 @@ contract ParachainGovernance is Parachain {
      */
     function didVote(bytes32 _disputeId, address _voter) external view returns (bool) {
         return voteInfo[_disputeId][voteRounds[_disputeId]].voted[_voter];
-    }
-
-    function getDisputesByReporter(address _reporter) external view returns (bytes32[] memory) {
-        return disputeIdsByReporter[_reporter];
     }
 
     /**

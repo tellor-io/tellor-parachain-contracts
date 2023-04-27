@@ -131,8 +131,6 @@ contract E2ETests is Test {
         vm.stopPrank();
 
         // Check state
-        bytes32[] memory disputes = gov.getDisputesByReporter(fakeDisputedReporter);
-        assertEq(disputes.length, _numDisputes);
         assertEq(token.balanceOf(address(alice)), _initialBalanceDisputer);
 
         // Assumes reporting is happening on the oracle parachain
