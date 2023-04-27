@@ -41,9 +41,12 @@ abstract contract Parachain {
             hex"0C", // fixed call index within pallet: 12
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)), // amount
-            bytes20(_staker) // staker
+            _staker // staker
         );
-        uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
+        uint64 overallWeight;
+        assembly {
+            overallWeight := add(transactRequiredWeightAtMost, mul(xcmInstructionFee, xcmInstructionCount))
+        }
         uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
         transactThroughSigned(
             _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
@@ -68,9 +71,12 @@ abstract contract Parachain {
             hex"0D", // fixed call index within pallet: 13
             _account,
             bytes32(reverse(_amount)),
-            bytes20(_staker) // staker
+            _staker // staker
         );
-        uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
+        uint64 overallWeight;
+        assembly {
+            overallWeight := add(transactRequiredWeightAtMost, mul(xcmInstructionFee, xcmInstructionCount))
+        }
         uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
         transactThroughSigned(
             _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
@@ -90,7 +96,10 @@ abstract contract Parachain {
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)) // amount
         );
-        uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
+        uint64 overallWeight;
+        assembly {
+            overallWeight := add(transactRequiredWeightAtMost, mul(xcmInstructionFee, xcmInstructionCount))
+        }
         uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
         transactThroughSigned(
             _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
@@ -112,7 +121,10 @@ abstract contract Parachain {
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)) // amount
         );
-        uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
+        uint64 overallWeight;
+        assembly {
+            overallWeight := add(transactRequiredWeightAtMost, mul(xcmInstructionFee, xcmInstructionCount))
+        }
         uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
         transactThroughSigned(
             _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
@@ -134,9 +146,12 @@ abstract contract Parachain {
             _parachain.palletInstance, // pallet index within runtime
             hex"10", // fixed call index within pallet: 16
             _disputeId, // dispute id
-            uint8(_outcome) // outcome
+            _outcome // outcome
         );
-        uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
+        uint64 overallWeight;
+        assembly {
+            overallWeight := add(transactRequiredWeightAtMost, mul(xcmInstructionFee, xcmInstructionCount))
+        }
         uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
         transactThroughSigned(
             _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
@@ -154,7 +169,10 @@ abstract contract Parachain {
             hex"0D", // fixed call index within pallet: 13
             _disputeId // dispute id
         );
-        uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
+        uint64 overallWeight;
+        assembly {
+            overallWeight := add(transactRequiredWeightAtMost, mul(xcmInstructionFee, xcmInstructionCount))
+        }
         uint256 feeAmount = convertWeightToFee(overallWeight, _parachain.weightToFee);
         transactThroughSigned(
             _parachain.id, transactRequiredWeightAtMost, call, feeAmount, overallWeight, _parachain.feeLocation
@@ -219,12 +237,10 @@ abstract contract Parachain {
     /// @dev Converts provided weight to fee for XCM execution.
     /// @param overallWeight uint256 Combined weight of consumer chain's dispatchable function (wrapped in transact) and XCM instructions.
     /// @param weightToFee uint256 Fee per weight (constant multiplier)
-    function convertWeightToFee(uint256 overallWeight, uint256 weightToFee)
-        internal
-        pure
-        returns (uint256)
-    {
+    function convertWeightToFee(uint256 overallWeight, uint256 weightToFee) internal pure returns (uint256 z) {
         // overall xcm fee cost based on constantMultiplier
-        return overallWeight * weightToFee;
+        assembly {
+            z := mul(overallWeight, weightToFee)
+        }
     }
 }
