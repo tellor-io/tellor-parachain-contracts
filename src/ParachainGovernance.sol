@@ -23,8 +23,6 @@ contract ParachainGovernance is Parachain {
     mapping(bytes32 => Dispute) private disputeInfo; // mapping of dispute IDs to the details of the dispute
     mapping(bytes32 => mapping(uint8 => Vote)) private voteInfo; // mapping of dispute IDs to vote round number to vote details
     mapping(bytes32 => uint8) private voteRounds; // mapping of dispute IDs to the number of vote rounds
-    mapping(address => uint256) private voteTallyByAddress; // mapping of addresses to the number of votes they have cast
-    mapping(address => bytes32[]) private disputeIdsByReporter; // mapping of reporter addresses to an array of dispute IDs
 
     enum VoteResult {
         FAILED,
@@ -165,8 +163,6 @@ contract ParachainGovernance is Parachain {
             _thisDispute.disputedReporter = _disputedReporter;
             _thisDispute.slashedAmount = disputeInfo[_disputeId].slashedAmount;
 
-            disputeIdsByReporter[_disputedReporter].push(_disputeId);
-
             // slash a single stakeAmount from reporter
             _thisDispute.slashedAmount = parachainStaking.slashParachainReporter(
                 _slashAmount, parachain.id, _thisDispute.disputedReporter, address(this)
@@ -215,7 +211,6 @@ contract ParachainGovernance is Parachain {
                 _thisVote.teamMultisig.against += 1;
             }
         }
-        voteTallyByAddress[msg.sender]++;
         emit Voted(
             _thisDispute.paraId, _thisDispute.queryId, _thisDispute.timestamp, _supports, msg.sender, _validDispute
         );
@@ -390,10 +385,6 @@ contract ParachainGovernance is Parachain {
         return voteInfo[_disputeId][voteRounds[_disputeId]].voted[_voter];
     }
 
-    function getDisputesByReporter(address _reporter) external view returns (bytes32[] memory) {
-        return disputeIdsByReporter[_reporter];
-    }
-
     /**
      * @dev Returns info on a dispute for a given ID
      * @param _disputeId is the ID of a specific dispute
@@ -456,14 +447,5 @@ contract ParachainGovernance is Parachain {
      */
     function getVoteRounds(bytes32 _hash) external view returns (uint8) {
         return voteRounds[_hash];
-    }
-
-    /**
-     * @dev Returns the total number of votes cast by an address
-     * @param _voter is the address of the voter to check for
-     * @return uint256 of the total number of votes cast by the voter
-     */
-    function getVoteTallyByAddress(address _voter) external view returns (uint256) {
-        return voteTallyByAddress[_voter];
     }
 }
