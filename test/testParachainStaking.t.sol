@@ -43,7 +43,7 @@ contract ParachainStakingTest is Test {
         staking = new ParachainStaking(address(registry), address(token));
         parachain = new TestParachain(address(registry));
         // setting feeLocation as native token of destination chain
-        fakeFeeLocation = XcmTransactorV2.Multilocation(0, parachain.x1External(3));
+        fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3000));
         // set fake governance address
         staking.init(address(0x2));
 

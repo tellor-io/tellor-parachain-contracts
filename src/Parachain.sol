@@ -13,7 +13,7 @@ abstract contract Parachain {
 
     // The amount of weight an XCM operation takes. This is a safe overestimate. Based on https://docs.moonbeam.network/builders/interoperability/xcm/fees/
     uint64 private constant xcmInstructionFee = 1000000000;
-    // Number of XCM instruction to be used (DescendOrigin, WithdrawAssets, BuyExecution, Transact)
+    //  Number of XCM instruction to be used (DescendOrigin, WithdrawAssets, BuyExecution, Transact) due to using transactThroughSigned.
     uint64 private constant xcmInstructionCount = 4;
 
     constructor(address _registry) {
@@ -33,7 +33,7 @@ abstract contract Parachain {
     ) internal {
         // Prepare remote call and send
 
-        // The benchmarked of weight of an reportStakeDeposited dispatchable function on the corresponding pallet
+        // The benchmarked weight of report_stake_deposited dispatchable function on the corresponding pallet
         uint64 transactRequiredWeightAtMost = 1218085000;
 
         bytes memory call = abi.encodePacked(
@@ -61,7 +61,7 @@ abstract contract Parachain {
         uint256 _amount,
         address _staker
     ) internal {
-        // The benchmarked of weight of an reportStakeWithdrawRequested dispatchable function on the corresponding pallet
+        // The benchmarked weight of report_staking_withdraw_request dispatchable function on the corresponding pallet
         uint64 transactRequiredWeightAtMost = 1155113000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
@@ -82,7 +82,7 @@ abstract contract Parachain {
     /// @param _reporter address The corresponding address of the reporter on the parachain.
     /// @param _amount uint256 Amount slashed.
     function reportSlash(IRegistry.Parachain memory _parachain, bytes memory _reporter, uint256 _amount) internal {
-        // The benchmarked of weight of an reportSlash dispatchable function on the corresponding pallet
+        // The benchmarked weight of report_slash dispatchable function on the corresponding pallet
         uint64 transactRequiredWeightAtMost = 1051143000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
@@ -104,7 +104,7 @@ abstract contract Parachain {
     function reportStakeWithdrawn(IRegistry.Parachain memory _parachain, bytes memory _reporter, uint256 _amount)
         internal
     {
-        // The benchmarked of weight of an reportStakeWithdrawn dispatchable function on the corresponding pallet
+        // The benchmarked weight of report_stake_withdrawn dispatchable function on the corresponding pallet
         uint64 transactRequiredWeightAtMost = 261856000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
@@ -128,7 +128,7 @@ abstract contract Parachain {
         bytes32 _disputeId,
         IParachainGovernance.VoteResult _outcome
     ) internal {
-        // The benchmarked of weight of an reportVoteTallied dispatchable function on the corresponding pallet
+        // The benchmarked weight of report_vote_tallied dispatchable function on the corresponding pallet
         uint64 transactRequiredWeightAtMost = 198884000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
@@ -147,7 +147,7 @@ abstract contract Parachain {
     /// @param _parachain Para The registered parachain.
     /// @param _disputeId bytes32 The unique identifier of the dispute.
     function reportVoteExecuted(IRegistry.Parachain memory _parachain, bytes32 _disputeId) internal {
-        // The benchmarked of weight of an reportVoteExecuted dispatchable function on the corresponding pallet
+        // The benchmarked weight of report_vote_executed dispatchable function on the corresponding pallet
         uint64 transactRequiredWeightAtMost = 323353000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
@@ -167,13 +167,13 @@ abstract contract Parachain {
         bytes memory _call,
         uint256 _feeAmount,
         uint64 _overallWeight,
-        XcmTransactorV2.Multilocation memory feeLocation
+        XcmTransactorV2.Multilocation memory _feeLocation
     ) private {
         // Create multi-location based on supplied paraId
         XcmTransactorV2.Multilocation memory location = XcmTransactorV2.Multilocation(1, x1(_paraId));
         // Send remote transact
         xcmTransactor.transactThroughSignedMultilocation(
-            location, feeLocation, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight
+            location, _feeLocation, _transactRequiredWeightAtMost, _call, _feeAmount, _overallWeight
         );
     }
 
@@ -217,7 +217,7 @@ abstract contract Parachain {
     }
 
     /// @dev Converts provided weight to fee for XCM execution.
-    /// @param overallWeight uint256 Combined weight of consumer chain's dispatchable function(wrapped in transact) and XCM instructions.
+    /// @param overallWeight uint256 Combined weight of consumer chain's dispatchable function (wrapped in transact) and XCM instructions.
     /// @param weightToFee uint256 Fee per weight (constant multiplier)
     function convertWeightToFee(uint256 overallWeight, uint256 weightToFee)
         internal

@@ -24,7 +24,7 @@ contract ParachainTest is Test {
     address fakeStaker = address(0xabcd);
     bytes fakeReporter = abi.encode(fakeStaker); // fake reporter account on oracle consumer parachain
     uint256 fakeWeightToFee = 5000;
-    uint32 fakeFeeLocationPallet = uint32(3);
+    uint32 fakeFeeLocationPallet = uint32(3000);
 
     // Parachain registration
     uint32 public fakeParaId = 12;
@@ -39,7 +39,7 @@ contract ParachainTest is Test {
         registry = new ParachainRegistry();
         parachain = new TestParachain(address(registry));
         // setting feeLocation as native token of destination chain
-        fakeFeeLocation = XcmTransactorV2.Multilocation(0, parachain.x1External(3));
+        fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3000));
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
@@ -97,7 +97,7 @@ contract ParachainTest is Test {
         assertEq(savedData.dest.parents, 1);
         assertEq(savedData.dest.interior.length, 1);
         assertEq(savedData.dest.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
-        assertEq(savedData.feeLocation.parents, 0);
+        assertEq(savedData.feeLocation.parents, 1);
         assertEq(savedData.feeLocation.interior.length, 1);
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
         assertEq(savedData.transactRequiredWeightAtMost, 1218085000);
@@ -144,7 +144,7 @@ contract ParachainTest is Test {
         assertEq(savedData.dest.parents, 1);
         assertEq(savedData.dest.interior.length, 1);
         assertEq(savedData.dest.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
-        assertEq(savedData.feeLocation.parents, 0);
+        assertEq(savedData.feeLocation.parents, 1);
         assertEq(savedData.feeLocation.interior.length, 1);
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
         assertEq(savedData.transactRequiredWeightAtMost, 1155113000);
@@ -191,7 +191,7 @@ contract ParachainTest is Test {
         assertEq(savedData.dest.parents, 1);
         assertEq(savedData.dest.interior.length, 1);
         assertEq(savedData.dest.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
-        assertEq(savedData.feeLocation.parents, 0);
+        assertEq(savedData.feeLocation.parents, 1);
         assertEq(savedData.feeLocation.interior.length, 1);
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
         assertEq(savedData.transactRequiredWeightAtMost, 1051143000);
@@ -234,7 +234,7 @@ contract ParachainTest is Test {
         assertEq(savedData.dest.parents, 1);
         assertEq(savedData.dest.interior.length, 1);
         assertEq(savedData.dest.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
-        assertEq(savedData.feeLocation.parents, 0);
+        assertEq(savedData.feeLocation.parents, 1);
         assertEq(savedData.feeLocation.interior.length, 1);
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
         assertEq(savedData.transactRequiredWeightAtMost, 261856000);
@@ -268,7 +268,9 @@ contract ParachainTest is Test {
             xcmTransactor.getTransactThroughSignedMultilocationArray();
         StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
 
-        //assertEq(savedData.feeLocation, fakeFeeLocation);
+        assertEq(savedData.feeLocation.parents, 1);
+        assertEq(savedData.feeLocation.interior.length, 1);
+        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
     }
 
     function testX1() public {

@@ -37,7 +37,7 @@ contract ParachainRegistryTest is Test {
         registry = new ParachainRegistry();
         parachain = new TestParachain(address(registry));
         // setting feeLocation as native token of destination chain
-        fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3));
+        fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3000));
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);

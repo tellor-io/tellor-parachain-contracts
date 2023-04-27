@@ -56,7 +56,7 @@ contract ParachainGovernanceTest is Test {
         parachain = new TestParachain(address(registry));
         gov = new ParachainGovernance(address(registry), fakeTeamMultiSig);
         // setting feeLocation as native token of destination chain
-        fakeFeeLocation = XcmTransactorV2.Multilocation(0, parachain.x1External(3));
+        fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3000));
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
