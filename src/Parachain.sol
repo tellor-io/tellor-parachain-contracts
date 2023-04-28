@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.0;
 
 import "../lib/moonbeam/precompiles/XcmTransactorV2.sol"; // Various helper methods for interfacing with the Tellor pallet on another parachain via XCM
-// import { IRegistry, ParachainNotRegistered } from "./ParachainRegistry.sol";
 import {IRegistry} from "./ParachainRegistry.sol";
 import {IParachainGovernance} from "./interfaces/IParachainGovernance.sol";
 
