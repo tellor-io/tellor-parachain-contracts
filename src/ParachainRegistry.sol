@@ -18,7 +18,6 @@ interface IRegistry {
     }
 
     //    todo: suggestion to replace these with simpler below functions, so state only read once per outer calling function
-    //    todo: confirm that using struct via memory does indeed pass by reference for internal functions
     //    function owner(uint32 _paraId) external view returns(address);
     //    function palletInstance(uint32 _paraId) external view returns(bytes memory);
     //    function stakeAmount(uint32 _paraId) external view returns(uint256);
@@ -70,12 +69,10 @@ contract ParachainRegistry is IRegistry {
     }
 
     function getById(uint32 _id) external view override returns (Parachain memory) {
-        // todo: confirm this creates a copy which is then passed around by reference within consuming functions
         return registrations[owners[_id]];
     }
 
     function getByAddress(address _address) external view override returns (Parachain memory) {
-        // todo: confirm this creates a copy which is then passed around by reference within consuming functions
         return registrations[_address];
     }
 
