@@ -237,7 +237,6 @@ contract ParachainStaking is Parachain {
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         uint256 _stakedBalance = _staker.stakedBalance;
         uint256 _lockedBalance = _staker.lockedBalance;
-        require(_stakedBalance + _lockedBalance > 0, "zero staker balance");
         if (_lockedBalance >= _slashAmount) {
             // if locked balance is at least _slashAmount, slash from locked balance
             _staker.lockedBalance -= _slashAmount;
@@ -256,14 +255,16 @@ contract ParachainStaking is Parachain {
             _staker.stakedBalance = 0;
             _staker.lockedBalance = 0;
         }
-        require(token.transfer(_recipient, _slashAmount), "transfer failed");
-        emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
+        if (_slashAmount > 0) {
+            require(token.transfer(_recipient, _slashAmount), "transfer failed");
+            emit ParachainReporterSlashed(_paraId, _reporter, _recipient, _slashAmount);
 
-        reportSlash(
-            parachain,
-            _parachainStakeInfo._account, // reporter's account on oracle consumer parachain
-            _slashAmount
-        );
+            reportSlash(
+                parachain,
+                _parachainStakeInfo._account, // reporter's account on oracle consumer parachain
+                _slashAmount
+            );
+        }
         return _slashAmount;
     }
 
