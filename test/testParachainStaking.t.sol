@@ -189,7 +189,7 @@ contract ParachainStakingTest is Test {
             20 // _amount
         );
         (, uint256 _bobStakedAfter, uint256 _bobLockedAfter) = staking.getParachainStakerInfo(fakeParaId, bob);
-        assertEq(_bobStakedAfter, _bobStakedBefore);
+        assertEq(_bobStakedAfter, _bobStakedBefore - 20);
         assertEq(_bobLockedAfter, 20);
         bobBalance = token.balanceOf(bob);
         uint256 stakingBalance = token.balanceOf(address(staking));
@@ -217,7 +217,7 @@ contract ParachainStakingTest is Test {
             20 // _amount
         );
         (, _bobStakedAfter, _bobLockedAfter) = staking.getParachainStakerInfo(fakeParaId, bob);
-        assertEq(_bobStakedAfter, _bobStaked);
+        assertEq(_bobStakedAfter, _bobStaked - 20);
         assertEq(_bobLockedAfter, 20);
         bobBalance = token.balanceOf(bob);
         stakingBalance = token.balanceOf(address(staking));
