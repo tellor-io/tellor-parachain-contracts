@@ -391,8 +391,6 @@ contract ParachainGovernanceTest is Test {
         vm.expectRevert("Vote must be tallied");
         gov.executeVote(realDisputeId);
 
-        // todo: unsure how to test "Must be the final vote"
-
         // Tally votes
         uint256 tallyDate = block.timestamp + 7 days;
         vm.warp(tallyDate);
