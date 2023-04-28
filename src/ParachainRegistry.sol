@@ -29,8 +29,8 @@ interface IRegistry {
 
 contract ParachainRegistry is IRegistry {
     // todo: confirm optimisation for lookups based on parachain owner address over paraId
-    mapping(address => Parachain) private registrations;
-    mapping(uint32 => address) private owners;
+    mapping(uint32 => Parachain) private registrations; // Parachain ID => Parachain
+    mapping(address => uint32) private owners; // Owner => Parachain ID
 
     XcmTransactorV2 private constant xcmTransactor = XCM_TRANSACTOR_V2_CONTRACT;
     XcmUtils private constant xcmUtils = XCM_UTILS_CONTRACT;
@@ -54,16 +54,16 @@ contract ParachainRegistry is IRegistry {
         // if (msg.sender != derivativeAddress) revert NotOwner();
         require(msg.sender == derivativeAddress, "Not owner");
         // todo: consider effects of changing pallet instance with re-registration
-        registrations[msg.sender] =
+        registrations[_paraId] =
             Parachain(_paraId, msg.sender, abi.encodePacked(_palletInstance), _weightToFee, _feeLocation);
-        owners[_paraId] = msg.sender;
+        owners[msg.sender] = _paraId;
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }
 
     /// @dev Deregister parachain.
     function deregister() external view {
         // Ensure parachain is registered & sender is parachain owner
-        IRegistry.Parachain memory _parachain = registrations[msg.sender];
+        IRegistry.Parachain memory _parachain = registrations[owners[msg.sender]];
         require(_parachain.owner == msg.sender && _parachain.owner != address(0x0), "not owner");
 
         // todo: remove registrations after considering effects on existing stake/disputes etc.
@@ -71,12 +71,12 @@ contract ParachainRegistry is IRegistry {
 
     function getById(uint32 _id) external view override returns (Parachain memory) {
         // todo: confirm this creates a copy which is then passed around by reference within consuming functions
-        return registrations[owners[_id]];
+        return registrations[_id];
     }
 
     function getByAddress(address _address) external view override returns (Parachain memory) {
         // todo: confirm this creates a copy which is then passed around by reference within consuming functions
-        return registrations[_address];
+        return registrations[owners[_address]];
     }
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
