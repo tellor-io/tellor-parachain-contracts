@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.0;
 
 // Various helper methods for interfacing with the Tellor pallet on another parachain via XCM
