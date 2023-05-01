@@ -246,7 +246,45 @@ contract ParachainTest is Test {
         assertEq(savedData.overallWeight, 4261856000);
     }
 
-    function testTransactThroughSigned() public {}
+    function testTransactThroughSigned() public {
+        // since function is private, indirectly test through reportStakeWithdrawnExternal call
+        // setup
+        IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
+            id: fakeParaId,
+            owner: paraOwner,
+            palletInstance: abi.encode(fakePalletInstance),
+            weightToFee: fakeWeightToFee,
+            feeLocation: fakeFeeLocation
+        });
+
+        uint256 fakeAmount = 100e18;
+        vm.prank(fakeStakingContract);
+        parachain.reportStakeWithdrawnExternal(fakeParachain, fakeReporter, fakeAmount);
+
+        // check saved data passed to StubXcmTransactorV2 through transactThroughSigned
+        StubXcmTransactorV2.TransactThroughSignedMultilocationCall[] memory savedDataArray =
+            xcmTransactor.getTransactThroughSignedMultilocationArray();
+        StubXcmTransactorV2.TransactThroughSignedMultilocationCall memory savedData = savedDataArray[0];
+
+        assertEq(savedData.dest.parents, 1);
+        assertEq(savedData.dest.interior.length, 1);
+        assertEq(savedData.dest.interior[0], abi.encodePacked(hex"00", bytes4(fakeParaId)));
+        assertEq(savedData.feeLocation.parents, 1);
+        assertEq(savedData.feeLocation.interior.length, 1);
+        assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
+        assertEq(savedData.transactRequiredWeightAtMost, 261856000);
+        bytes memory _expectedCall = abi.encodePacked(
+            abi.encode(fakePalletInstance),
+            hex"0E",
+            fakeReporter,
+            bytes32(parachain.reverseExternal(fakeAmount))
+        );
+        assertEq(savedData.call, _expectedCall);
+        uint64 _expectedOverallWeight = 261856000 + (1000000000 * 4);
+        uint256 _expectedFeeAmount = _expectedOverallWeight * fakeWeightToFee;
+        assertEq(savedData.feeAmount, _expectedFeeAmount);
+        assertEq(savedData.overallWeight, _expectedOverallWeight);
+    }
 
     function testParachain() public {
         // since function is private, indirectly test through reportStakeWithdrawnExternal call
@@ -271,6 +309,7 @@ contract ParachainTest is Test {
         assertEq(savedData.feeLocation.parents, 1);
         assertEq(savedData.feeLocation.interior.length, 1);
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
+
     }
 
     function testX1() public {
