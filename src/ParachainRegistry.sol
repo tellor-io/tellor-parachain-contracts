@@ -20,8 +20,8 @@ interface IRegistry {
 }
 
 contract ParachainRegistry is IRegistry {
-    mapping(address => Parachain) private registrations;
-    mapping(uint32 => address) private owners;
+    mapping(uint32 => Parachain) private registrations; // Parachain ID => Parachain
+    mapping(address => uint32) private owners; // Owner => Parachain ID
 
     XcmTransactorV2 private constant xcmTransactor = XCM_TRANSACTOR_V2_CONTRACT;
     XcmUtils private constant xcmUtils = XCM_UTILS_CONTRACT;
@@ -43,25 +43,25 @@ contract ParachainRegistry is IRegistry {
         address derivativeAddress =
             xcmUtils.multilocationToAddress(XcmUtils.Multilocation(1, x2(_paraId, _palletInstance)));
         require(msg.sender == derivativeAddress, "Not owner");
-        registrations[msg.sender] =
+        registrations[_paraId] =
             Parachain(_paraId, msg.sender, abi.encodePacked(_palletInstance), _weightToFee, _feeLocation);
-        owners[_paraId] = msg.sender;
+        owners[msg.sender] = _paraId;
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }
 
     /// @dev Deregister parachain.
     function deregister() external view {
         // Ensure parachain is registered & sender is parachain owner
-        IRegistry.Parachain memory _parachain = registrations[msg.sender];
+        IRegistry.Parachain memory _parachain = registrations[owners[msg.sender]];
         require(_parachain.owner == msg.sender && _parachain.owner != address(0x0), "not owner");
     }
 
     function getById(uint32 _id) external view override returns (Parachain memory) {
-        return registrations[owners[_id]];
+        return registrations[_id];
     }
 
     function getByAddress(address _address) external view override returns (Parachain memory) {
-        return registrations[_address];
+        return registrations[owners[_address]];
     }
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
