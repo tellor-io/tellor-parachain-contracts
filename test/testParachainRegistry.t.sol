@@ -95,8 +95,6 @@ contract ParachainRegistryTest is Test {
         assertEq(parachain.feeLocation.interior[0], fakeFeeLocation.interior[0]);
     }
 
-    function testDeregister() public {}
-
     function testGetById() public {
         ParachainRegistry.Parachain memory parachain = registry.getById(fakeParaId);
         assertEq(parachain.id, fakeParaId);
