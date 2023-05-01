@@ -256,6 +256,10 @@ contract E2ETests is Test {
 
         // Stake, then request stake withdrawal
         uint256 initialBalance = token.balanceOf(address(bob));
+        (, uint256 stakedBalance, uint256 lockedBalance) = staking.getParachainStakerInfo(fakeParaId, bob);
+        console.log("starting stakedBalance: %s", stakedBalance);
+        console.log("starting lockedBalance: %s", lockedBalance);
+        console.log("starting bob balance: %s", token.balanceOf(address(bob)));
         vm.startPrank(bob);
         token.approve(address(staking), fakeStakeAmount);
         staking.depositParachainStake(
@@ -263,12 +267,19 @@ contract E2ETests is Test {
             bytes("consumerChainAcct"), // _account
             fakeStakeAmount // _amount
         );
+        (, stakedBalance, lockedBalance) = staking.getParachainStakerInfo(fakeParaId, bob);
+        console.log("after staking stakedBalance: %s", stakedBalance);
+        console.log("after staking lockedBalance: %s", lockedBalance);
+        console.log("after staking bob balance: %s", token.balanceOf(address(bob)));
         staking.requestParachainStakeWithdraw(
             fakeParaId, // _paraId
             fakeStakeAmount // _amount
         );
         vm.stopPrank();
-        (, uint256 stakedBalance, uint256 lockedBalance) = staking.getParachainStakerInfo(fakeParaId, bob);
+        (, stakedBalance, lockedBalance) = staking.getParachainStakerInfo(fakeParaId, bob);
+        console.log("after withdraw request stakedBalance: %s", stakedBalance);
+        console.log("after withdraw request lockedBalance: %s", lockedBalance);
+        console.log("after withdraw request bob balance: %s", token.balanceOf(address(bob)));
         assertEq(lockedBalance, fakeStakeAmount);
         assertEq(stakedBalance, 0);
         assertEq(token.balanceOf(address(bob)), initialBalance - fakeStakeAmount);
@@ -288,9 +299,6 @@ contract E2ETests is Test {
 
         assertEq(token.balanceOf(address(staking)), 50);
         assertEq(token.balanceOf(address(gov)), fakeSlashAmount);
-
-        // todo: what if the slash amount is more than the stake amount?
-        // todo: check if stake amount is supposed to remain the same after requesting withdrawal & slashed from dispute
     }
 
     function testMultipleStakeWithdrawRequestsDisputesOnMultipleChains() public {
@@ -408,7 +416,7 @@ contract E2ETests is Test {
         balanceGovContract = token.balanceOf(address(gov));
         console.log("Staking contract balance after dispute for 2nd parachain: ", balanceStakingContract);
         console.log("Gov contract balance after dispute for 2nd parachain: ", balanceGovContract);
-        assertEq(balanceStakingContract, (fakeStakeAmount + fakeStakeAmount2) - fakeSlashAmount * 2); // todo: check if this is correct
+        assertEq(balanceStakingContract, (fakeStakeAmount + fakeStakeAmount2) - fakeSlashAmount * 2);
         assertEq(balanceGovContract, fakeSlashAmount * 2);
         console.log("\n");
 

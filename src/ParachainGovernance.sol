@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.3;
 
 import "../lib/moonbeam/precompiles/ERC20.sol";
 import {Parachain} from "./Parachain.sol";
-// import { IRegistry, ParachainRegistry, ParachainNotRegistered, NotOwner } from "./ParachainRegistry.sol";
 import {IRegistry, ParachainRegistry} from "./ParachainRegistry.sol";
 import {IParachainStaking} from "./ParachainStaking.sol";
 import {IParachainGovernance} from "./interfaces/IParachainGovernance.sol";
