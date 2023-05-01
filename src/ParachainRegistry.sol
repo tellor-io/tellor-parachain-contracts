@@ -49,13 +49,6 @@ contract ParachainRegistry is IRegistry {
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }
 
-    /// @dev Deregister parachain.
-    function deregister() external view {
-        // Ensure parachain is registered & sender is parachain owner
-        IRegistry.Parachain memory _parachain = registrations[owners[msg.sender]];
-        require(_parachain.owner == msg.sender && _parachain.owner != address(0x0), "not owner");
-    }
-
     function getById(uint32 _id) external view override returns (Parachain memory) {
         return registrations[_id];
     }
