@@ -4,10 +4,6 @@ pragma solidity ^0.8.0;
 import "../lib/moonbeam/precompiles/XcmTransactorV2.sol";
 import "../lib/moonbeam/precompiles/XcmUtils.sol";
 
-// error NotAllowed();
-// error NotOwner();
-// error ParachainNotRegistered();
-
 interface IRegistry {
     struct Parachain {
         uint32 id;
@@ -17,18 +13,11 @@ interface IRegistry {
         XcmTransactorV2.Multilocation feeLocation;
     }
 
-    //    todo: suggestion to replace these with simpler below functions, so state only read once per outer calling function
-    //    todo: confirm that using struct via memory does indeed pass by reference for internal functions
-    //    function owner(uint32 _paraId) external view returns(address);
-    //    function palletInstance(uint32 _paraId) external view returns(bytes memory);
-    //    function stakeAmount(uint32 _paraId) external view returns(uint256);
-
     function getById(uint32 _id) external view returns (Parachain memory);
     function getByAddress(address _address) external view returns (Parachain memory);
 }
 
 contract ParachainRegistry is IRegistry {
-    // todo: confirm optimisation for lookups based on parachain owner address over paraId
     mapping(uint32 => Parachain) private registrations; // Parachain ID => Parachain
     mapping(address => uint32) private owners; // Owner => Parachain ID
 
@@ -51,9 +40,7 @@ contract ParachainRegistry is IRegistry {
         // Ensure sender is on parachain
         address derivativeAddress =
             xcmUtils.multilocationToAddress(XcmUtils.Multilocation(1, x2(_paraId, _palletInstance)));
-        // if (msg.sender != derivativeAddress) revert NotOwner();
         require(msg.sender == derivativeAddress, "Not owner");
-        // todo: consider effects of changing pallet instance with re-registration
         registrations[_paraId] =
             Parachain(_paraId, msg.sender, abi.encodePacked(_palletInstance), _weightToFee, _feeLocation);
         owners[msg.sender] = _paraId;
@@ -65,30 +52,23 @@ contract ParachainRegistry is IRegistry {
         // Ensure parachain is registered & sender is parachain owner
         IRegistry.Parachain memory _parachain = registrations[owners[msg.sender]];
         require(_parachain.owner == msg.sender && _parachain.owner != address(0x0), "not owner");
-
-        // todo: remove registrations after considering effects on existing stake/disputes etc.
     }
 
     function getById(uint32 _id) external view override returns (Parachain memory) {
-        // todo: confirm this creates a copy which is then passed around by reference within consuming functions
         return registrations[_id];
     }
 
     function getByAddress(address _address) external view override returns (Parachain memory) {
-        // todo: confirm this creates a copy which is then passed around by reference within consuming functions
         return registrations[owners[_address]];
     }
 
     function parachain(uint32 _paraId) private pure returns (bytes memory) {
         // 0x00 denotes Parachain: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
-        // return bytes.concat(hex"00", bytes4(_paraId));
-        // TypeError: Member "concat" not found or not visible after argument-dependent lookup in type(bytes storage pointer)
         return abi.encodePacked(hex"00", abi.encodePacked(_paraId));
     }
 
     function pallet(uint8 _palletInstance) private pure returns (bytes memory) {
         // 0x04 denotes PalletInstance: https://docs.moonbeam.network/builders/xcm/xcm-transactor/#building-the-precompile-multilocation
-        // return bytes.concat(hex"04", bytes1(_palletInstance));
         return abi.encodePacked(hex"04", abi.encodePacked(_palletInstance));
     }
 
