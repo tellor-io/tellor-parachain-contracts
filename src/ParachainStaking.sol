@@ -166,6 +166,7 @@ contract ParachainStaking is Parachain {
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         require(_staker.stakedBalance >= _amount, "insufficient staked balance");
+        _staker.stakedBalance -= _amount;
         _staker.lockedBalance += _amount;
         toWithdraw += _amount;
         emit StakeWithdrawRequested(msg.sender, _amount);

@@ -281,7 +281,7 @@ contract E2ETests is Test {
         console.log("after withdraw request lockedBalance: %s", lockedBalance);
         console.log("after withdraw request bob balance: %s", token.balanceOf(address(bob)));
         assertEq(lockedBalance, fakeStakeAmount);
-        assertEq(stakedBalance, fakeStakeAmount);
+        assertEq(stakedBalance, 0);
         assertEq(token.balanceOf(address(bob)), initialBalance - fakeStakeAmount);
 
         // Can assume bad value was submitted on oracle consumer parachain 🪄
@@ -293,10 +293,7 @@ contract E2ETests is Test {
         );
         // Check reporter was slashed
         (, uint256 _stakedBalAfter, uint256 _lockedBalAfter) = staking.getParachainStakerInfo(fakeParaId, bob);
-        console.log("after dispute stakedBalance: %s", _stakedBalAfter);
-        console.log("after dispute lockedBalance: %s", _lockedBalAfter);
-        console.log("after dispute bob balance: %s", token.balanceOf(address(bob)));
-        assertEq(_stakedBalAfter, fakeStakeAmount);
+        assertEq(_stakedBalAfter, 0);
         assertEq(token.balanceOf(address(bob)), initialBalance - fakeStakeAmount);
         assertEq(_lockedBalAfter, fakeStakeAmount - fakeSlashAmount);
 
@@ -344,7 +341,7 @@ contract E2ETests is Test {
         vm.stopPrank();
         (, uint256 stakedBalance, uint256 lockedBalance) = staking.getParachainStakerInfo(fakeParaId, bob);
         assertEq(lockedBalance, fakeStakeAmount);
-        assertEq(stakedBalance, fakeStakeAmount);
+        assertEq(stakedBalance, 0);
         assertEq(token.balanceOf(address(bob)), initialBalance - fakeStakeAmount);
         console.log("bob staked balance after requesting withdraw for 1st parachain: ", stakedBalance);
         console.log("bob locked balance after requesting withdraw for 1st parachain: ", lockedBalance);
@@ -361,7 +358,7 @@ contract E2ETests is Test {
         (, uint256 _stakedBalAfter, uint256 _lockedBalAfter) = staking.getParachainStakerInfo(fakeParaId, bob);
         console.log("bob staked balance after dispute for 1st parachain: ", _stakedBalAfter);
         console.log("bob locked balance after dispute for 1st parachain: ", _lockedBalAfter);
-        assertEq(_stakedBalAfter, fakeStakeAmount);
+        assertEq(_stakedBalAfter, 0);
         assertEq(token.balanceOf(address(bob)), initialBalance - fakeStakeAmount);
         assertEq(_lockedBalAfter, fakeStakeAmount - fakeSlashAmount);
 
@@ -394,7 +391,7 @@ contract E2ETests is Test {
         vm.stopPrank();
         (, stakedBalance, lockedBalance) = staking.getParachainStakerInfo(fakeParaId2, bob);
         assertEq(lockedBalance, fakeStakeAmount2);
-        assertEq(stakedBalance, fakeStakeAmount2);
+        assertEq(stakedBalance, 0);
         assertEq(token.balanceOf(address(bob)), initialBalance - fakeStakeAmount2);
         console.log("bob staked balance after requesting withdraw for 2nd parachain: ", stakedBalance);
         console.log("bob locked balance after requesting withdraw for 2nd parachain: ", lockedBalance);
@@ -411,7 +408,7 @@ contract E2ETests is Test {
         (, _stakedBalAfter, _lockedBalAfter) = staking.getParachainStakerInfo(fakeParaId2, bob);
         console.log("bob staked balance after dispute for 2nd parachain: ", _stakedBalAfter);
         console.log("bob locked balance after dispute for 2nd parachain: ", _lockedBalAfter);
-        assertEq(_stakedBalAfter, fakeStakeAmount2);
+        assertEq(_stakedBalAfter, 0);
         assertEq(token.balanceOf(address(bob)), initialBalance - fakeStakeAmount2);
         assertEq(_lockedBalAfter, fakeStakeAmount2 - fakeSlashAmount);
 
@@ -445,7 +442,7 @@ contract E2ETests is Test {
         console.log("bob staked balance after requesting withdraw for 3rd parachain: ", stakedBalance);
         console.log("bob locked balance after requesting withdraw for 3rd parachain: ", lockedBalance);
         assertEq(lockedBalance, fakeStakeAmount3);
-        assertEq(stakedBalance, fakeStakeAmount3);
+        assertEq(stakedBalance, 0);
         assertEq(token.balanceOf(address(bob)), initialBalance - fakeStakeAmount3);
 
         // Can assume bad value was submitted on oracle consumer parachain 🪄
@@ -460,7 +457,7 @@ contract E2ETests is Test {
         (, _stakedBalAfter, _lockedBalAfter) = staking.getParachainStakerInfo(fakeParaId3, bob);
         console.log("bob staked balance after dispute for 3rd parachain: ", _stakedBalAfter);
         console.log("bob locked balance after dispute for 3rd parachain: ", _lockedBalAfter);
-        assertEq(_stakedBalAfter, fakeStakeAmount3);
+        assertEq(_stakedBalAfter, 0);
         assertEq(token.balanceOf(address(bob)), initialBalance - fakeStakeAmount3);
         assertEq(_lockedBalAfter, fakeStakeAmount3 - fakeSlashAmount);
 
