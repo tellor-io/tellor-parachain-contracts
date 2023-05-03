@@ -6,3 +6,9 @@ cache*
 
 # Don't ignore the contents of the 'out/StubXcmUtils.sol/' directory
 !/out/StubXcmUtils.sol/*
+
+# Don't ignore the 'out/StubXcmTransactorV2.sol/' directory
+!/out/StubXcmTransactorV2.sol/
+
+# Don't ignore the contents of the 'out/StubXcmTransactorV2.sol/' directory
+!/out/StubXcmTransactorV2.sol/*
