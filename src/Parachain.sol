@@ -39,7 +39,7 @@ abstract contract Parachain {
 
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
-            hex"0C", // fixed call index within pallet: 12
+            hex"0D", // fixed call index within pallet: 13
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)), // amount
             bytes20(_staker) // staker
@@ -66,7 +66,7 @@ abstract contract Parachain {
         uint64 transactRequiredWeightAtMost = 1155113000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
-            hex"0D", // fixed call index within pallet: 13
+            hex"0E", // fixed call index within pallet: 14
             _account,
             bytes32(reverse(_amount)),
             bytes20(_staker) // staker
@@ -87,7 +87,7 @@ abstract contract Parachain {
         uint64 transactRequiredWeightAtMost = 1051143000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
-            hex"0F", // fixed call index within pallet: 15
+            hex"10", // fixed call index within pallet: 16
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)) // amount
         );
@@ -109,7 +109,7 @@ abstract contract Parachain {
         uint64 transactRequiredWeightAtMost = 261856000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
-            hex"0E", // fixed call index within pallet: 14
+            hex"0F", // fixed call index within pallet: 15
             _reporter, // account id of reporter on target parachain
             bytes32(reverse(_amount)) // amount
         );
@@ -133,7 +133,7 @@ abstract contract Parachain {
         uint64 transactRequiredWeightAtMost = 198884000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
-            hex"10", // fixed call index within pallet: 16
+            hex"11", // fixed call index within pallet: 17
             _disputeId, // dispute id
             uint8(_outcome) // outcome
         );
@@ -152,7 +152,7 @@ abstract contract Parachain {
         uint64 transactRequiredWeightAtMost = 323353000;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
-            hex"0D", // fixed call index within pallet: 13
+            hex"12", // fixed call index within pallet: 18
             _disputeId // dispute id
         );
         uint64 overallWeight = transactRequiredWeightAtMost + (xcmInstructionFee * xcmInstructionCount);
