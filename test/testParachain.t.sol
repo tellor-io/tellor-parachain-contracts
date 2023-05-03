@@ -274,10 +274,7 @@ contract ParachainTest is Test {
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
         assertEq(savedData.transactRequiredWeightAtMost, 261856000);
         bytes memory _expectedCall = abi.encodePacked(
-            abi.encode(fakePalletInstance),
-            hex"0F",
-            fakeReporter,
-            bytes32(parachain.reverseExternal(fakeAmount))
+            abi.encode(fakePalletInstance), hex"0F", fakeReporter, bytes32(parachain.reverseExternal(fakeAmount))
         );
         assertEq(savedData.call, _expectedCall);
         uint64 _expectedOverallWeight = 261856000 + (1000000000 * 4);
@@ -309,7 +306,6 @@ contract ParachainTest is Test {
         assertEq(savedData.feeLocation.parents, 1);
         assertEq(savedData.feeLocation.interior.length, 1);
         assertEq(savedData.feeLocation.interior[0], abi.encodePacked(hex"00", bytes4(fakeFeeLocationPallet)));
-
     }
 
     function testX1() public {
