@@ -50,4 +50,7 @@ contract TestParachain is Parachain {
     function convertWeightToFeeExternal(uint256 overallWeight, uint256 weightToFee) external pure returns (uint256) {
         return convertWeightToFee(overallWeight, weightToFee);
     }
+
+    // exclude contract from coverage report
+    function test() public {}
 }

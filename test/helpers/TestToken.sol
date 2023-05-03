@@ -12,4 +12,7 @@ contract TestToken is ERC20 {
     function mint(address to, uint256 amount) external virtual {
         _mint(to, amount);
     }
+
+    // exclude contract from coverage report
+    function test() public {}
 }
