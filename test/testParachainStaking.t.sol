@@ -12,14 +12,12 @@ import "./helpers/TestParachain.sol";
 import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 import "../src/ParachainRegistry.sol";
-import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";
 
 contract ParachainStakingTest is Test {
     TestToken public token;
     ParachainRegistry public registry;
     ParachainStaking public staking;
-    Parachain public parachainContract;
     TestParachain public parachain;
 
     address public paraOwner = address(0x1111);
@@ -84,7 +82,7 @@ contract ParachainStakingTest is Test {
         // Try to create new w/o passing in token address
         vm.prank(bob);
         vm.expectRevert("must set token address");
-        ParachainStaking _ps = new ParachainStaking(address(registry), address(0x0));
+        new ParachainStaking(address(registry), address(0x0));
     }
 
     function testInit() public {
@@ -155,7 +153,7 @@ contract ParachainStakingTest is Test {
         );
 
         // Test depositing with insufficient tokens
-        (, uint256 _darylStakedBal, uint256 _darylLockedBal) = staking.getParachainStakerInfo(fakeParaId, daryl);
+        (,, uint256 _darylLockedBal) = staking.getParachainStakerInfo(fakeParaId, daryl);
         console.log("daryl locked balance: ", _darylLockedBal);
         vm.startPrank(daryl);
         vm.expectRevert("insufficient balance");

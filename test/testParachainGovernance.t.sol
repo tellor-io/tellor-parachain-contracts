@@ -12,7 +12,6 @@ import "./helpers/TestParachain.sol";
 import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 import "../src/ParachainRegistry.sol";
-import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";
 import "../src/ParachainGovernance.sol";
 
@@ -507,13 +506,7 @@ contract ParachainGovernanceTest is Test {
         assertEq(_initiator, alice);
 
         // Check vote info for non-existent vote
-        (
-            bytes32 _hash2,
-            uint256[16] memory _voteInfo2,
-            bool _voteExecuted2,
-            ParachainGovernance.VoteResult _voteResult2,
-            address _initiator2
-        ) = gov.getVoteInfo(keccak256(abi.encode("blah")), 1);
+        (bytes32 _hash2, uint256[16] memory _voteInfo2,,,) = gov.getVoteInfo(keccak256(abi.encode("blah")), 1);
         assertEq(_hash2, bytes32(0));
         assertEq(_voteInfo2[0], 0); // voteRound
         assertEq(_voteInfo2[1], 0); // startDate

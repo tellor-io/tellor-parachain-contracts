@@ -8,11 +8,10 @@ import "forge-std/console.sol";
 import "solmate/tokens/ERC20.sol";
 
 import "./helpers/TestToken.sol";
+import "./helpers/TestParachain.sol";
+import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 import "../src/ParachainRegistry.sol";
-import "../src/Parachain.sol";
-import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
-import "./helpers/TestParachain.sol";
 
 contract ParachainRegistryTest is Test {
     TestToken public token;
@@ -78,35 +77,35 @@ contract ParachainRegistryTest is Test {
         registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeFeeLocation);
 
         // check storage
-        ParachainRegistry.Parachain memory parachain = registry.getByAddress(paraOwner2);
-        assertEq(parachain.id, fakeParaId2);
-        assertEq(parachain.owner, paraOwner2);
-        assertEq(parachain.palletInstance, abi.encodePacked(fakePalletInstance2));
-        assertEq(parachain.weightToFee, fakeWeightToFee);
-        assertEq(parachain.feeLocation.parents, fakeFeeLocation.parents);
-        assertEq(parachain.feeLocation.interior[0], fakeFeeLocation.interior[0]);
+        ParachainRegistry.Parachain memory parachainA = registry.getByAddress(paraOwner2);
+        assertEq(parachainA.id, fakeParaId2);
+        assertEq(parachainA.owner, paraOwner2);
+        assertEq(parachainA.palletInstance, abi.encodePacked(fakePalletInstance2));
+        assertEq(parachainA.weightToFee, fakeWeightToFee);
+        assertEq(parachainA.feeLocation.parents, fakeFeeLocation.parents);
+        assertEq(parachainA.feeLocation.interior[0], fakeFeeLocation.interior[0]);
 
         // indirectly check that paraOwner was saved to 'owners' mapping
-        parachain = registry.getById(fakeParaId2);
-        assertEq(parachain.id, fakeParaId2);
-        assertEq(parachain.owner, paraOwner2);
-        assertEq(parachain.palletInstance, abi.encodePacked(fakePalletInstance2));
-        assertEq(parachain.weightToFee, fakeWeightToFee);
-        assertEq(parachain.feeLocation.interior[0], fakeFeeLocation.interior[0]);
+        parachainA = registry.getById(fakeParaId2);
+        assertEq(parachainA.id, fakeParaId2);
+        assertEq(parachainA.owner, paraOwner2);
+        assertEq(parachainA.palletInstance, abi.encodePacked(fakePalletInstance2));
+        assertEq(parachainA.weightToFee, fakeWeightToFee);
+        assertEq(parachainA.feeLocation.interior[0], fakeFeeLocation.interior[0]);
     }
 
     function testGetById() public {
-        ParachainRegistry.Parachain memory parachain = registry.getById(fakeParaId);
-        assertEq(parachain.id, fakeParaId);
-        assertEq(parachain.owner, paraOwner);
-        assertEq(parachain.palletInstance, abi.encodePacked(fakePalletInstance));
+        ParachainRegistry.Parachain memory parachainB = registry.getById(fakeParaId);
+        assertEq(parachainB.id, fakeParaId);
+        assertEq(parachainB.owner, paraOwner);
+        assertEq(parachainB.palletInstance, abi.encodePacked(fakePalletInstance));
     }
 
     function testGetByAddress() public {
-        ParachainRegistry.Parachain memory parachain = registry.getByAddress(paraOwner);
-        assertEq(parachain.id, fakeParaId);
-        assertEq(parachain.owner, paraOwner);
-        assertEq(parachain.palletInstance, abi.encodePacked(fakePalletInstance));
+        ParachainRegistry.Parachain memory parachainC = registry.getByAddress(paraOwner);
+        assertEq(parachainC.id, fakeParaId);
+        assertEq(parachainC.owner, paraOwner);
+        assertEq(parachainC.palletInstance, abi.encodePacked(fakePalletInstance));
     }
 
     function testParachain() public {

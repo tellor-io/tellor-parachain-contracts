@@ -7,11 +7,12 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "solmate/tokens/ERC20.sol";
 
-import "../src/ParachainRegistry.sol";
 import "./helpers/TestParachain.sol";
 import "./helpers/TestToken.sol";
 import "./helpers/StubXcmTransactorV2.sol";
 import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
+
+import "../src/ParachainRegistry.sol";
 
 contract ParachainTest is Test {
     TestToken public token;
@@ -76,13 +77,6 @@ contract ParachainTest is Test {
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation
         });
-        IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: address(0),
-            palletInstance: abi.encode(fakePalletInstance),
-            weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
-        });
         uint256 fakeAmount = 100e18;
 
         // test registered parachain
@@ -118,13 +112,6 @@ contract ParachainTest is Test {
         IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance),
-            weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
-        });
-        IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: address(0),
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation
@@ -169,13 +156,6 @@ contract ParachainTest is Test {
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation
         });
-        IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: address(0),
-            palletInstance: abi.encode(fakePalletInstance),
-            weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
-        });
 
         uint256 fakeAmount = 100e18;
 
@@ -208,13 +188,6 @@ contract ParachainTest is Test {
         IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance),
-            weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
-        });
-        IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
-            id: fakeParaId,
-            owner: address(0),
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation
