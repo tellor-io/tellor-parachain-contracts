@@ -7,13 +7,12 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 
 import "./helpers/TestToken.sol";
+import "./helpers/TestParachain.sol";
 import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 import "../src/ParachainRegistry.sol";
-import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";
 import "../src/ParachainGovernance.sol";
-import "./helpers/TestParachain.sol";
 
 contract E2ETestsB is Test {
     TestToken public token;

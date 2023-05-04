@@ -31,20 +31,20 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
         uint64 overallWeight;
     }
 
-    function indexToAccount(uint16 index) external view override returns (address owner) {
+    function indexToAccount(uint16 /* index */ ) external pure override returns (address owner) {
         return address(0x0);
     }
 
-    function transactInfoWithSigned(Multilocation memory multilocation)
+    function transactInfoWithSigned(Multilocation memory /* multilocation */ )
         external
-        view
+        pure
         override
         returns (uint64 transactExtraWeight, uint64 transactExtraWeightSigned, uint64 maxWeight)
     {
         return (0, 0, 0);
     }
 
-    function feePerSecond(Multilocation memory multilocation) external view override returns (uint256) {
+    function feePerSecond(Multilocation memory /* multilocation */ ) external pure override returns (uint256) {
         return 0;
     }
 

@@ -7,11 +7,12 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 import "solmate/tokens/ERC20.sol";
 
-import "../src/ParachainRegistry.sol";
 import "./helpers/TestParachain.sol";
 import "./helpers/TestToken.sol";
 import "./helpers/StubXcmTransactorV2.sol";
 import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
+
+import "../src/ParachainRegistry.sol";
 
 contract ParachainTest is Test {
     TestToken public token;
@@ -76,7 +77,7 @@ contract ParachainTest is Test {
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation
         });
-        IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
+        IRegistry.Parachain({
             id: fakeParaId,
             owner: address(0),
             palletInstance: abi.encode(fakePalletInstance),
@@ -122,7 +123,7 @@ contract ParachainTest is Test {
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation
         });
-        IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
+        IRegistry.Parachain({
             id: fakeParaId,
             owner: address(0),
             palletInstance: abi.encode(fakePalletInstance),
@@ -169,7 +170,7 @@ contract ParachainTest is Test {
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation
         });
-        IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
+        IRegistry.Parachain({
             id: fakeParaId,
             owner: address(0),
             palletInstance: abi.encode(fakePalletInstance),
@@ -212,7 +213,7 @@ contract ParachainTest is Test {
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation
         });
-        IRegistry.Parachain memory badFakeParachain = IRegistry.Parachain({
+        IRegistry.Parachain({
             id: fakeParaId,
             owner: address(0),
             palletInstance: abi.encode(fakePalletInstance),

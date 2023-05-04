@@ -7,14 +7,12 @@ import "forge-std/Vm.sol";
 import "forge-std/console.sol";
 
 import "./helpers/TestToken.sol";
+import "./helpers/TestParachain.sol";
 import {StubXcmUtils} from "./helpers/StubXcmUtils.sol";
 
 import "../src/ParachainRegistry.sol";
-import "../src/Parachain.sol";
 import "../src/ParachainStaking.sol";
 import "../src/ParachainGovernance.sol";
-import "./testParachain.t.sol";
-import "./helpers/TestParachain.sol";
 
 contract E2ETests is Test {
     TestToken public token;
@@ -910,7 +908,6 @@ contract E2ETests is Test {
         vm.stopPrank();
 
         // begin initial dispute
-        uint256 _startVote = block.timestamp;
         vm.prank(paraOwner);
         gov.beginParachainDispute(
             fakeQueryId, fakeTimestamp, fakeValue, fakeDisputedReporter, fakeDisputeInitiator, fakeSlashAmount
