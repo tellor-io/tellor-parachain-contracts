@@ -77,13 +77,6 @@ contract ParachainTest is Test {
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation
         });
-        IRegistry.Parachain({
-            id: fakeParaId,
-            owner: address(0),
-            palletInstance: abi.encode(fakePalletInstance),
-            weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
-        });
         uint256 fakeAmount = 100e18;
 
         // test registered parachain
@@ -119,13 +112,6 @@ contract ParachainTest is Test {
         IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance),
-            weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
-        });
-        IRegistry.Parachain({
-            id: fakeParaId,
-            owner: address(0),
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation
@@ -170,13 +156,6 @@ contract ParachainTest is Test {
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation
         });
-        IRegistry.Parachain({
-            id: fakeParaId,
-            owner: address(0),
-            palletInstance: abi.encode(fakePalletInstance),
-            weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
-        });
 
         uint256 fakeAmount = 100e18;
 
@@ -209,13 +188,6 @@ contract ParachainTest is Test {
         IRegistry.Parachain memory fakeParachain = IRegistry.Parachain({
             id: fakeParaId,
             owner: paraOwner,
-            palletInstance: abi.encode(fakePalletInstance),
-            weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
-        });
-        IRegistry.Parachain({
-            id: fakeParaId,
-            owner: address(0),
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation
