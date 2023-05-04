@@ -98,9 +98,6 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
             );
     }
 
-    // add this to be excluded from coverage report
-    function test() public {}
-
     // add this to be excluded from coverage report. This is a getter for the transactThroughSignedMultilocationArray
     function getTransactThroughSignedMultilocationArray()
         public
@@ -109,4 +106,7 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
     {
         return transactThroughSignedMultilocationArray;
     }
+
+    // exclude contract from coverage report
+    function test() public {}
 }

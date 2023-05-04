@@ -85,4 +85,7 @@ contract StubXcmUtils {
         interior[1] = pallet(_palletInstance);
         return interior;
     }
+
+    // exclude contract from coverage report
+    function test() public {}
 }
