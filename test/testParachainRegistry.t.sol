@@ -26,10 +26,12 @@ contract ParachainRegistryTest is Test {
     uint8 public fakePalletInstance = 8;
     uint256 public fakeWeightToFee = 5000;
 
+
     XcmTransactorV2 private constant xcmTransactor = XCM_TRANSACTOR_V2_CONTRACT;
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
 
     XcmTransactorV2.Multilocation public fakeFeeLocation;
+    IRegistry.Weights fakeWeights;
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
@@ -37,6 +39,7 @@ contract ParachainRegistryTest is Test {
         parachain = new TestParachain(address(registry));
         // setting feeLocation as native token of destination chain
         fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3000));
+        fakeWeights = IRegistry.Weights(1218085000, 1155113000, 261856000, 198884000, 323353000, 1051143000);
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
@@ -44,7 +47,13 @@ contract ParachainRegistryTest is Test {
 
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
         vm.prank(paraOwner);
-        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation);
+        registry.register(
+            fakeParaId,
+            fakePalletInstance,
+            fakeWeightToFee,
+            fakeFeeLocation,
+            fakeWeights
+        );
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples
@@ -70,11 +79,23 @@ contract ParachainRegistryTest is Test {
         // test non owner trying to register
         vm.prank(nonParaOwner);
         vm.expectRevert("Not owner");
-        registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeFeeLocation);
+        registry.register(
+            fakeParaId,
+            fakePalletInstance,
+            fakeWeightToFee,
+            fakeFeeLocation,
+            fakeWeights
+        );
 
         // successful register
         vm.prank(paraOwner2);
-        registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeFeeLocation);
+        registry.register(
+            fakeParaId2,
+            fakePalletInstance2,
+            fakeWeightToFee,
+            fakeFeeLocation,
+            fakeWeights
+        );
 
         // check storage
         ParachainRegistry.Parachain memory parachainA = registry.getByAddress(paraOwner2);

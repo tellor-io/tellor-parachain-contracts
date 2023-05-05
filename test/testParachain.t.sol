@@ -34,6 +34,7 @@ contract ParachainTest is Test {
     StubXcmTransactorV2 private constant xcmTransactor = StubXcmTransactorV2(XCM_TRANSACTOR_V2_ADDRESS);
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
     XcmTransactorV2.Multilocation fakeFeeLocation;
+    IRegistry.Weights fakeWeights;
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
@@ -41,6 +42,8 @@ contract ParachainTest is Test {
         parachain = new TestParachain(address(registry));
         // setting feeLocation as native token of destination chain
         fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3000));
+        fakeWeights = IRegistry.Weights(1218085000, 1155113000, 261856000, 198884000, 323353000, 1051143000);
+
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
@@ -49,7 +52,14 @@ contract ParachainTest is Test {
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
         vm.prank(paraOwner);
 
-        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation);
+
+        registry.register(
+            fakeParaId,
+            fakePalletInstance,
+            fakeWeightToFee,
+            fakeFeeLocation,
+            fakeWeights
+        );
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples
@@ -75,7 +85,13 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
+            feeLocation: fakeFeeLocation,
+            reportStakeDeposited: fakeWeights.reportStakeDeposited,
+            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
+            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
+            reportVoteTallied: fakeWeights.reportVoteTallied,
+            reportVoteExecuted: fakeWeights.reportVoteExecuted,
+            reportSlash: fakeWeights.reportSlash
         });
         uint256 fakeAmount = 100e18;
 
@@ -114,7 +130,13 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
+            feeLocation: fakeFeeLocation,
+            reportStakeDeposited: fakeWeights.reportStakeDeposited,
+            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
+            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
+            reportVoteTallied: fakeWeights.reportVoteTallied,
+            reportVoteExecuted: fakeWeights.reportVoteExecuted,
+            reportSlash: fakeWeights.reportSlash
         });
 
         uint256 fakeAmount = 100e18;
@@ -154,7 +176,13 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
+            feeLocation: fakeFeeLocation,
+            reportStakeDeposited: fakeWeights.reportStakeDeposited,
+            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
+            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
+            reportVoteTallied: fakeWeights.reportVoteTallied,
+            reportVoteExecuted: fakeWeights.reportVoteExecuted,
+            reportSlash: fakeWeights.reportSlash
         });
 
         uint256 fakeAmount = 100e18;
@@ -190,7 +218,13 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
+            feeLocation: fakeFeeLocation,
+            reportStakeDeposited: fakeWeights.reportStakeDeposited,
+            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
+            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
+            reportVoteTallied: fakeWeights.reportVoteTallied,
+            reportVoteExecuted: fakeWeights.reportVoteExecuted,
+            reportSlash: fakeWeights.reportSlash
         });
 
         uint256 fakeAmount = 100e18;
@@ -227,7 +261,13 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
+            feeLocation: fakeFeeLocation,
+            reportStakeDeposited: fakeWeights.reportStakeDeposited,
+            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
+            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
+            reportVoteTallied: fakeWeights.reportVoteTallied,
+            reportVoteExecuted: fakeWeights.reportVoteExecuted,
+            reportSlash: fakeWeights.reportSlash
         });
 
         uint256 fakeAmount = 100e18;
@@ -264,7 +304,13 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
+            feeLocation: fakeFeeLocation,
+            reportStakeDeposited: fakeWeights.reportStakeDeposited,
+            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
+            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
+            reportVoteTallied: fakeWeights.reportVoteTallied,
+            reportVoteExecuted: fakeWeights.reportVoteExecuted,
+            reportSlash: fakeWeights.reportSlash
         });
 
         uint256 fakeAmount = 100e18;
@@ -289,7 +335,13 @@ contract ParachainTest is Test {
             owner: paraOwner,
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
-            feeLocation: fakeFeeLocation
+            feeLocation: fakeFeeLocation,
+            reportStakeDeposited: fakeWeights.reportStakeDeposited,
+            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
+            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
+            reportVoteTallied: fakeWeights.reportVoteTallied,
+            reportVoteExecuted: fakeWeights.reportVoteExecuted,
+            reportSlash: fakeWeights.reportSlash
         });
 
         uint256 fakeAmount = 100e18;

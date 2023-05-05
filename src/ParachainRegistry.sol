@@ -13,7 +13,23 @@ interface IRegistry {
         bytes palletInstance;
         uint256 weightToFee;
         XcmTransactorV2.Multilocation feeLocation;
+        uint64 reportStakeDeposited;
+        uint64 reportStakeWithdrawRequested;
+        uint64 reportStakeWithdrawn;
+        uint64 reportVoteTallied;
+        uint64 reportVoteExecuted;
+        uint64 reportSlash;
     }
+
+    struct Weights {
+        uint64 reportStakeDeposited;
+        uint64 reportStakeWithdrawRequested;
+        uint64 reportStakeWithdrawn;
+        uint64 reportVoteTallied;
+        uint64 reportVoteExecuted;
+        uint64 reportSlash;
+    }
+
 
     function getById(uint32 _id) external view returns (Parachain memory);
     function getByAddress(address _address) external view returns (Parachain memory);
@@ -33,18 +49,30 @@ contract ParachainRegistry is IRegistry {
     /// @param _palletInstance uint8 The index of the Tellor pallet within the parachain's runtime.
     /// @param _weightToFee uint256 The constant multiplier(fee per weight) used to convert weight to fee
     /// @param _feeLocation XcmTransactorV2.Multilocation The location of the currency type of consumer chain.
+    /// @param _weights Weights Weight of dispatchables on the corresponding pallet
     function register(
         uint32 _paraId,
         uint8 _palletInstance,
         uint256 _weightToFee,
-        XcmTransactorV2.Multilocation memory _feeLocation
+        XcmTransactorV2.Multilocation memory _feeLocation,
+        Weights memory _weights
     ) external {
         // Ensure sender is on parachain
         address derivativeAddress =
             xcmUtils.multilocationToAddress(XcmUtils.Multilocation(1, x2(_paraId, _palletInstance)));
         require(msg.sender == derivativeAddress, "Not owner");
         registrations[_paraId] =
-            Parachain(_paraId, msg.sender, abi.encodePacked(_palletInstance), _weightToFee, _feeLocation);
+            Parachain(_paraId,
+                      msg.sender,
+                      abi.encodePacked(_palletInstance),
+                      _weightToFee,
+                      _feeLocation,
+                      _weights.reportStakeDeposited,
+                      _weights.reportStakeWithdrawRequested,
+                      _weights.reportStakeWithdrawn,
+                      _weights.reportVoteTallied,
+                      _weights.reportVoteExecuted,
+                      _weights.reportSlash);
         owners[msg.sender] = _paraId;
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }
