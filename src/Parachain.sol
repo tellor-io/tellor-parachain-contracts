@@ -35,7 +35,7 @@ abstract contract Parachain {
         // Prepare remote call and send
 
         // The benchmarked weight of report_stake_deposited dispatchable function on the corresponding pallet
-        uint64 transactRequiredWeightAtMost = _parachain.reportStakeDeposited;
+        uint64 transactRequiredWeightAtMost = _parachain.weights.reportStakeDeposited;
 
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
@@ -63,7 +63,7 @@ abstract contract Parachain {
         address _staker
     ) internal {
         // The benchmarked weight of report_staking_withdraw_request dispatchable function on the corresponding pallet
-        uint64 transactRequiredWeightAtMost = _parachain.reportStakeWithdrawRequested;
+        uint64 transactRequiredWeightAtMost = _parachain.weights.reportStakeWithdrawRequested;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
             hex"0E", // fixed call index within pallet: 14
@@ -84,7 +84,7 @@ abstract contract Parachain {
     /// @param _amount uint256 Amount slashed.
     function reportSlash(IRegistry.Parachain memory _parachain, bytes memory _reporter, uint256 _amount) internal {
         // The benchmarked weight of report_slash dispatchable function on the corresponding pallet
-        uint64 transactRequiredWeightAtMost = _parachain.reportSlash;
+        uint64 transactRequiredWeightAtMost = _parachain.weights.reportSlash;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within parachain runtime
             hex"10", // fixed call index within pallet: 16
@@ -106,7 +106,7 @@ abstract contract Parachain {
         internal
     {
         // The benchmarked weight of report_stake_withdrawn dispatchable function on the corresponding pallet
-        uint64 transactRequiredWeightAtMost = _parachain.reportStakeWithdrawn;
+        uint64 transactRequiredWeightAtMost = _parachain.weights.reportStakeWithdrawn;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
             hex"0F", // fixed call index within pallet: 15
@@ -130,7 +130,7 @@ abstract contract Parachain {
         IParachainGovernance.VoteResult _outcome
     ) internal {
         // The benchmarked weight of report_vote_tallied dispatchable function on the corresponding pallet
-        uint64 transactRequiredWeightAtMost = _parachain.reportVoteTallied;
+        uint64 transactRequiredWeightAtMost = _parachain.weights.reportVoteTallied;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
             hex"11", // fixed call index within pallet: 17
@@ -149,7 +149,7 @@ abstract contract Parachain {
     /// @param _disputeId bytes32 The unique identifier of the dispute.
     function reportVoteExecuted(IRegistry.Parachain memory _parachain, bytes32 _disputeId) internal {
         // The benchmarked weight of report_vote_executed dispatchable function on the corresponding pallet
-        uint64 transactRequiredWeightAtMost = _parachain.reportVoteExecuted;
+        uint64 transactRequiredWeightAtMost = _parachain.weights.reportVoteExecuted;
         bytes memory call = abi.encodePacked(
             _parachain.palletInstance, // pallet index within runtime
             hex"12", // fixed call index within pallet: 18

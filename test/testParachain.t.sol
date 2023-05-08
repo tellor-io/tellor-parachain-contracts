@@ -86,12 +86,7 @@ contract ParachainTest is Test {
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation,
-            reportStakeDeposited: fakeWeights.reportStakeDeposited,
-            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
-            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
-            reportVoteTallied: fakeWeights.reportVoteTallied,
-            reportVoteExecuted: fakeWeights.reportVoteExecuted,
-            reportSlash: fakeWeights.reportSlash
+            weights: fakeWeights
         });
         uint256 fakeAmount = 100e18;
 
@@ -131,12 +126,7 @@ contract ParachainTest is Test {
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation,
-            reportStakeDeposited: fakeWeights.reportStakeDeposited,
-            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
-            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
-            reportVoteTallied: fakeWeights.reportVoteTallied,
-            reportVoteExecuted: fakeWeights.reportVoteExecuted,
-            reportSlash: fakeWeights.reportSlash
+            weights: fakeWeights
         });
 
         uint256 fakeAmount = 100e18;
@@ -177,12 +167,7 @@ contract ParachainTest is Test {
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation,
-            reportStakeDeposited: fakeWeights.reportStakeDeposited,
-            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
-            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
-            reportVoteTallied: fakeWeights.reportVoteTallied,
-            reportVoteExecuted: fakeWeights.reportVoteExecuted,
-            reportSlash: fakeWeights.reportSlash
+            weights: fakeWeights
         });
 
         uint256 fakeAmount = 100e18;
@@ -219,12 +204,7 @@ contract ParachainTest is Test {
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation,
-            reportStakeDeposited: fakeWeights.reportStakeDeposited,
-            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
-            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
-            reportVoteTallied: fakeWeights.reportVoteTallied,
-            reportVoteExecuted: fakeWeights.reportVoteExecuted,
-            reportSlash: fakeWeights.reportSlash
+            weights: fakeWeights
         });
 
         uint256 fakeAmount = 100e18;
@@ -262,12 +242,7 @@ contract ParachainTest is Test {
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation,
-            reportStakeDeposited: fakeWeights.reportStakeDeposited,
-            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
-            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
-            reportVoteTallied: fakeWeights.reportVoteTallied,
-            reportVoteExecuted: fakeWeights.reportVoteExecuted,
-            reportSlash: fakeWeights.reportSlash
+            weights: fakeWeights
         });
 
         uint256 fakeAmount = 100e18;
@@ -305,12 +280,7 @@ contract ParachainTest is Test {
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation,
-            reportStakeDeposited: fakeWeights.reportStakeDeposited,
-            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
-            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
-            reportVoteTallied: fakeWeights.reportVoteTallied,
-            reportVoteExecuted: fakeWeights.reportVoteExecuted,
-            reportSlash: fakeWeights.reportSlash
+            weights: fakeWeights
         });
 
         uint256 fakeAmount = 100e18;
@@ -336,12 +306,7 @@ contract ParachainTest is Test {
             palletInstance: abi.encode(fakePalletInstance),
             weightToFee: fakeWeightToFee,
             feeLocation: fakeFeeLocation,
-            reportStakeDeposited: fakeWeights.reportStakeDeposited,
-            reportStakeWithdrawRequested: fakeWeights.reportStakeWithdrawRequested,
-            reportStakeWithdrawn: fakeWeights.reportStakeWithdrawn,
-            reportVoteTallied: fakeWeights.reportVoteTallied,
-            reportVoteExecuted: fakeWeights.reportVoteExecuted,
-            reportSlash: fakeWeights.reportSlash
+            weights: fakeWeights
         });
 
         uint256 fakeAmount = 100e18;

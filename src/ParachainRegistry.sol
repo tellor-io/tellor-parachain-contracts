@@ -13,12 +13,7 @@ interface IRegistry {
         bytes palletInstance;
         uint256 weightToFee;
         XcmTransactorV2.Multilocation feeLocation;
-        uint64 reportStakeDeposited;
-        uint64 reportStakeWithdrawRequested;
-        uint64 reportStakeWithdrawn;
-        uint64 reportVoteTallied;
-        uint64 reportVoteExecuted;
-        uint64 reportSlash;
+        Weights weights;
     }
 
     struct Weights {
@@ -67,12 +62,7 @@ contract ParachainRegistry is IRegistry {
                       abi.encodePacked(_palletInstance),
                       _weightToFee,
                       _feeLocation,
-                      _weights.reportStakeDeposited,
-                      _weights.reportStakeWithdrawRequested,
-                      _weights.reportStakeWithdrawn,
-                      _weights.reportVoteTallied,
-                      _weights.reportVoteExecuted,
-                      _weights.reportSlash);
+                      _weights);
         owners[msg.sender] = _paraId;
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }
