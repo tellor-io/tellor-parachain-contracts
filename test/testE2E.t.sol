@@ -44,6 +44,7 @@ contract E2ETests is Test {
     uint32 public fakeParaId = 12;
     uint8 public fakePalletInstance = 8;
     uint256 public fakeStakeAmount = 100;
+    uint32 fakeFeeLocationPallet = uint32(3000);
 
     uint32 public fakeParaId2 = 13;
     uint8 public fakePalletInstance2 = 9;
@@ -56,6 +57,7 @@ contract E2ETests is Test {
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
 
     XcmTransactorV2.Multilocation public fakeFeeLocation;
+    IRegistry.Weights fakeWeights;
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
@@ -65,6 +67,7 @@ contract E2ETests is Test {
         parachain = new TestParachain(address(registry));
         // setting feeLocation as native token of destination chain
         fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3000));
+        fakeWeights = IRegistry.Weights(1218085000, 1155113000, 261856000, 198884000, 323353000, 1051143000);
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
@@ -76,11 +79,29 @@ contract E2ETests is Test {
 
         // Register parachains
         vm.prank(paraOwner);
-        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation);
+        registry.register(
+            fakeParaId,
+            fakePalletInstance,
+            fakeWeightToFee,
+            fakeFeeLocation,
+            fakeWeights
+        );
         vm.prank(paraOwner2);
-        registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeFeeLocation);
+        registry.register(
+            fakeParaId2,
+            fakePalletInstance2,
+            fakeWeightToFee,
+            fakeFeeLocation,
+            fakeWeights
+        );
         vm.prank(paraOwner3);
-        registry.register(fakeParaId3, fakePalletInstance3, fakeWeightToFee, fakeFeeLocation);
+        registry.register(
+            fakeParaId3,
+            fakePalletInstance3,
+            fakeWeightToFee,
+            fakeFeeLocation,
+            fakeWeights
+        );
 
         gov.init(address(staking));
         staking.init(address(gov));

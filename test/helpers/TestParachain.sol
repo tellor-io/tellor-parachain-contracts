@@ -5,6 +5,14 @@ pragma solidity ^0.8.0;
 import "../../src/Parachain.sol";
 
 contract TestParachain is Parachain {
+
+    uint64 public fakeReportStakeDeposited = 1218085000;
+    uint64 public fakeReportStakeWithdrawRequested = 1155113000;
+    uint64 public fakeReportStakeWithdrawn = 261856000;
+    uint64 public fakeReportVoteTallied = 198884000;
+    uint64 public fakeReportVoteExecuted = 323353000;
+    uint64 public fakeReportSlash = 1051143000;
+
     constructor(address _registry) Parachain(_registry) {}
 
     function reportStakeDepositedExternal(

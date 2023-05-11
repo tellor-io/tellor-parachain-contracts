@@ -43,10 +43,12 @@ contract ParachainGovernanceTest is Test {
     uint32 public fakeParaId = 12;
     uint8 public fakePalletInstance = 8;
     uint256 public fakeStakeAmount = 20;
+    uint32 fakeFeeLocationPallet = uint32(3000);
 
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
 
     XcmTransactorV2.Multilocation public fakeFeeLocation;
+    IRegistry.Weights fakeWeights;
 
     function setUp() public {
         token = new TestToken(1_000_000 * 10 ** 18);
@@ -56,6 +58,7 @@ contract ParachainGovernanceTest is Test {
         gov = new ParachainGovernance(address(registry), fakeTeamMultiSig);
         // setting feeLocation as native token of destination chain
         fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3000));
+        fakeWeights = IRegistry.Weights(1218085000, 1155113000, 261856000, 198884000, 323353000, 1051143000);
 
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
@@ -64,7 +67,13 @@ contract ParachainGovernanceTest is Test {
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
 
         vm.prank(paraOwner);
-        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation);
+        registry.register(
+            fakeParaId,
+            fakePalletInstance,
+            fakeWeightToFee,
+            fakeFeeLocation,
+            fakeWeights
+        );
 
         gov.init(address(staking));
         staking.init(address(gov));
