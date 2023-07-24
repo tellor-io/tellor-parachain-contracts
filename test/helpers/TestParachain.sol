@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import "../../src/Parachain.sol";
 
 contract TestParachain is Parachain {
-
     uint64 public fakeReportStakeDeposited = 1218085000;
     uint64 public fakeReportStakeWithdrawRequested = 1155113000;
     uint64 public fakeReportStakeWithdrawn = 261856000;

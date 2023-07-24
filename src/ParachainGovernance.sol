@@ -214,7 +214,7 @@ contract ParachainGovernance is Parachain {
         }
         emit Voted(
             _thisDispute.paraId, _thisDispute.queryId, _thisDispute.timestamp, _supports, msg.sender, _validDispute
-            );
+        );
     }
 
     /**
@@ -265,7 +265,7 @@ contract ParachainGovernance is Parachain {
             _totalReportsFor,
             _totalReportsAgainst,
             _totalReportsInvalid
-            );
+        );
     }
 
     /**

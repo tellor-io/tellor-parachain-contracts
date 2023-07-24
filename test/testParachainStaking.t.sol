@@ -56,13 +56,7 @@ contract ParachainStakingTest is Test {
 
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
 
-        registry.register(
-            fakeParaId,
-            fakePalletInstance,
-            fakeWeightToFee,
-            fakeFeeLocation,
-            fakeWeights
-        );
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation, fakeWeights);
         vm.stopPrank();
 
         // Fund accounts
@@ -278,50 +272,6 @@ contract ParachainStakingTest is Test {
         vm.stopPrank();
     }
 
-    function testConfirmParachainStakeWithdrawRequest() public {
-        // Note: normally, a parachain staker would not be the parachain owner, as
-        // functions called by the parachain owner are called via xcm from the consumer
-        // chain's pallet; however, for testing they're the same.
-
-        // Try to confirm stake withdrawal from incorrect sender
-        vm.prank(bob);
-        vm.expectRevert("not owner");
-        staking.confirmParachainStakeWithdrawRequest(
-            bob, // _staker
-            100 // _amount
-        );
-
-        // Deposit stake
-        vm.startPrank(paraOwner);
-        token.mint(address(paraOwner), 100);
-        token.approve(address(staking), 100);
-        staking.depositParachainStake(
-            fakeParaId, // _paraId
-            bytes("consumerChainAcct"), // _account
-            20 // _amount
-        );
-
-        // Request stake withdrawal
-        staking.requestParachainStakeWithdraw(
-            fakeParaId, // _paraId
-            20 // _amount
-        );
-        // Check confirmed locked balance
-        (, uint256 lockedBalanceConfirmed) = staking.getParachainStakerDetails(fakeParaId, paraOwner);
-        assertEq(lockedBalanceConfirmed, 0);
-
-        // Confirm stake withdrawal request
-        staking.confirmParachainStakeWithdrawRequest(
-            paraOwner, // _staker
-            20 // _amount
-        );
-        // Check confirmed locked balance
-        (, lockedBalanceConfirmed) = staking.getParachainStakerDetails(fakeParaId, paraOwner);
-        assertEq(lockedBalanceConfirmed, 20);
-
-        vm.stopPrank();
-    }
-
     function testWithdrawParachainStake() public {
         // Ensure can't withdraw stake from unregistered parachain
         vm.expectRevert("parachain not registered");
@@ -354,17 +304,7 @@ contract ParachainStakingTest is Test {
             20 // _amount
         );
 
-        // Try to withdraw before oracle consumer parachain confirms
-        vm.expectRevert("withdraw stake request not confirmed");
-        staking.withdrawParachainStake(fakeParaId);
-
-        // Confirm stake withdrawal request
-        staking.confirmParachainStakeWithdrawRequest(
-            paraOwner, // _staker
-            20 // _amount
-        );
-        assertEq(token.balanceOf(address(staking)), 20);
-        assertEq(token.balanceOf(address(paraOwner)), 80);
+        // todo: should have to wait till lock period expires to withdraw?
 
         // Withdraw stake
         staking.withdrawParachainStake(fakeParaId);
@@ -459,10 +399,8 @@ contract ParachainStakingTest is Test {
     function testGetParachainStakerDetails() public {
         // Not a staker
         vm.prank(address(0xbeef));
-        (bytes memory account, uint256 lockedBalanceConfirmed) =
-            staking.getParachainStakerDetails(fakeParaId, paraOwner);
+        bytes memory account = staking.getParachainStakerDetails(fakeParaId, paraOwner);
         assertEq(account, bytes(""));
-        assertEq(lockedBalanceConfirmed, 0);
 
         // Staker
         vm.startPrank(bob);
@@ -473,9 +411,8 @@ contract ParachainStakingTest is Test {
             bytes("consumerChainAcct"), // _account
             20 // _amount
         );
-        (account, lockedBalanceConfirmed) = staking.getParachainStakerDetails(fakeParaId, bob);
+        account = staking.getParachainStakerDetails(fakeParaId, bob);
         assertEq(account, bytes("consumerChainAcct"));
-        assertEq(lockedBalanceConfirmed, 0);
     }
 
     function testGetGovernanceAddress() public {

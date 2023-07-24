@@ -66,29 +66,11 @@ contract E2ETestsB is Test {
 
         // Register parachains
         vm.prank(paraOwner);
-        registry.register(
-            fakeParaId,
-            8,
-            fakeWeightToFee,
-            fakeFeeLocation,
-            fakeWeights
-        );
+        registry.register(fakeParaId, 8, fakeWeightToFee, fakeFeeLocation, fakeWeights);
         vm.prank(paraOwner2);
-        registry.register(
-            fakeParaId2,
-            9,
-            fakeWeightToFee,
-            fakeFeeLocation,
-            fakeWeights
-        );
+        registry.register(fakeParaId2, 9, fakeWeightToFee, fakeFeeLocation, fakeWeights);
         vm.prank(paraOwner3);
-        registry.register(
-            fakeParaId3,
-            10,
-            fakeWeightToFee,
-            fakeFeeLocation,
-            fakeWeights
-        );
+        registry.register(fakeParaId3, 10, fakeWeightToFee, fakeFeeLocation, fakeWeights);
 
         gov.init(address(staking));
         staking.init(address(gov));
