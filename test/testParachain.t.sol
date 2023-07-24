@@ -44,7 +44,6 @@ contract ParachainTest is Test {
         fakeFeeLocation = XcmTransactorV2.Multilocation(1, parachain.x1External(3000));
         fakeWeights = IRegistry.Weights(1218085000, 1155113000, 261856000, 198884000, 323353000, 1051143000);
 
-
         // Set fake precompile(s)
         deployPrecompile("StubXcmTransactorV2.sol", XCM_TRANSACTOR_V2_ADDRESS);
         deployPrecompile("StubXcmUtils.sol", XCM_UTILS_ADDRESS);
@@ -52,14 +51,7 @@ contract ParachainTest is Test {
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
         vm.prank(paraOwner);
 
-
-        registry.register(
-            fakeParaId,
-            fakePalletInstance,
-            fakeWeightToFee,
-            fakeFeeLocation,
-            fakeWeights
-        );
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation, fakeWeights);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples

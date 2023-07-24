@@ -67,13 +67,7 @@ contract ParachainGovernanceTest is Test {
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
 
         vm.prank(paraOwner);
-        registry.register(
-            fakeParaId,
-            fakePalletInstance,
-            fakeWeightToFee,
-            fakeFeeLocation,
-            fakeWeights
-        );
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation, fakeWeights);
 
         gov.init(address(staking));
         staking.init(address(gov));

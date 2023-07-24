@@ -23,3 +23,6 @@ cache/
 .env
 
 .idea/
+
+# Ignore mac files
+*.DS_Store

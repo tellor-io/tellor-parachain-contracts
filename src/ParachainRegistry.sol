@@ -25,7 +25,6 @@ interface IRegistry {
         uint64 reportSlash;
     }
 
-
     function getById(uint32 _id) external view returns (Parachain memory);
     function getByAddress(address _address) external view returns (Parachain memory);
 }
@@ -57,12 +56,7 @@ contract ParachainRegistry is IRegistry {
             xcmUtils.multilocationToAddress(XcmUtils.Multilocation(1, x2(_paraId, _palletInstance)));
         require(msg.sender == derivativeAddress, "Not owner");
         registrations[_paraId] =
-            Parachain(_paraId,
-                      msg.sender,
-                      abi.encodePacked(_palletInstance),
-                      _weightToFee,
-                      _feeLocation,
-                      _weights);
+            Parachain(_paraId, msg.sender, abi.encodePacked(_palletInstance), _weightToFee, _feeLocation, _weights);
         owners[msg.sender] = _paraId;
         emit ParachainRegistered(msg.sender, _paraId, msg.sender);
     }

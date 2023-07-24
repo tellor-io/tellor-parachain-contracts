@@ -26,7 +26,6 @@ contract ParachainRegistryTest is Test {
     uint8 public fakePalletInstance = 8;
     uint256 public fakeWeightToFee = 5000;
 
-
     XcmTransactorV2 private constant xcmTransactor = XCM_TRANSACTOR_V2_CONTRACT;
     StubXcmUtils private constant xcmUtils = StubXcmUtils(XCM_UTILS_ADDRESS);
 
@@ -47,13 +46,7 @@ contract ParachainRegistryTest is Test {
 
         xcmUtils.fakeSetOwnerMultilocationAddress(fakeParaId, fakePalletInstance, paraOwner);
         vm.prank(paraOwner);
-        registry.register(
-            fakeParaId,
-            fakePalletInstance,
-            fakeWeightToFee,
-            fakeFeeLocation,
-            fakeWeights
-        );
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation, fakeWeights);
     }
 
     // From https://book.getfoundry.sh/cheatcodes/get-code#examples
@@ -79,23 +72,11 @@ contract ParachainRegistryTest is Test {
         // test non owner trying to register
         vm.prank(nonParaOwner);
         vm.expectRevert("Not owner");
-        registry.register(
-            fakeParaId,
-            fakePalletInstance,
-            fakeWeightToFee,
-            fakeFeeLocation,
-            fakeWeights
-        );
+        registry.register(fakeParaId, fakePalletInstance, fakeWeightToFee, fakeFeeLocation, fakeWeights);
 
         // successful register
         vm.prank(paraOwner2);
-        registry.register(
-            fakeParaId2,
-            fakePalletInstance2,
-            fakeWeightToFee,
-            fakeFeeLocation,
-            fakeWeights
-        );
+        registry.register(fakeParaId2, fakePalletInstance2, fakeWeightToFee, fakeFeeLocation, fakeWeights);
 
         // check storage
         ParachainRegistry.Parachain memory parachainA = registry.getByAddress(paraOwner2);

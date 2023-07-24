@@ -95,7 +95,7 @@ contract StubXcmTransactorV2 is XcmTransactorV2 {
     ) external override {
         emit TransactThroughSigned(
             dest, feeLocationAddress, transactRequiredWeightAtMost, call, feeAmount, overallWeight
-            );
+        );
     }
 
     // add this to be excluded from coverage report. This is a getter for the transactThroughSignedMultilocationArray

@@ -9,7 +9,6 @@ import {IRegistry} from "./ParachainRegistry.sol";
 interface IParachainStaking {
     function depositParachainStake(uint32 _paraId, bytes calldata _account, uint256 _amount) external;
     function requestParachainStakeWithdrawal(uint32 _paraId, uint256 _amount) external;
-    function confirmParachainStakeWidthrawRequest(uint32 _paraId, address _staker, uint256 _amount) external;
     function withdrawParachainStake(uint32 _paraId, address _staker, uint256 _amount) external;
     function slashParachainReporter(uint256 _slashAmount, uint32 _paraId, address _reporter, address _recipient)
         external
@@ -62,7 +61,6 @@ contract ParachainStaking is Parachain {
     struct ParachainStakeInfo {
         StakeInfo _stakeInfo;
         bytes _account;
-        uint256 _lockedBalanceConfirmed;
     }
 
     // Events
@@ -166,6 +164,7 @@ contract ParachainStaking is Parachain {
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][msg.sender];
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         require(_staker.stakedBalance >= _amount, "insufficient staked balance");
+        _staker.startDate = block.timestamp;
         _staker.stakedBalance -= _amount;
         _staker.lockedBalance += _amount;
         toWithdraw += _amount;
@@ -173,21 +172,6 @@ contract ParachainStaking is Parachain {
         emit ParachainStakeWithdrawRequested(_paraId, _parachainStakeInfo._account, _amount);
 
         reportStakeWithdrawRequested(parachain, _parachainStakeInfo._account, _amount, msg.sender);
-    }
-
-    /// @dev Called by oracle consumer parachain. Prevents staker from withdrawing stake until consumer
-    /// parachain has confirmed that the account cannot report anymore.
-    /// @param _staker The address of the staker requesting withdrawal.
-    /// @param _amount The amount of tokens to withdraw.
-    function confirmParachainStakeWithdrawRequest(address _staker, uint256 _amount) external {
-        // Ensure parachain is registered & sender is parachain owner
-        IRegistry.Parachain memory parachain = registry.getByAddress(msg.sender);
-        require(parachain.owner == msg.sender && parachain.owner != address(0x0), "not owner");
-
-        ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[parachain.id][_staker];
-        _parachainStakeInfo._lockedBalanceConfirmed = _amount;
-
-        emit ParachainStakeWithdrawRequestConfirmed(parachain.id, _staker, _amount);
     }
 
     /// @dev Allows a staker to withdraw their stake.
@@ -200,14 +184,10 @@ contract ParachainStaking is Parachain {
         StakeInfo storage _staker = _parachainStakeInfo._stakeInfo;
         require(block.timestamp - _staker.startDate >= 7 days, "lock period not expired");
         require(_staker.lockedBalance > 0, "no locked balance to withdraw");
-        require(
-            _staker.lockedBalance == _parachainStakeInfo._lockedBalanceConfirmed, "withdraw stake request not confirmed"
-        );
         uint256 _amount = _staker.lockedBalance;
         require(token.transfer(msg.sender, _amount), "withdraw stake token transfer failed");
         toWithdraw -= _amount;
         _staker.lockedBalance = 0;
-        _parachainStakeInfo._lockedBalanceConfirmed = 0;
 
         emit StakeWithdrawn(msg.sender);
         emit ParachainStakeWithdrawn(_paraId, msg.sender);
@@ -298,15 +278,10 @@ contract ParachainStaking is Parachain {
      * @param _paraId is the parachain ID of the oracle consumer parachain
      * @param _stakerAddress address of staker inquiring about
      * @return bytes account on consumer parachain enabled to report by staker
-     * @return uint256 amount of locked token confirmed by consumer parachain
      */
-    function getParachainStakerDetails(uint32 _paraId, address _stakerAddress)
-        external
-        view
-        returns (bytes memory, uint256)
-    {
+    function getParachainStakerDetails(uint32 _paraId, address _stakerAddress) external view returns (bytes memory) {
         ParachainStakeInfo storage _parachainStakeInfo = parachainStakerDetails[_paraId][_stakerAddress];
-        return (_parachainStakeInfo._account, _parachainStakeInfo._lockedBalanceConfirmed);
+        return _parachainStakeInfo._account;
     }
 
     /**
