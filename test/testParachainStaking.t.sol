@@ -304,7 +304,10 @@ contract ParachainStakingTest is Test {
             20 // _amount
         );
 
-        // todo: should have to wait till lock period expires to withdraw?
+        vm.expectRevert("lock period not expired");
+        staking.withdrawParachainStake(fakeParaId);
+
+        vm.warp(block.timestamp + 7 days + 1 seconds); // wait for lock period to expire
 
         // Withdraw stake
         staking.withdrawParachainStake(fakeParaId);
